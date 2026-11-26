@@ -82,7 +82,7 @@ function lateRoundHit(pick: PickRow): boolean {
 }
 
 export function isGemPick(pick: PickRow): boolean {
-  return pick.stamps.includes("STEAL") || pick.stamps.includes("LATE BLOOMER") || pick.stamps.includes("ELITE");
+  return pick.stamps.includes("STEAL") || pick.stamps.includes("LATE BLOOMER");
 }
 
 function gemSummary(picks: PickRow[]): { elites: number; gems: number; evaluated: number; gemRate: number | null } {
