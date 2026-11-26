@@ -16,6 +16,7 @@ const draftRaterLinks = [
 const tradeMachineLinks = [
   { href: "/trade-machine", label: "Mock Trade" },
   { href: "/trade-machine/rater", label: "Trade Rater" },
+  { href: "/trade-machine/trees", label: "Trade Trees" },
 ];
 
 export function MenuDrawer() {
@@ -140,10 +141,6 @@ export function MenuDrawer() {
                   {link.label}
                 </Link>
               ))}
-              <span className="rounded-lg border border-dashed border-[#262B36] px-1 py-1.5 text-center text-sm leading-tight text-[#94A3B8]/70" title="Coming soon">
-                Trade Trees
-                <span className="block text-[9px] tracking-wider uppercase">Soon</span>
-              </span>
             </div>
           </div>
 

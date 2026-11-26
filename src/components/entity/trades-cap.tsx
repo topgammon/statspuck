@@ -189,6 +189,19 @@ export function DraftCapitalMatrix({ abbr, teamName }: { abbr: string; teamName:
   );
 }
 
+/** Link from a team or GM profile to that team's trade trees. */
+export function TreesLink({ abbr, label }: { abbr: string; label: string }) {
+  return (
+    <Link href={`/trade-machine/trees?team=${abbr}`} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[#262B36] bg-[#14171F] p-4 transition hover:border-[#38BDF8]">
+      <span>
+        <span className="display block text-lg font-bold">Trade trees</span>
+        <span className="text-sm text-[#94A3B8]">Follow {label.replace(" trade trees", "")}&rsquo;s deals through everything they became.</span>
+      </span>
+      <span className="text-sm font-semibold text-[#38BDF8]">Explore the trees →</span>
+    </Link>
+  );
+}
+
 /** The separate Asset Management grade, not live yet. */
 export function AssetMgmtSoon({ subject, preview }: { subject: string; preview?: number | null }) {
   return (
@@ -260,6 +273,7 @@ export function GmTradesPanel({ person, team, teamName, current, report }: { per
         )}
       </div>
       {asset ? <TradeRecord report={asset} subject={person} /> : null}
+      <TreesLink abbr={team} label={`${teamName} trade trees`} />
       <AssetMgmtSoon subject={person} preview={asset?.efficiency ?? null} />
       {current ? (
         <>

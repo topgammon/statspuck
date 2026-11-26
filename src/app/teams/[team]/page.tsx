@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { BioCard, CapBar, ComingSoonPanel, DnaPills, ModulePreviews, ORG_TABS, PillarGrades, SectionLabel } from "@/components/entity/bio";
-import { AssetMgmtSoon, AssetRankMini, DraftCapitalMatrix, FranchiseAssetCard, TradeRecord } from "@/components/entity/trades-cap";
+import { AssetMgmtSoon, AssetRankMini, DraftCapitalMatrix, FranchiseAssetCard, TradeRecord, TreesLink } from "@/components/entity/trades-cap";
 import { teamTradeReport } from "@/lib/gm-grades";
 import { OrgDevelopment } from "@/components/entity/org-development";
 import { devBoard, devGems, undraftedGems } from "@/lib/dev-board";
@@ -158,6 +158,7 @@ export default async function TeamPage({ params }: { params: Promise<Params> }) 
         <FranchiseAssetCard abbr={team.abbr} />
         <DraftCapitalMatrix abbr={team.abbr} teamName={team.name} />
         {trades ? <TradeRecord report={trades} subject={team.name} /> : null}
+        <TreesLink abbr={team.abbr} label={`${team.name} trade trees`} />
         <AssetMgmtSoon subject={team.name} />
       </div>
     ),
