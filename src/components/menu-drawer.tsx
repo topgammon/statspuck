@@ -114,6 +114,16 @@ export function MenuDrawer() {
             <span className="rounded-full bg-[#E11D48]/15 px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#E11D48] uppercase">Live</span>
           </Link>
 
+          <Link
+            href="/trade-machine"
+            className={`mt-2 flex items-center justify-between gap-2 rounded-xl border p-3 transition ${
+              pathname.startsWith("/trade-machine") ? "border-[#38BDF8] bg-[#38BDF8]/10" : "border-[#E11D48]/40 bg-[#0B0D10]/60 hover:border-[#38BDF8]/60"
+            }`}
+          >
+            <span className="display text-xl font-bold text-[#F8FAFC]">Trade Machine</span>
+            <span className="rounded-full bg-[#E11D48]/15 px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#E11D48] uppercase">Live</span>
+          </Link>
+
           <p className="mt-7 text-[11px] font-semibold tracking-[0.16em] text-[#94A3B8] uppercase">Roadmap · Coming soon</p>
           <ul className="mt-2 divide-y divide-[#262B36]">
             {modules

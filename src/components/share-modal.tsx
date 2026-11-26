@@ -151,7 +151,7 @@ function ShareModal({
       const href = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = href;
-      link.download = `statspuck-draft-rater-${fileSlug}.png`;
+      link.download = `statspuck-${card.kind === "trade" ? "trade-machine" : "draft-rater"}-${fileSlug}.png`;
       link.click();
       URL.revokeObjectURL(href);
       note("Image saved");

@@ -1,37 +1,86 @@
 import contractsJson from "../../data/contracts.json";
 
-// Salary cap and contract data.
-// The cap ceiling is the NHL's published figure. Player contracts and team cap
-// totals fill in once a licensed data source is connected (see data/contracts.json).
+// Salary cap and contract data, synced nightly from public roster tables
+// (pipelines/draft-rater/fetch_contracts.py). If a sync is throttled the last saved
+// data/contracts.json stays in place, so the site never loses its numbers.
 
 export type PlayerContract = {
   /** Average annual value in dollars. */
   aav: number;
-  /** Season the contract ends, as the year it ends in (2028 = expires after 2027–28). */
+  /** Year the contract ends in (2028 = last paid season is 2027-28). */
   expires: number;
   elc?: boolean;
+  /** Team that holds the contract today. */
+  team?: string;
 };
+
+export type TeamCap = {
+  /** Cap hit used today. */
+  capHit: number;
+  capSpace: number;
+  ltir: number;
+  deadCap: number;
+};
+
+export type OwnedPick = { y: number; r: number; from: string };
 
 export type ContractsFile = {
   season: string;
+  /** NHL Salary Cap Ceiling (upper limit). */
   capCeiling: number;
+  /** NHL Salary Cap Floor (lower limit). */
+  capFloor?: number;
   source: string | null;
   asOf: string | null;
   players: Record<string, PlayerContract>;
-  teams: Record<string, { capHit: number }>;
+  teams: Record<string, TeamCap>;
+  picks?: Record<string, OwnedPick[]>;
 };
 
-export const contracts = contractsJson as ContractsFile;
+export const contracts = contractsJson as unknown as ContractsFile;
+
+/** First calendar year of the current cap season: "2026-27" -> 2026. */
+export const capSeasonStart = Number(contracts.season.slice(0, 4));
+
+/** Fallback floor if a sync ever predates the floor field: about 74% of the ceiling. */
+export const capFloor = contracts.capFloor ?? Math.round((contracts.capCeiling * 0.74) / 100_000) * 100_000;
+export const capCeiling = contracts.capCeiling;
 
 export function playerContract(playerId: number | null): PlayerContract | null {
   if (playerId == null) return null;
   return contracts.players[String(playerId)] ?? null;
 }
 
+export function teamCap(abbr: string): TeamCap | null {
+  return contracts.teams[abbr] ?? null;
+}
+
 export function teamCapHit(abbr: string): number | null {
   return contracts.teams[abbr]?.capHit ?? null;
 }
 
+/** Seasons left on a deal, counting the current one. */
+export function yearsLeft(contract: PlayerContract): number {
+  return Math.max(1, contract.expires - capSeasonStart);
+}
+
+/** Share of the NHL salary cap ceiling, e.g. 0.089. */
+export function capShare(aav: number): number {
+  return aav / capCeiling;
+}
+
 export function money(value: number): string {
   return `$${(value / 1_000_000).toFixed(2)}M`;
+}
+
+export function pctCap(aav: number): string {
+  return `${(capShare(aav) * 100).toFixed(1)}%`;
+}
+
+/** "$8.50M AAV · 8.9% Cap · 4 yrs left" or "ELC · 1.0% Cap". */
+export function contractLine(contract: PlayerContract): string {
+  const left = yearsLeft(contract);
+  const term = `${left} ${left === 1 ? "yr" : "yrs"} left`;
+  if (contract.elc) return `ELC · ${pctCap(contract.aav)} Cap`;
+  return `${money(contract.aav)} AAV · ${pctCap(contract.aav)} Cap · ${term}`;
 }

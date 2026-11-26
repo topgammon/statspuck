@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
-import { BioCard, ComingSoonPanel, ContractPill, HeroGrade, ModulePreviews, PillGrid, PLAYER_TABS, QuickPill, SectionLabel, VitalsRow } from "@/components/entity/bio";
+import { AssetTeaser, AssetValuePanel } from "@/components/entity/asset-value";
+import { ArchetypePill, BioCard, ComingSoonPanel, ContractPill, HeroGrade, ModulePreviews, PillGrid, PLAYER_TABS, ProspectTierPill, QuickPill, SectionLabel, VitalsRow } from "@/components/entity/bio";
 import { EntityTabs, TabLink } from "@/components/entity/entity-tabs";
 import { PlayerDevelopment } from "@/components/entity/player-development";
 import { UndraftedProfile } from "@/components/entity/undrafted-profile";
@@ -13,7 +14,9 @@ import { PlayerHeadshot } from "@/components/player-headshot";
 import { ShareLauncher } from "@/components/share-modal";
 import { StampRow, VeteranMark } from "@/components/stamps";
 import { TeamLogo, TeamName } from "@/components/team-logo";
+import { classify, prospectTier } from "@/lib/archetypes";
 import { playerContract } from "@/lib/cap";
+import { nhlerFor } from "@/lib/nhlers";
 import { countryName } from "@/lib/countries";
 import { meta, pickImage, picks, picksById, teamsByAbbr, undrafted, undraftedById } from "@/lib/data";
 import { draftLabel, isVeteran, scoreClass, signed } from "@/lib/format";
@@ -72,7 +75,9 @@ export default async function PlayerPage({ params }: { params: Promise<Params> }
   const grade = pick.developing ? null : pick.letter;
   const retired = pick.stamps.includes("RETIRED") || pick.active === false;
   const veteran = isVeteran(pick.draftPlus) && !pick.stamps.includes("RETIRED");
-  const contract = playerContract(pick.playerId);
+  const contract = retired ? null : playerContract(pick.playerId);
+  const archetype = classify(nhlerFor(pick.playerId));
+  const tier = prospectTier(pick);
   const current = pick.currentTeam ? teamsByAbbr.get(pick.currentTeam) : null;
 
   const share = (
@@ -124,6 +129,8 @@ export default async function PlayerPage({ params }: { params: Promise<Params> }
         ) : (
           <span className="text-xs text-[#94A3B8]">No stamps yet</span>
         )}
+        <ArchetypePill archetype={archetype} />
+        <ProspectTierPill tier={tier} />
       </div>
       <PillGrid>
         <QuickPill label="Career Impact" value={pick.qg.toFixed(1)} title="Impact puts skaters and goalies on one scale where 1.0 is about one average NHL game." />
@@ -152,7 +159,7 @@ export default async function PlayerPage({ params }: { params: Promise<Params> }
     overview: <Overview pick={pick} />,
     draft: <DraftPanel pick={pick} color={color} />,
     development: <PlayerDevelopment pick={pick} />,
-    asset: <ComingSoonPanel tab="asset" subject={pick.name} />,
+    asset: <AssetValuePanel playerId={pick.playerId} name={pick.name} tier={tier} />,
     luck: <ComingSoonPanel tab="luck" subject={pick.name} />,
     matchups: <ComingSoonPanel tab="matchups" subject={pick.name} />,
   };
@@ -209,7 +216,10 @@ function Overview({ pick }: { pick: PickRow }) {
         </TabLink>
       </div>
       <div className="lg:col-span-2">
-        <ModulePreviews tabs={["asset", "luck", "matchups"]} />
+        <div className="mb-3">
+          <AssetTeaser playerId={pick.playerId} />
+        </div>
+        <ModulePreviews tabs={["luck", "matchups"]} />
       </div>
     </div>
   );

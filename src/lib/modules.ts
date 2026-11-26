@@ -30,9 +30,11 @@ export const modules: ModuleInfo[] = [
   },
   {
     name: "Trade Machine",
-    status: "UP NEXT",
+    status: "LIVE NOW",
+    href: "/trade-machine",
+    cta: "Make a trade →",
     icon: "trade",
-    blurb: "EA-style trade simulator and historical trade grader powered by Impact per dollar, contract term, and injury risk.",
+    blurb: "EA-style trade simulator: every player and pick on one 0–100 Asset Value scale, with live salary cap floor and ceiling checks.",
   },
   {
     name: "Luck Meter",

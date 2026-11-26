@@ -1,12 +1,16 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { BioCard, ComingSoonPanel, HeroGrade, ModulePreviews, PillGrid, PLAYER_TABS, QuickPill, SectionLabel, VitalsRow, type VitalItem } from "@/components/entity/bio";
+import { AssetTeaser, AssetValuePanel } from "@/components/entity/asset-value";
+import { ArchetypePill, BioCard, ComingSoonPanel, ContractPill, HeroGrade, ModulePreviews, PillGrid, PLAYER_TABS, QuickPill, SectionLabel, VitalsRow, type VitalItem } from "@/components/entity/bio";
 import { EntityTabs, TabLink } from "@/components/entity/entity-tabs";
 import { PlayerHeadshot } from "@/components/player-headshot";
 import { ShareLauncher } from "@/components/share-modal";
 import { StampRow } from "@/components/stamps";
 import { TeamLogo, TeamName } from "@/components/team-logo";
+import { classify } from "@/lib/archetypes";
+import { playerContract } from "@/lib/cap";
 import { teamsByAbbr } from "@/lib/data";
+import { nhlerFor } from "@/lib/nhlers";
 import { BUCKET_COLOR, BUCKET_LABEL, type Bucket } from "@/lib/development";
 import { signed } from "@/lib/format";
 import { gmHref, teamHref } from "@/lib/routes";
@@ -98,6 +102,7 @@ export function UndraftedProfile({ player, vitals }: { player: UndraftedPlayer; 
             ) : (
               <span className="rounded-full border border-[#262B36] px-2.5 py-0.5 text-xs text-[#94A3B8]">Not on an NHL roster</span>
             )}
+            <ContractPill contract={retired ? null : playerContract(player.playerId)} />
           </div>
         </div>
       </div>
@@ -109,6 +114,7 @@ export function UndraftedProfile({ player, vitals }: { player: UndraftedPlayer; 
     <div className="flex h-full flex-col gap-3">
       <div className="flex min-h-7 flex-wrap items-center gap-2">
         <StampRow stamps={player.stamps} />
+        <ArchetypePill archetype={classify(nhlerFor(player.playerId))} />
       </div>
       <PillGrid>
         <QuickPill label="Career Impact" value={player.qg.toFixed(1)} title="Impact puts skaters and goalies on one scale where 1.0 is about one average NHL game. Seasons since 2005-06." />
@@ -148,7 +154,7 @@ export function UndraftedProfile({ player, vitals }: { player: UndraftedPlayer; 
     overview: <Overview player={player} />,
     draft: <DraftPanel player={player} />,
     development: <DevelopmentPanel player={player} />,
-    asset: <ComingSoonPanel tab="asset" subject={player.name} />,
+    asset: <AssetValuePanel playerId={player.playerId} name={player.name} />,
     luck: <ComingSoonPanel tab="luck" subject={player.name} />,
     matchups: <ComingSoonPanel tab="matchups" subject={player.name} />,
   };
@@ -206,7 +212,10 @@ function Overview({ player }: { player: UndraftedPlayer }) {
         </TabLink>
       </div>
       <div className="lg:col-span-2">
-        <ModulePreviews tabs={["asset", "luck", "matchups"]} />
+        <div className="mb-3">
+          <AssetTeaser playerId={player.playerId} />
+        </div>
+        <ModulePreviews tabs={["luck", "matchups"]} />
       </div>
     </div>
   );

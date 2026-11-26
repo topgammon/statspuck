@@ -11,7 +11,6 @@ import { ShareLauncher } from "@/components/share-modal";
 import { ScoutingPanels } from "@/components/scouting-panels";
 import { TeamBreakdown } from "@/components/team-breakdown";
 import { TeamLogo } from "@/components/team-logo";
-import { teamCapHit } from "@/lib/cap";
 import { eras, leaderboard, og, picks } from "@/lib/data";
 import { DEV_SCORE_TIP, DRAFT_SCORE_TIP, scoreClass, signed } from "@/lib/format";
 import { gmHref, playerHref, teamHref } from "@/lib/routes";
@@ -98,7 +97,7 @@ export default async function TeamPage({ params }: { params: Promise<Params> }) 
 
   const middle = (
     <div className="flex h-full flex-col gap-4">
-      <CapBar capHit={teamCapHit(team.abbr)} />
+      <CapBar abbr={team.abbr} />
       <DnaPills report={report} />
     </div>
   );

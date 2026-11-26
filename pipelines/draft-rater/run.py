@@ -10,8 +10,10 @@ from __future__ import annotations
 
 import argparse
 
+from asset_data import build as build_asset_data
 from cards import render
 from fetch_bios import main as fetch_bios
+from fetch_contracts import main as fetch_contracts
 from fetch_gm_photos import main as fetch_gm_photos
 from fetch_nhl import fetch_all, sample
 from fetch_paths import main as fetch_paths
@@ -36,7 +38,9 @@ def main() -> None:
         fetch_gm_photos()
         fetch_paths()
         fetch_bios()
+        fetch_contracts()
     build()
+    build_asset_data()
     if not args.skip_cards:
         render()
 

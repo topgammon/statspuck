@@ -75,7 +75,17 @@ function dims(format: ShareFormat) {
   };
 }
 
-function Frame({ format, accent, children }: { format: ShareFormat; accent: string; children: ReactNode }) {
+function Frame({
+  format,
+  accent,
+  children,
+  product = { name: "Draft Rater", path: "/draft-rater" },
+}: {
+  format: ShareFormat;
+  accent: string;
+  children: ReactNode;
+  product?: { name: string; path: string };
+}) {
   const d = dims(format);
   return (
     <div
@@ -150,11 +160,11 @@ function Frame({ format, accent, children }: { format: ShareFormat; accent: stri
           </span>
           <span style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
             <span style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: d.wide ? 22 : 28, letterSpacing: 1 }}>STATSPUCK</span>
-            <span style={{ color: MUTED, fontSize: d.wide ? 14 : 18, letterSpacing: 2, textTransform: "uppercase" }}>Draft Rater</span>
+            <span style={{ color: MUTED, fontSize: d.wide ? 14 : 18, letterSpacing: 2, textTransform: "uppercase" }}>{product.name}</span>
           </span>
         </span>
         <span style={{ color: MUTED, fontSize: d.wide ? 18 : 24, letterSpacing: 0.4 }}>
-          statspuck.com<span style={{ color: DIM }}>/draft-rater</span>
+          statspuck.com<span style={{ color: DIM }}>{product.path}</span>
         </span>
       </footer>
     </div>
@@ -367,9 +377,23 @@ export type ShareCardModel =
       subtitle: string;
       mode: "Teams" | "GMs";
       rows: { rank: number; name: string; abbr?: string; letter: string; score: number; color: string }[];
-    };
+    }
+  | { kind: "trade"; headline: string; sub: string; sides: TradeSide[]; capNotes: string[] };
+
+export type TradeSide = {
+  abbr: string;
+  name: string;
+  color: string;
+  grade: string;
+  /** Total Asset Value coming in. */
+  total: number;
+  /** Net cap change in dollars. */
+  capDelta: number;
+  receives: { label: string; sub: string; rating: number; color: string }[];
+};
 
 export function ShareCardView({ format, card }: { format: ShareFormat; card: ShareCardModel }) {
+  if (card.kind === "trade") return <TradeShareCard format={format} headline={card.headline} sub={card.sub} sides={card.sides} capNotes={card.capNotes} />;
   if (card.kind === "player") return <PlayerShareCard format={format} pick={card.pick} color={card.color} />;
   if (card.kind === "undrafted") return <UndraftedShareCard format={format} player={card.player} color={card.color} />;
   if (card.kind === "team") {
@@ -892,6 +916,65 @@ export function BoardShareCard({
           </div>
         ))}
       </div>
+    </Frame>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Trade Machine                                                       */
+/* ------------------------------------------------------------------ */
+
+export function TradeShareCard({ format, headline, sub, sides, capNotes }: { format: ShareFormat; headline: string; sub: string; sides: TradeSide[]; capNotes: string[] }) {
+  const d = dims(format);
+  const three = sides.length >= 3;
+  const maxRows = d.wide ? (three ? 3 : 4) : three ? 5 : 6;
+  const capText = (value: number) => `${value >= 0 ? "+" : "−"}$${(Math.abs(value) / 1_000_000).toFixed(2)}M`;
+  return (
+    <Frame format={format} accent={RED} product={{ name: "Trade Machine", path: "/trade-machine" }}>
+      <div>
+        <Eyebrow size={d.wide ? 15 : 18}>Trade Machine · Verdict</Eyebrow>
+        <Title size={fitSize(headline, d.wide ? 54 : 72, d.wide ? 30 : 24)}>{headline}</Title>
+        <div style={{ marginTop: 8, color: MUTED, fontSize: d.wide ? 19 : 24, ...ellipsis }}>{sub}</div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${d.wide || sides.length < 3 ? sides.length : 1}, minmax(0, 1fr))`, gap: d.wide ? 18 : 20 }}>
+        {sides.map((side) => {
+          const shown = side.receives.slice(0, maxRows);
+          const extra = side.receives.length - shown.length;
+          return (
+            <div key={side.abbr} style={{ background: PANEL, border: `1px solid ${LINE}`, borderRadius: 18, padding: d.wide ? "16px 20px" : "20px 26px", minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <Logo abbr={side.abbr} size={d.wide ? 48 : 60} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: d.wide ? 24 : 30, ...ellipsis }}>{side.name}</div>
+                  <div style={{ color: MUTED, fontSize: d.wide ? 13 : 16, letterSpacing: 1.6, textTransform: "uppercase" }}>Receives</div>
+                </div>
+                <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: d.wide ? 46 : 58, lineHeight: 1, color: gradeColor(side.grade) }}>{side.grade}</div>
+              </div>
+              <div style={{ marginTop: d.wide ? 10 : 14, display: "flex", flexDirection: "column", gap: d.wide ? 5 : 8 }}>
+                {shown.length === 0 ? <div style={{ color: DIM, fontSize: d.wide ? 16 : 20 }}>Nothing</div> : null}
+                {shown.map((row) => (
+                  <div key={row.label + row.sub} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: d.wide ? 17 : 22 }}>
+                    <span style={{ flex: 1, fontWeight: 600, ...ellipsis }}>
+                      {row.label} <span style={{ color: DIM, fontWeight: 400, fontSize: d.wide ? 14 : 18 }}>{row.sub}</span>
+                    </span>
+                    <span style={{ fontFamily: DISPLAY, fontWeight: 700, color: row.color, flex: "none" }}>{row.rating}</span>
+                  </div>
+                ))}
+                {extra > 0 ? <div style={{ color: DIM, fontSize: d.wide ? 14 : 18 }}>+{extra} more</div> : null}
+              </div>
+              <div style={{ marginTop: d.wide ? 10 : 14, paddingTop: d.wide ? 8 : 12, borderTop: `1px solid ${LINE}`, display: "flex", justifyContent: "space-between", color: MUTED, fontSize: d.wide ? 15 : 20 }}>
+                <span>
+                  Asset Value <b style={{ color: INK }}>{side.total}</b>
+                </span>
+                <span>
+                  Cap <b style={{ color: side.capDelta > 0 ? LOSS : EMERALD }}>{capText(side.capDelta)}</b>
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ color: capNotes.length ? GOLD : MUTED, fontSize: d.wide ? 16 : 21, ...ellipsis }}>{capNotes.length ? capNotes.join(" · ") : "Cap check passed for every team."}</div>
     </Frame>
   );
 }

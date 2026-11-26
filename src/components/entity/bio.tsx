@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
-import { contracts, money, type PlayerContract } from "@/lib/cap";
+import { CapMeter } from "@/components/cap-meter";
+import { ARCHETYPE_TIP, type Archetype } from "@/lib/archetype-meta";
+import { capCeiling, capFloor, contractLine, contracts, money, teamCap, type PlayerContract } from "@/lib/cap";
 import { modules } from "@/lib/modules";
 import type { ScoutingReport } from "@/lib/scouting";
 import { letterTone } from "@/lib/search";
@@ -138,50 +140,68 @@ export function VitalsRow({ items }: { items: VitalItem[] }) {
   );
 }
 
+/** `$8.50M AAV · 8.9% Cap · 4 yrs left` or `ELC · 1.0% Cap`. Player contract only, never team cap space. */
 export function ContractPill({ contract }: { contract: PlayerContract | null }) {
   if (!contract) return null;
-  const text = contract.elc ? `ELC · Exp ${contract.expires}` : `${money(contract.aav)} AAV · Exp ${contract.expires}`;
   return (
-    <span className="inline-flex items-center rounded-full border border-[#38BDF8]/40 bg-[#38BDF8]/10 px-2.5 py-0.5 text-xs font-semibold text-[#38BDF8]">
-      {text}
+    <span
+      title={`Share of the ${money(capCeiling)} NHL salary cap ceiling. ${contract.expires > 0 ? `Contract runs through ${contract.expires - 1}-${String(contract.expires).slice(2)}.` : ""}`}
+      className="inline-flex items-center rounded-full border border-[#38BDF8]/40 bg-[#38BDF8]/10 px-2.5 py-0.5 text-xs font-semibold text-[#38BDF8]"
+    >
+      {contractLine(contract)}
     </span>
   );
 }
 
-/** Used cap vs remaining space against the league ceiling. Shows a quiet placeholder until cap data is connected. */
-export function CapBar({ capHit }: { capHit: number | null }) {
-  const ceiling = contracts.capCeiling;
-  if (capHit == null) {
+/** Auto-classified role badge, e.g. Sniper or Shutdown D. */
+export function ArchetypePill({ archetype, small = false }: { archetype: Archetype | null; small?: boolean }) {
+  if (!archetype) return null;
+  return (
+    <span
+      title={ARCHETYPE_TIP[archetype]}
+      className={`display inline-flex items-center rounded-full border border-[#38BDF8]/50 bg-[#38BDF8]/10 font-bold tracking-[0.12em] whitespace-nowrap text-[#7DD3FC] uppercase ${
+        small ? "px-2 py-px text-[10px]" : "px-2.5 py-0.5 text-xs"
+      }`}
+    >
+      {archetype}
+    </span>
+  );
+}
+
+const TIER_STYLE: Record<0 | 1 | 2 | 3, { color: string; glow: string }> = {
+  3: { color: "#3B82F6", glow: "0 0 18px 3px rgba(59,130,246,0.65), inset 0 0 8px rgba(147,197,253,0.35)" },
+  2: { color: "#38BDF8", glow: "0 0 12px 1px rgba(56,189,248,0.45)" },
+  1: { color: "#94A3B8", glow: "0 0 6px 0 rgba(148,163,184,0.25)" },
+  0: { color: "#64748B", glow: "none" },
+};
+
+/** Projection tier for a DEVELOPING prospect. Higher tiers glow brighter. */
+export function ProspectTierPill({ tier, small = false }: { tier: { label: string; level: 0 | 1 | 2 | 3; tip: string } | null; small?: boolean }) {
+  if (!tier) return null;
+  const style = TIER_STYLE[tier.level];
+  return (
+    <span
+      title={tier.tip}
+      className={`display inline-flex items-center rounded-full border font-bold tracking-[0.12em] whitespace-nowrap uppercase ${small ? "px-2 py-px text-[10px]" : "px-2.5 py-0.5 text-xs"}`}
+      style={{ color: style.color, borderColor: `${style.color}99`, background: `${style.color}1f`, boxShadow: style.glow }}
+    >
+      {tier.label}
+    </span>
+  );
+}
+
+/** Team Salary Cap Bar on team and current-GM profiles: Floor, Ceiling, used cap, space and distance above floor. */
+export function CapBar({ abbr }: { abbr: string }) {
+  const cap = teamCap(abbr);
+  if (!cap) {
     return (
       <div>
-        <div className="flex items-baseline justify-between gap-2">
-          <SectionLabel>Salary cap · {contracts.season}</SectionLabel>
-          <span className="text-xs text-[#94A3B8]">Ceiling {money(ceiling)}</span>
-        </div>
-        <div className="mt-2 h-3 rounded-full border border-dashed border-[#262B36] bg-[#0B0D10]" />
-        <p className="mt-1.5 text-xs text-[#94A3B8]">Team cap figures are coming soon.</p>
+        <SectionLabel>Salary cap · {contracts.season}</SectionLabel>
+        <p className="mt-2 text-xs text-[#94A3B8]">Cap figures for this team are not available right now.</p>
       </div>
     );
   }
-  const used = Math.min(capHit / ceiling, 1);
-  const space = ceiling - capHit;
-  return (
-    <div>
-      <div className="flex items-baseline justify-between gap-2">
-        <SectionLabel>Salary cap · {contracts.season}</SectionLabel>
-        <span className="text-xs text-[#94A3B8]">Ceiling {money(ceiling)}</span>
-      </div>
-      <div className="mt-2 flex h-3 overflow-hidden rounded-full bg-[#0B0D10] ring-1 ring-[#262B36]" role="img" aria-label={`${money(capHit)} used, ${money(space)} space`}>
-        <div className="h-full bg-[#38BDF8]" style={{ width: `${used * 100}%` }} />
-      </div>
-      <div className="mt-1.5 flex justify-between text-xs">
-        <span className="text-[#38BDF8]">Used {money(capHit)}</span>
-        <span className={space >= 0 ? "text-[#10B981]" : "text-[#EF4444]"}>
-          {space >= 0 ? `Space ${money(space)}` : `Over by ${money(-space)}`}
-        </span>
-      </div>
-    </div>
-  );
+  return <CapMeter used={cap.capHit} ceiling={capCeiling} floor={capFloor} label={`Salary cap · ${contracts.season}`} />;
 }
 
 const SOON: Record<string, { module: string; title: string; points: string[] }> = {
@@ -260,7 +280,7 @@ export const PLAYER_TABS = [
   { id: "overview", label: "Overview" },
   { id: "draft", label: "Draft" },
   { id: "development", label: "Development" },
-  { id: "asset", label: "Asset Value", soon: true },
+  { id: "asset", label: "Asset Value" },
   { id: "luck", label: "Luck", soon: true },
   { id: "matchups", label: "Matchups", soon: true },
 ];

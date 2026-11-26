@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { EraProfile } from "@/components/era-profile";
-import { teamCapHit } from "@/lib/cap";
 import { devBoard, devGems, undraftedGems } from "@/lib/dev-board";
 import { development } from "@/lib/development";
 import { eras, erasBySlug, meta, og, picks } from "@/lib/data";
@@ -55,7 +54,6 @@ export default async function GmPage({ params }: { params: Promise<Params> }) {
       league={meta.leagueAvg}
       multiTeam={samePerson.length > 1}
       otherStops={otherStops}
-      capHit={era.endYear == null ? teamCapHit(era.team) : null}
       devGems={devGems(era.dev)}
       undraftedGems={undraftedGems({ era: era.slug })}
       devBoard={devBoard}

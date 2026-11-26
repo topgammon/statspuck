@@ -28,7 +28,6 @@ export function EraProfile({
   league,
   multiTeam,
   otherStops,
-  capHit,
   devGems,
   undraftedGems,
   devBoard,
@@ -43,7 +42,6 @@ export function EraProfile({
   league: number;
   multiTeam: boolean;
   otherStops: Stop[];
-  capHit: number | null;
   devGems: DevGem[];
   undraftedGems: UndraftedGem[];
   devBoard: DevLeaderRow[];
@@ -133,7 +131,7 @@ export function EraProfile({
 
   const middle = (
     <div className="flex h-full flex-col gap-4">
-      {active ? <CapBar capHit={capHit} /> : null}
+      {active ? <CapBar abbr={era.team} /> : null}
       <DnaPills report={report} graded={graded} />
     </div>
   );
