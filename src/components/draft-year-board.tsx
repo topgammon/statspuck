@@ -21,7 +21,7 @@ export function DraftYearBoard({
 }) {
   const [team, setTeam] = useState("all");
   const [sortNonce, setSortNonce] = useState(0);
-  const redraft = [...picks].sort((a, b) => a.redraft - b.redraft || a.overall - b.overall)[0];
+  const redraft = picks.filter((pick) => !pick.forfeited).sort((a, b) => a.redraft - b.redraft || a.overall - b.overall)[0];
   const steals = picks.filter((pick) => !pick.developing && pick.overall >= 20 && (pick.score ?? 0) > 0);
   const steal = [...steals].sort((a, b) => (b.score ?? 0) - (a.score ?? 0))[0];
   const busts = picks.filter((pick) => pick.overall <= 32 && pick.stamps.includes("BUST") && pick.score != null);

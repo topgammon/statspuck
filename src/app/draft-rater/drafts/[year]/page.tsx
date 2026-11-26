@@ -82,11 +82,11 @@ export default async function DraftYearPage({ params }: { params: Promise<Params
                 rating: row.rating,
                 avg: row.avg,
                 regulars: owned.filter((pick) => pick.qg >= 100).length,
-                leader: [...owned].sort((a, b) => a.redraft - b.redraft)[0] ?? null,
+                leader: owned.filter((pick) => !pick.forfeited).sort((a, b) => a.redraft - b.redraft)[0] ?? null,
                 steal: owned.filter((pick) => !pick.developing && pick.overall >= 20 && (pick.score ?? 0) > 0).sort((a, b) => (b.score ?? 0) - (a.score ?? 0))[0] ?? null,
                 bust: owned.filter((pick) => pick.stamps.includes("BUST")).sort((a, b) => (a.score ?? 0) - (b.score ?? 0))[0] ?? null,
                 bestTeam: row.teams.filter((team) => team.avg != null).sort((a, b) => (b.avg ?? 0) - (a.avg ?? 0))[0]?.franchiseName ?? "—",
-                top: [...owned].sort((a, b) => a.redraft - b.redraft).slice(0, 5),
+                top: owned.filter((pick) => !pick.forfeited).sort((a, b) => a.redraft - b.redraft).slice(0, 5),
               }}
             />
           </div>
