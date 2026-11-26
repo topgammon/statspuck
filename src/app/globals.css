@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-barlow), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-oswald), Impact, sans-serif;
+  --color-brand: #e11d48;
+  --color-ice: #38bdf8;
+  --color-canvas: #0b0d10;
+  --color-panel: #14171f;
+  --color-line: #262b36;
+  --color-muted: #94a3b8;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background:
+    radial-gradient(900px 420px at 100% -10%, rgba(225, 29, 72, 0.16), transparent 55%),
+    #0b0d10;
+  color: #f8fafc;
+  font-family: var(--font-sans);
+}
+
+.display {
+  font-family: var(--font-display);
+  letter-spacing: 0.01em;
+}
+
+/* Pin column titles under the site header while the page scrolls. */
+.sheet thead th {
+  position: sticky;
+  top: 4.5rem;
+  z-index: 10;
+  background-color: #0b0d10;
+}
+
+::selection {
+  background: #e11d48;
+  color: white;
+}

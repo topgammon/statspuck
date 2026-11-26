@@ -1,0 +1,36 @@
+"""Refresh the database, refit the curves, and redraw the share cards.
+
+    python pipeline/run.py --sample     # one draft and one stats page
+    python pipeline/run.py              # incremental update
+    python pipeline/run.py --rebuild    # refetch every season from the network
+    python pipeline/run.py --skip-fetch # refit and redraw from the database
+"""
+
+from __future__ import annotations
+
+import argparse
+
+from cards import render
+from fetch_nhl import fetch_all, sample
+from model import build
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Update Draft Rater data.")
+    parser.add_argument("--sample", action="store_true", help="Print a small API sample and stop.")
+    parser.add_argument("--rebuild", action="store_true", help="Refetch completed seasons too.")
+    parser.add_argument("--skip-fetch", action="store_true", help="Use the database as it stands.")
+    parser.add_argument("--skip-cards", action="store_true", help="Skip share-card images.")
+    args = parser.parse_args()
+    if args.sample:
+        sample()
+        return
+    if not args.skip_fetch:
+        fetch_all(rebuild=args.rebuild)
+    build()
+    if not args.skip_cards:
+        render()
+
+
+if __name__ == "__main__":
+    main()

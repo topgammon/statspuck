@@ -1,0 +1,11 @@
+node_modules
+.next
+out
+next-env.d.ts
+*.tsbuildinfo
+.wrangler
+.env*
+pipelines/*/cache
+__pycache__
+.DS_Store
+Thumbs.db

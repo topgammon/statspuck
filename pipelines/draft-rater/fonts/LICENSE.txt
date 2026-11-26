@@ -1,0 +1,7 @@
+Oswald and Barlow are used under the SIL Open Font License 1.1.
+https://openfontlicense.org
+
+DejaVu Sans is used under the Bitstream Vera / DejaVu license.
+https://dejavu-fonts.github.io/License.html
+
+These files are only used to draw share cards. The website loads Oswald and Barlow from Google Fonts.

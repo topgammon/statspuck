@@ -1,0 +1,39 @@
+name: Draft Rater data
+
+# Nightly refresh of NHL games and Draft Rater grades.
+# Updates always land on the staging branch first. They reach statspuck.com
+# only when staging is merged into main after review.
+on:
+  schedule:
+    # 10:00 UTC is 3:00 AM in America/Cambridge_Bay (UTC-7).
+    - cron: "0 10 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: staging
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pipeline dependencies
+        run: pip install -r pipelines/draft-rater/requirements.txt
+      - name: Refresh games played and redraw grades
+        run: python pipelines/draft-rater/run.py
+      - name: Commit data to staging if it changed
+        run: |
+          git config user.name "statspuck-data-bot"
+          git config user.email "statspuck-data-bot@users.noreply.github.com"
+          git add data/draft-rater public/draft-rater/og public/draft-rater/charts
+          if git diff --staged --quiet; then
+            echo "No data changes"
+          else
+            git commit -m "Update Draft Rater games and grades"
+            git push origin HEAD:staging
+          fi

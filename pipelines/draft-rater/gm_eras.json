@@ -1,0 +1,167 @@
+{
+  "note": "Every general manager who ran a draft from 2005 on. startYear and endYear are draft years, inclusive. The draft goes to whoever held the job on draft day, which is usually late June (July in 2005 and 2021, October in 2020). Leave endYear null for the current drafter. Acting general managers who never ran a draft are left out.",
+  "eras": [
+    {"team": "ANA", "person": "Brian Burke", "role": "GM", "startYear": 2005, "endYear": 2008, "note": "Hired June 20, 2005, before that July's draft. Left for Toronto on November 12, 2008, after the draft."},
+    {"team": "ANA", "person": "Bob Murray", "role": "GM", "startYear": 2009, "endYear": 2021, "note": "Hired November 12, 2008. Fired November 10, 2021, after that year's draft."},
+    {"team": "ANA", "person": "Pat Verbeek", "role": "GM", "startYear": 2022, "endYear": null, "note": "Hired February 3, 2022. Jeff Solomon was interim between the 2021 and 2022 drafts and did not run one."},
+
+    {"team": "BOS", "person": "Mike O'Connell", "role": "GM", "startYear": 2005, "endYear": 2005, "note": "Fired March 25, 2006, before that draft. Jeff Gorton was interim until Peter Chiarelli was hired and did not run a draft."},
+    {"team": "BOS", "person": "Peter Chiarelli", "role": "GM", "startYear": 2006, "endYear": 2014, "note": "Hired May 26, 2006. Fired April 15, 2015, before that draft."},
+    {"team": "BOS", "person": "Don Sweeney", "role": "GM", "startYear": 2015, "endYear": null, "note": "Hired May 20, 2015."},
+
+    {"team": "BUF", "person": "Darcy Regier", "role": "GM", "startYear": 2005, "endYear": 2013, "note": "Fired November 13, 2013, after that draft. Pat LaFontaine ran hockey operations until January and did not draft."},
+    {"team": "BUF", "person": "Tim Murray", "role": "GM", "startYear": 2014, "endYear": 2016, "note": "Hired January 9, 2014. Fired April 20, 2017, before that draft."},
+    {"team": "BUF", "person": "Jason Botterill", "role": "GM", "startYear": 2017, "endYear": 2019, "note": "Hired May 11, 2017. Fired June 16, 2020, before that October's draft."},
+    {"team": "BUF", "person": "Kevyn Adams", "role": "GM", "startYear": 2020, "endYear": 2025, "note": "Hired June 16, 2020. Replaced December 15, 2025, after the 2025 draft."},
+    {"team": "BUF", "person": "Jarmo Kekäläinen", "role": "GM", "startYear": 2026, "endYear": null, "note": "Hired December 15, 2025."},
+
+    {"team": "CGY", "person": "Darryl Sutter", "role": "GM", "startYear": 2005, "endYear": 2010, "note": "Stepped down December 28, 2010, after that draft."},
+    {"team": "CGY", "person": "Jay Feaster", "role": "GM", "startYear": 2011, "endYear": 2013, "note": "Hired December 28, 2010. Fired December 12, 2013. Brian Burke was acting GM until April and did not draft."},
+    {"team": "CGY", "person": "Brad Treliving", "role": "GM", "startYear": 2014, "endYear": 2022, "note": "Hired April 28, 2014. Left April 17, 2023, before that draft."},
+    {"team": "CGY", "person": "Craig Conroy", "role": "GM", "startYear": 2023, "endYear": null, "note": "Hired May 23, 2023. Don Maloney was interim for a few weeks and did not draft."},
+
+    {"team": "CAR", "person": "Jim Rutherford", "role": "GM", "startYear": 2005, "endYear": 2013, "note": "Left April 28, 2014, before that draft, and took the Pittsburgh job."},
+    {"team": "CAR", "person": "Ron Francis", "role": "GM", "startYear": 2014, "endYear": 2017, "note": "Hired April 28, 2014. Relieved of the job March 7, 2018, before that draft."},
+    {"team": "CAR", "person": "Don Waddell", "role": "GM", "startYear": 2018, "endYear": 2023, "note": "Named GM May 8, 2018. Resigned May 24, 2024, before that draft."},
+    {"team": "CAR", "person": "Eric Tulsky", "role": "GM", "startYear": 2024, "endYear": null, "note": "Interim from May 24, 2024, before the draft. Named permanent that June."},
+
+    {"team": "CHI", "person": "Dale Tallon", "role": "GM", "startYear": 2005, "endYear": 2009, "note": "Hired June 21, 2005, before that July's draft. Stan Bowman was promoted July 14, 2009, after the draft."},
+    {"team": "CHI", "person": "Stan Bowman", "role": "GM", "startYear": 2010, "endYear": 2021, "note": "Named GM July 14, 2009. Left October 26, 2021, after that year's draft."},
+    {"team": "CHI", "person": "Kyle Davidson", "role": "GM", "startYear": 2022, "endYear": null, "note": "Interim from October 26, 2021. Named permanent March 1, 2022."},
+
+    {"team": "COL", "person": "Pierre Lacroix", "role": "GM", "startYear": 2005, "endYear": 2005, "note": "Left May 24, 2006, before that draft."},
+    {"team": "COL", "person": "François Giguère", "role": "GM", "startYear": 2006, "endYear": 2008, "note": "Hired May 24, 2006. Fired April 13, 2009, before that draft."},
+    {"team": "COL", "person": "Greg Sherman", "role": "GM", "startYear": 2009, "endYear": 2014, "note": "Hired June 3, 2009. Joe Sakic took the GM title on September 19, 2014, after that draft."},
+    {"team": "COL", "person": "Joe Sakic", "role": "GM", "startYear": 2015, "endYear": 2022, "note": "First stint. Chris MacFarland was named GM on July 11, 2022, after that draft, so 2022 stays with Sakic."},
+    {"team": "COL", "person": "Chris MacFarland", "role": "GM", "startYear": 2023, "endYear": 2025, "note": "Left June 2, 2026, before that draft."},
+    {"team": "COL", "person": "Joe Sakic", "role": "GM", "startYear": 2026, "endYear": null, "note": "Second stint. Returned June 2, 2026."},
+
+    {"team": "CBJ", "person": "Doug MacLean", "role": "GM", "startYear": 2005, "endYear": 2006, "note": "Fired April 19, 2007. Jim Clark was interim until June and did not draft."},
+    {"team": "CBJ", "person": "Scott Howson", "role": "GM", "startYear": 2007, "endYear": 2012, "note": "Hired June 15, 2007, a week before the draft. Fired February 12, 2013."},
+    {"team": "CBJ", "person": "Jarmo Kekäläinen", "role": "GM", "startYear": 2013, "endYear": 2023, "note": "Hired February 13, 2013. Fired February 15, 2024. John Davidson was interim until May and did not draft."},
+    {"team": "CBJ", "person": "Don Waddell", "role": "GM", "startYear": 2024, "endYear": null, "note": "Hired May 28, 2024."},
+
+    {"team": "DAL", "person": "Doug Armstrong", "role": "GM", "startYear": 2005, "endYear": 2007, "note": "Relieved November 13, 2007, after that draft."},
+    {"team": "DAL", "person": "Brett Hull & Les Jackson", "role": "GM", "startYear": 2008, "endYear": 2008, "note": "Co-general managers from November 13, 2007 until Joe Nieuwendyk was hired May 31, 2009, before that draft."},
+    {"team": "DAL", "person": "Joe Nieuwendyk", "role": "GM", "startYear": 2009, "endYear": 2012, "note": "Hired May 31, 2009. Fired April 28, 2013, before that draft."},
+    {"team": "DAL", "person": "Jim Nill", "role": "GM", "startYear": 2013, "endYear": null, "note": "Hired April 29, 2013."},
+
+    {"team": "DET", "person": "Ken Holland", "role": "GM", "startYear": 2005, "endYear": 2018, "note": "Left April 19, 2019, before that draft, and later took the Edmonton job."},
+    {"team": "DET", "person": "Steve Yzerman", "role": "GM", "startYear": 2019, "endYear": 2026, "note": "Hired April 19, 2019. Left September 15, 2026, after the 2026 draft."},
+    {"team": "DET", "person": "Shawn Horcoff", "role": "GM", "startYear": 2027, "endYear": null, "note": "Interim GM from September 15, 2026. First draft would be 2027."},
+
+    {"team": "EDM", "person": "Kevin Lowe", "role": "GM", "startYear": 2005, "endYear": 2008, "note": "Moved out of the GM chair July 31, 2008, after that draft."},
+    {"team": "EDM", "person": "Steve Tambellini", "role": "GM", "startYear": 2009, "endYear": 2012, "note": "Hired July 31, 2008. Fired April 15, 2013, before that draft."},
+    {"team": "EDM", "person": "Craig MacTavish", "role": "GM", "startYear": 2013, "endYear": 2014, "note": "Hired April 15, 2013. Fired April 24, 2015, before that draft."},
+    {"team": "EDM", "person": "Peter Chiarelli", "role": "GM", "startYear": 2015, "endYear": 2018, "note": "Hired April 24, 2015. Fired January 23, 2019. Keith Gretzky was interim until May and did not draft."},
+    {"team": "EDM", "person": "Ken Holland", "role": "GM", "startYear": 2019, "endYear": 2023, "note": "Hired May 7, 2019. His tenure ended June 27, 2024, the day before that draft."},
+    {"team": "EDM", "person": "Jeff Jackson", "role": "GM", "startYear": 2024, "endYear": 2024, "note": "Interim from June 27, 2024 through the draft. Stan Bowman was hired July 24."},
+    {"team": "EDM", "person": "Stan Bowman", "role": "GM", "startYear": 2025, "endYear": null, "note": "Hired July 24, 2024, after that year's draft."},
+
+    {"team": "FLA", "person": "Mike Keenan", "role": "GM", "startYear": 2005, "endYear": 2006, "note": "Left September 3, 2006, after that draft."},
+    {"team": "FLA", "person": "Jacques Martin", "role": "GM", "startYear": 2007, "endYear": 2008, "note": "Took the job September 3, 2006. Resigned June 1, 2009, before that draft."},
+    {"team": "FLA", "person": "Randy Sexton", "role": "GM", "startYear": 2009, "endYear": 2009, "note": "Assistant GM who ran the 2009 draft after Martin left. Named GM that October. Replaced May 17, 2010, before the next draft."},
+    {"team": "FLA", "person": "Dale Tallon", "role": "GM", "startYear": 2010, "endYear": 2015, "note": "First stint. Hired May 17, 2010. Moved to president May 16, 2016, before that draft."},
+    {"team": "FLA", "person": "Tom Rowe", "role": "GM", "startYear": 2016, "endYear": 2016, "note": "Hired May 16, 2016. Tallon returned as GM on April 10, 2017, before the next draft."},
+    {"team": "FLA", "person": "Dale Tallon", "role": "GM", "startYear": 2017, "endYear": 2019, "note": "Second stint. Left August 10, 2020, before that October's draft."},
+    {"team": "FLA", "person": "Bill Zito", "role": "GM", "startYear": 2020, "endYear": null, "note": "Hired September 2, 2020, before that year's October draft."},
+
+    {"team": "LAK", "person": "Dave Taylor", "role": "GM", "startYear": 2005, "endYear": 2005, "note": "Left April 18, 2006, before that draft."},
+    {"team": "LAK", "person": "Dean Lombardi", "role": "GM", "startYear": 2006, "endYear": 2016, "note": "Hired April 21, 2006. Fired April 10, 2017, before that draft."},
+    {"team": "LAK", "person": "Rob Blake", "role": "GM", "startYear": 2017, "endYear": 2024, "note": "Hired April 10, 2017. Left May 5, 2025, before that draft."},
+    {"team": "LAK", "person": "Ken Holland", "role": "GM", "startYear": 2025, "endYear": null, "note": "Hired May 14, 2025."},
+
+    {"team": "MIN", "person": "Doug Risebrough", "role": "GM", "startYear": 2005, "endYear": 2008, "note": "Contract not renewed April 16, 2009, before that draft."},
+    {"team": "MIN", "person": "Chuck Fletcher", "role": "GM", "startYear": 2009, "endYear": 2017, "note": "Hired May 22, 2009. Let go April 23, 2018, before that draft."},
+    {"team": "MIN", "person": "Paul Fenton", "role": "GM", "startYear": 2018, "endYear": 2019, "note": "Hired May 21, 2018. Fired July 30, 2019, after that draft."},
+    {"team": "MIN", "person": "Bill Guerin", "role": "GM", "startYear": 2020, "endYear": null, "note": "Hired August 21, 2019, after the 2019 draft."},
+
+    {"team": "MTL", "person": "Bob Gainey", "role": "GM", "startYear": 2005, "endYear": 2009, "note": "Stepped aside February 8, 2010, before that draft."},
+    {"team": "MTL", "person": "Pierre Gauthier", "role": "GM", "startYear": 2010, "endYear": 2011, "note": "Took over February 8, 2010. Fired March 29, 2012, before that draft."},
+    {"team": "MTL", "person": "Marc Bergevin", "role": "GM", "startYear": 2012, "endYear": 2021, "note": "Hired May 2, 2012. Fired November 28, 2021, after that year's draft."},
+    {"team": "MTL", "person": "Kent Hughes", "role": "GM", "startYear": 2022, "endYear": null, "note": "Hired January 18, 2022."},
+
+    {"team": "NSH", "person": "David Poile", "role": "GM", "startYear": 2005, "endYear": 2023, "note": "Retired June 30, 2023, the day after that draft."},
+    {"team": "NSH", "person": "Barry Trotz", "role": "GM", "startYear": 2024, "endYear": 2025, "note": "Took over July 1, 2023, after the 2023 draft. Stepped down June 2, 2026, before that draft."},
+    {"team": "NSH", "person": "Chris MacFarland", "role": "GM", "startYear": 2026, "endYear": null, "note": "Hired June 2, 2026."},
+
+    {"team": "NJD", "person": "Lou Lamoriello", "role": "GM", "startYear": 2005, "endYear": 2014, "note": "Left May 4, 2015, before that draft."},
+    {"team": "NJD", "person": "Ray Shero", "role": "GM", "startYear": 2015, "endYear": 2019, "note": "Hired May 4, 2015. Fired January 12, 2020, before that October's draft."},
+    {"team": "NJD", "person": "Tom Fitzgerald", "role": "GM", "startYear": 2020, "endYear": 2025, "note": "Hired January 12, 2020. Left April 6, 2026, before that draft."},
+    {"team": "NJD", "person": "Sunny Mehta", "role": "GM", "startYear": 2026, "endYear": null, "note": "Hired April 16, 2026."},
+
+    {"team": "NYI", "person": "Mike Milbury", "role": "GM", "startYear": 2005, "endYear": 2005, "note": "Left June 8, 2006, before that draft."},
+    {"team": "NYI", "person": "Neil Smith", "role": "GM", "startYear": 2006, "endYear": 2006, "note": "Hired June 8, 2006 and fired July 18, after the draft."},
+    {"team": "NYI", "person": "Garth Snow", "role": "GM", "startYear": 2007, "endYear": 2017, "note": "Hired July 18, 2006, after that draft. Relieved June 5, 2018, before the next one."},
+    {"team": "NYI", "person": "Lou Lamoriello", "role": "GM", "startYear": 2018, "endYear": 2024, "note": "Hired June 5, 2018. Left April 22, 2025, before that draft."},
+    {"team": "NYI", "person": "Mathieu Darche", "role": "GM", "startYear": 2025, "endYear": null, "note": "Hired May 23, 2025."},
+
+    {"team": "NYR", "person": "Glen Sather", "role": "GM", "startYear": 2005, "endYear": 2015, "note": "Handed the job to Jeff Gorton on July 1, 2015, after that draft."},
+    {"team": "NYR", "person": "Jeff Gorton", "role": "GM", "startYear": 2016, "endYear": 2020, "note": "Hired July 1, 2015. Fired May 5, 2021, before that July's draft."},
+    {"team": "NYR", "person": "Chris Drury", "role": "GM", "startYear": 2021, "endYear": null, "note": "Hired May 5, 2021."},
+
+    {"team": "OTT", "person": "John Muckler", "role": "GM", "startYear": 2005, "endYear": 2006, "note": "Left June 18, 2007, four days before that draft."},
+    {"team": "OTT", "person": "Bryan Murray", "role": "GM", "startYear": 2007, "endYear": 2015, "note": "Hired June 18, 2007. Stepped down April 10, 2016, before that draft."},
+    {"team": "OTT", "person": "Pierre Dorion", "role": "GM", "startYear": 2016, "endYear": 2023, "note": "Hired April 10, 2016. Left November 1, 2023, after that draft."},
+    {"team": "OTT", "person": "Steve Staios", "role": "GM", "startYear": 2024, "endYear": null, "note": "Interim from November 1, 2023. Named permanent December 31, 2023."},
+
+    {"team": "PHI", "person": "Bob Clarke", "role": "GM", "startYear": 2005, "endYear": 2006, "note": "Resigned October 22, 2006, after that draft."},
+    {"team": "PHI", "person": "Paul Holmgren", "role": "GM", "startYear": 2007, "endYear": 2013, "note": "Took over October 22, 2006. Moved to president May 7, 2014, before that draft."},
+    {"team": "PHI", "person": "Ron Hextall", "role": "GM", "startYear": 2014, "endYear": 2018, "note": "Hired May 7, 2014. Fired November 26, 2018, after that draft."},
+    {"team": "PHI", "person": "Chuck Fletcher", "role": "GM", "startYear": 2019, "endYear": 2022, "note": "Hired December 3, 2018. Fired March 10, 2023, before that draft."},
+    {"team": "PHI", "person": "Daniel Briere", "role": "GM", "startYear": 2023, "endYear": null, "note": "Interim from March 10, 2023. Named GM May 11, 2023."},
+
+    {"team": "PIT", "person": "Craig Patrick", "role": "GM", "startYear": 2005, "endYear": 2005, "note": "Left May 20, 2006, before that draft."},
+    {"team": "PIT", "person": "Ray Shero", "role": "GM", "startYear": 2006, "endYear": 2013, "note": "Hired May 20, 2006. Fired May 16, 2014, before the draft. Jason Botterill was interim for three weeks and did not draft."},
+    {"team": "PIT", "person": "Jim Rutherford", "role": "GM", "startYear": 2014, "endYear": 2020, "note": "Hired June 6, 2014. Stepped down January 27, 2021."},
+    {"team": "PIT", "person": "Ron Hextall", "role": "GM", "startYear": 2021, "endYear": 2022, "note": "Hired February 9, 2021, before that July's draft. Fired April 14, 2023, before the next draft."},
+    {"team": "PIT", "person": "Kyle Dubas", "role": "GM", "startYear": 2023, "endYear": null, "note": "Named president and interim GM June 1, 2023, and held the job for that draft. Named permanent that August."},
+
+    {"team": "SJS", "person": "Doug Wilson", "role": "GM", "startYear": 2005, "endYear": 2021, "note": "Stepped down April 7, 2022. Joe Will was interim until July and did not draft."},
+    {"team": "SJS", "person": "Mike Grier", "role": "GM", "startYear": 2022, "endYear": null, "note": "Hired July 5, 2022, two days before the draft."},
+
+    {"team": "SEA", "person": "Ron Francis", "role": "GM", "startYear": 2021, "endYear": 2024, "note": "The Kraken's first GM. First draft was 2021. Replaced April 22, 2025, before that draft."},
+    {"team": "SEA", "person": "Jason Botterill", "role": "GM", "startYear": 2025, "endYear": null, "note": "Hired April 22, 2025."},
+
+    {"team": "STL", "person": "Larry Pleau", "role": "GM", "startYear": 2005, "endYear": 2010, "note": "Doug Armstrong took over July 1, 2010, after that draft."},
+    {"team": "STL", "person": "Doug Armstrong", "role": "GM", "startYear": 2011, "endYear": 2026, "note": "Named GM July 1, 2010. Alexander Steen took over June 30, 2026, after the draft."},
+    {"team": "STL", "person": "Alexander Steen", "role": "GM", "startYear": 2027, "endYear": null, "note": "Hired June 30, 2026. First draft would be 2027."},
+
+    {"team": "TBL", "person": "Jay Feaster", "role": "GM", "startYear": 2005, "endYear": 2008, "note": "Resigned July 11, 2008, after that draft."},
+    {"team": "TBL", "person": "Brian Lawton", "role": "GM", "startYear": 2009, "endYear": 2009, "note": "Hired October 22, 2008, after that draft. Fired April 12, 2010. Tom Kurvers was interim until May and did not draft."},
+    {"team": "TBL", "person": "Steve Yzerman", "role": "GM", "startYear": 2010, "endYear": 2018, "note": "Hired May 25, 2010. Stepped down September 11, 2018, after the draft."},
+    {"team": "TBL", "person": "Julien BriseBois", "role": "GM", "startYear": 2019, "endYear": null, "note": "Promoted September 11, 2018."},
+
+    {"team": "TOR", "person": "John Ferguson Jr.", "role": "GM", "startYear": 2005, "endYear": 2007, "note": "Fired January 22, 2008, before that draft."},
+    {"team": "TOR", "person": "Cliff Fletcher", "role": "GM", "startYear": 2008, "endYear": 2008, "note": "Interim from January 22, 2008 through that draft. Brian Burke was hired November 29, after it."},
+    {"team": "TOR", "person": "Brian Burke", "role": "GM", "startYear": 2009, "endYear": 2012, "note": "Hired November 29, 2008. Left January 9, 2013, before that draft."},
+    {"team": "TOR", "person": "Dave Nonis", "role": "GM", "startYear": 2013, "endYear": 2014, "note": "Hired January 9, 2013. Fired April 12, 2015, before that draft."},
+    {"team": "TOR", "person": "Mark Hunter", "role": "GM", "startYear": 2015, "endYear": 2015, "note": "Co-interim GM with Kyle Dubas. Hunter ran the 2015 draft. Brendan Shanahan had the final say. Lou Lamoriello was hired July 23, after the draft."},
+    {"team": "TOR", "person": "Lou Lamoriello", "role": "GM", "startYear": 2016, "endYear": 2017, "note": "Hired July 23, 2015. Kyle Dubas was named GM May 11, 2018, before that draft."},
+    {"team": "TOR", "person": "Kyle Dubas", "role": "GM", "startYear": 2018, "endYear": 2022, "note": "Named GM May 11, 2018. Left in May 2023, before the draft."},
+    {"team": "TOR", "person": "Brad Treliving", "role": "GM", "startYear": 2023, "endYear": 2025, "note": "Hired May 31, 2023. Fired March 30, 2026, before that draft."},
+    {"team": "TOR", "person": "John Chayka", "role": "GM", "startYear": 2026, "endYear": null, "note": "Hired May 3, 2026."},
+
+    {"team": "UTA", "person": "Mike Barnett", "role": "GM", "startYear": 2005, "endYear": 2006, "note": "Phoenix. Fired April 11, 2007, before that draft."},
+    {"team": "UTA", "person": "Don Maloney", "role": "GM", "startYear": 2007, "endYear": 2015, "note": "Hired May 29, 2007. Fired April 11, 2016, before that draft. The club was the Coyotes throughout this era."},
+    {"team": "UTA", "person": "John Chayka", "role": "GM", "startYear": 2016, "endYear": 2019, "note": "Hired May 5, 2016. Resigned July 26, 2020. Steve Sullivan was interim until September and did not draft."},
+    {"team": "UTA", "person": "Bill Armstrong", "role": "GM", "startYear": 2020, "endYear": null, "note": "Hired by Arizona on September 17, 2020, before that October's draft, and stayed through the move to Utah."},
+
+    {"team": "VAN", "person": "Dave Nonis", "role": "GM", "startYear": 2005, "endYear": 2007, "note": "Fired April 14, 2008, before that draft."},
+    {"team": "VAN", "person": "Mike Gillis", "role": "GM", "startYear": 2008, "endYear": 2013, "note": "Hired April 23, 2008. Fired April 8, 2014, before that draft."},
+    {"team": "VAN", "person": "Jim Benning", "role": "GM", "startYear": 2014, "endYear": 2021, "note": "Hired May 21, 2014. Fired December 5, 2021, after that year's draft."},
+    {"team": "VAN", "person": "Patrik Allvin", "role": "GM", "startYear": 2022, "endYear": 2025, "note": "Hired January 26, 2022. Left April 17, 2026, before that draft."},
+    {"team": "VAN", "person": "Ryan Johnson", "role": "GM", "startYear": 2026, "endYear": null, "note": "Hired May 14, 2026."},
+
+    {"team": "VGK", "person": "George McPhee", "role": "GM", "startYear": 2017, "endYear": 2019, "note": "The Golden Knights' first GM. Kelly McCrimmon took over September 1, 2019, after that draft."},
+    {"team": "VGK", "person": "Kelly McCrimmon", "role": "GM", "startYear": 2020, "endYear": null, "note": "Took effect September 1, 2019."},
+
+    {"team": "WSH", "person": "George McPhee", "role": "GM", "startYear": 2005, "endYear": 2013, "note": "Left April 26, 2014, before that draft."},
+    {"team": "WSH", "person": "Brian MacLellan", "role": "GM", "startYear": 2014, "endYear": 2024, "note": "Hired May 26, 2014. Moved to president July 8, 2024, after that draft."},
+    {"team": "WSH", "person": "Chris Patrick", "role": "GM", "startYear": 2025, "endYear": null, "note": "Hired July 8, 2024."},
+
+    {"team": "WPG", "person": "Don Waddell", "role": "GM", "startYear": 2005, "endYear": 2009, "note": "Atlanta Thrashers. Moved to president April 14, 2010, before that draft."},
+    {"team": "WPG", "person": "Rick Dudley", "role": "GM", "startYear": 2010, "endYear": 2010, "note": "Hired April 14, 2010 and ran Atlanta's last draft. Left June 4, 2011, before Winnipeg's first draft."},
+    {"team": "WPG", "person": "Kevin Cheveldayoff", "role": "GM", "startYear": 2011, "endYear": null, "note": "Hired June 8, 2011, in time for the draft."}
+  ]
+}
