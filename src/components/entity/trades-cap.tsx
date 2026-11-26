@@ -189,6 +189,32 @@ export function DraftCapitalMatrix({ abbr, teamName }: { abbr: string; teamName:
   );
 }
 
+/** The separate Asset Management grade, not live yet. */
+export function AssetMgmtSoon({ subject, preview }: { subject: string; preview?: number | null }) {
+  return (
+    <div className="rounded-2xl border border-dashed border-[#262B36] bg-[#14171F]/60 p-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <SectionLabel>Asset Management grade</SectionLabel>
+        <span className="rounded-full bg-white/5 px-2.5 py-1 text-[10px] font-bold tracking-wider text-[#94A3B8] uppercase ring-1 ring-[#262B36]">Coming soon</span>
+      </div>
+      <p className="mt-2 max-w-2xl text-sm text-[#94A3B8]">
+        A separate grade for how well {subject} manages every asset: drafts, trades, signings, buyouts and waivers. Drafting, Development and Trades already have their own grades. The rest of the picture needs data we do not have yet, so
+        this grade is not part of the Overall GM Grade.
+      </p>
+      {preview != null ? (
+        <p className="mt-3 text-sm text-[#94A3B8]">
+          Preview: today&rsquo;s roster uses the cap{" "}
+          <span className={`font-semibold ${preview >= 0 ? "text-[#10B981]" : "text-[#EF4444]"}`}>
+            {preview >= 0 ? "+" : "−"}
+            {Math.abs(preview).toFixed(1)}% of the cap
+          </span>{" "}
+          {preview >= 0 ? "better" : "worse"} than what that production costs on the open market.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 /** Trades & Cap tab for a general manager: Pillar 3 summary, trade record and, for the current GM, his franchise's assets. */
 export function GmTradesPanel({ person, team, teamName, current, report }: { person: string; team: string; teamName: string; current: boolean; report: GmReport | null }) {
   const asset = report?.asset ?? null;
@@ -197,7 +223,7 @@ export function GmTradesPanel({ person, team, teamName, current, report }: { per
       <div className="rounded-2xl border border-[#E11D48]/40 bg-[#14171F] p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <SectionLabel>Pillar 3 · Asset &amp; Trades</SectionLabel>
+            <SectionLabel>Pillar 3 · Trades</SectionLabel>
             <p className="mt-1 max-w-2xl text-sm text-[#94A3B8]">
               Trade track record plus, for the current GM, how efficiently the roster uses the cap. 0.0 is the league-average GM, and a short tenure is pulled toward it.
             </p>
@@ -221,7 +247,7 @@ export function GmTradesPanel({ person, team, teamName, current, report }: { per
             <Fact label="Net trade Impact" value={`${asset.net >= 0 ? "+" : "−"}${fmt(Math.abs(asset.net))}`} tone={asset.net >= 0 ? "text-[#10B981]" : "text-[#EF4444]"} />
             <Fact label="Rating" value={`${asset.rating}/100`} />
             <Fact
-              label="Contract efficiency"
+              label="Contract efficiency (preview)"
               value={asset.efficiency == null ? "—" : `${asset.efficiency >= 0 ? "+" : "−"}${Math.abs(asset.efficiency).toFixed(1)}% cap`}
               tone={asset.efficiency == null ? undefined : asset.efficiency >= 0 ? "text-[#10B981]" : "text-[#EF4444]"}
               title="Production the roster delivers minus what that production would cost on the open market, as a share of the cap. Current GMs only."
@@ -229,11 +255,12 @@ export function GmTradesPanel({ person, team, teamName, current, report }: { per
           </dl>
         ) : (
           <p className="mt-4 text-sm text-[#94A3B8]">
-            No grade yet: the public trade log starts in 2009-10, and {person} made fewer than two trades there. The Overall GM Grade uses the pillars that do have data.
+            No grade yet: {person} made fewer than two trades in the 2005-06 onward trade log. The Overall GM Grade uses the pillars that do have data.
           </p>
         )}
       </div>
       {asset ? <TradeRecord report={asset} subject={person} /> : null}
+      <AssetMgmtSoon subject={person} preview={asset?.efficiency ?? null} />
       {current ? (
         <>
           <FranchiseAssetCard abbr={team} />
@@ -302,7 +329,7 @@ export function TradeRecord({ report, subject }: { report: Pick<AssetGrade, "tra
   if (!trades) {
     return (
       <div className="rounded-2xl border border-dashed border-[#262B36] bg-[#14171F]/60 p-5 text-sm text-[#94A3B8]">
-        No trades by {subject} in the public trade log (2009-10 onward).
+        No trades by {subject} in the trade log (2005-06 onward).
       </div>
     );
   }

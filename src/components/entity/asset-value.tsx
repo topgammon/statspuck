@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { ArchetypePill, ProspectTierPill, SectionLabel } from "@/components/entity/bio";
+import type { PlayerValue } from "@/lib/player-value";
 import { TabLink } from "@/components/entity/entity-tabs";
 import { classify } from "@/lib/archetypes";
 import { contractLine, money, playerContract } from "@/lib/cap";
 import { ageAtSeason, nhlerFor, nhlersFile, type Group } from "@/lib/nhlers";
 import { formatRating, ratingFill, ratingTone } from "@/lib/rating";
-import { ageCurve, assetFor, curveAt, DISCOUNT, EXTENSION_WEIGHT, ELC_CONTROL_WEIGHT, PREMIUM, primeWindow, type PlayerAsset } from "@/lib/valuation";
+import { ageCurve, curveAt, DISCOUNT, EXTENSION_WEIGHT, ELC_CONTROL_WEIGHT, PREMIUM, primeWindow, type PlayerAsset } from "@/lib/valuation";
 
 // The Asset Value tab on /players/[id]: score, contract surplus breakdown, age-curve projection.
 
@@ -17,39 +18,53 @@ function signedMoney(value: number): string {
 const GROUP_LABEL: Record<Group, string> = { F: "forwards", D: "defensemen", G: "goalies" };
 const SINGULAR: Record<Group, string> = { F: "forward", D: "defenseman", G: "goalie" };
 
-export function AssetValuePanel({
-  playerId,
-  name,
-  tier,
-}: {
-  playerId: number | null;
-  name: string;
-  tier?: { label: string; level: 0 | 1 | 2 | 3; tip: string } | null;
-}) {
-  const asset = assetFor(playerId);
-  const contract = playerContract(playerId);
-  const record = nhlerFor(playerId);
-  if (!asset || !contract || playerId == null) {
-    return (
-      <div className="rounded-2xl border border-dashed border-[#262B36] bg-[#14171F]/60 p-6 sm:p-8">
-        <span className="rounded-full bg-white/5 px-2.5 py-1 text-[10px] font-bold tracking-wider text-[#94A3B8] uppercase ring-1 ring-[#262B36]">Asset Value</span>
-        <h2 className="display mt-4 text-3xl font-bold">No active NHL contract for {name}</h2>
-        <p className="mt-2 max-w-2xl text-[#94A3B8]">
-          Asset Value prices active NHL players who are under contract: recent Impact, the age curve, and what the contract is worth against what the player is worth. Prospects and
-          free agents join once they sign.
+/** Asset Value for a player who is not under an NHL contract: a prospect, a retired player, or an unsigned one. */
+function OtherValuePanel({ value, name }: { value: Exclude<PlayerValue, { kind: "contract" }>; name: string }) {
+  const heading =
+    value.kind === "prospect" ? `${name} is a prospect` : value.kind === "inactive" ? `${name} is retired or inactive` : `${name} has no NHL contract`;
+  const body =
+    value.kind === "prospect"
+      ? `Prospects are priced from where they were drafted and how they have progressed. Pick #${value.overall} is worth a base value on the Draft Rater's expected-Impact curve. His projection tier (${value.tier.label}) scales it, and it shrinks as his seven-year window runs out (he is ${value.draftPlus} ${value.draftPlus === 1 ? "year" : "years"} past the draft). Once he signs an NHL contract he gets the full contract-based Asset Value.`
+      : value.kind === "inactive"
+        ? "Retired and inactive players have an Asset Value of 0: there is nothing left to trade."
+        : "He is active but not under an NHL contract, so there is nothing to trade and his Asset Value is 0. It switches on when he signs.";
+  return (
+    <div className="rounded-2xl border border-[#E11D48]/40 bg-[#14171F] p-5 sm:p-6">
+      <div className="flex items-center justify-between gap-2">
+        <SectionLabel>Asset Value</SectionLabel>
+        <span className="rounded-full bg-[#E11D48]/15 px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#E11D48] uppercase">Live</span>
+      </div>
+      <div className="mt-3 flex flex-wrap items-end gap-x-6 gap-y-3">
+        <p className="flex items-end gap-2">
+          <span className={`display text-7xl leading-none font-bold ${ratingTone(value.rating)}`}>{formatRating(value.rating)}</span>
+          <span className="pb-2 text-sm text-[#94A3B8]">/ 100</span>
         </p>
-        {tier ? (
-          <div className="mt-4 flex items-center gap-3">
-            <ProspectTierPill tier={tier} />
-            <span className="text-sm text-[#94A3B8]">{tier.tip}</span>
+        {value.kind === "prospect" ? (
+          <div className="flex flex-col gap-1.5 pb-1">
+            <ProspectTierPill tier={value.tier} />
+            <span className="max-w-sm text-sm text-[#94A3B8]">{value.tier.tip}</span>
           </div>
         ) : null}
-        <Link href="/trade-machine" className="mt-5 inline-block text-sm font-semibold text-[#38BDF8] hover:underline">
-          Open the Trade Machine →
-        </Link>
       </div>
-    );
+      <div className="relative mt-4 h-2.5 max-w-md overflow-hidden rounded-full bg-[#0B0D10] ring-1 ring-[#262B36]">
+        <div className="h-full rounded-full" style={{ width: `${Math.max(0, Math.min(100, value.rating))}%`, background: ratingFill(value.rating) }} />
+      </div>
+      <h2 className="display mt-5 text-2xl font-bold">{heading}</h2>
+      <p className="mt-1 max-w-2xl text-sm text-[#94A3B8]">{body}</p>
+      <Link href="/trade-machine" className="mt-4 inline-block text-sm font-semibold text-[#38BDF8] hover:underline">
+        Open the Trade Machine →
+      </Link>
+    </div>
+  );
+}
+
+export function AssetValuePanel({ playerId, name, value, tier }: { playerId: number | null; name: string; value: PlayerValue; tier?: { label: string; level: 0 | 1 | 2 | 3; tip: string } | null }) {
+  if (value.kind !== "contract" || playerId == null) {
+    return <OtherValuePanel value={value as Exclude<PlayerValue, { kind: "contract" }>} name={name} />;
   }
+  const asset = value.asset;
+  const contract = playerContract(playerId)!;
+  const record = nhlerFor(playerId);
 
   const archetype = classify(record);
   const prime = primeWindow(asset.group);
@@ -191,8 +206,8 @@ export function AssetValuePanel({
 }
 
 /** Overview card that points to the Asset Value tab. */
-export function AssetTeaser({ playerId }: { playerId: number | null }) {
-  const asset = assetFor(playerId);
+export function AssetTeaser({ value }: { value: PlayerValue }) {
+  const asset = value.kind === "contract" ? value.asset : null;
   return (
     <div className="rounded-xl border border-[#E11D48]/40 bg-[#14171F] p-4">
       <div className="flex items-center justify-between gap-2">
@@ -205,7 +220,10 @@ export function AssetTeaser({ playerId }: { playerId: number | null }) {
           {asset.yearsLeft} {asset.yearsLeft === 1 ? "yr" : "yrs"} left
         </p>
       ) : (
-        <p className="mt-1 text-sm text-[#94A3B8]">Priced once he is under an active NHL contract.</p>
+        <p className="mt-1 text-sm text-[#94A3B8]">
+          <span className={`display text-2xl font-bold ${ratingTone(value.rating)}`}>{formatRating(value.rating)}</span> / 100 ·{" "}
+          {value.kind === "prospect" ? `prospect value, ${value.tier.label.toLowerCase()}` : value.kind === "inactive" ? "retired or inactive" : "no NHL contract"}
+        </p>
       )}
       <TabLink tab="asset" className="mt-2 text-sm font-semibold text-[#38BDF8] hover:underline">
         Open Asset Value →

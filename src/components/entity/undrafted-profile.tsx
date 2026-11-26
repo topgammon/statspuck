@@ -11,6 +11,8 @@ import { classify } from "@/lib/archetypes";
 import { playerContract } from "@/lib/cap";
 import { teamsByAbbr } from "@/lib/data";
 import { nhlerFor } from "@/lib/nhlers";
+import { playerValue, type PlayerValue } from "@/lib/player-value";
+import { formatRating, ratingTone } from "@/lib/rating";
 import { BUCKET_COLOR, BUCKET_LABEL, type Bucket } from "@/lib/development";
 import { signed } from "@/lib/format";
 import { gmHref, teamHref } from "@/lib/routes";
@@ -65,6 +67,7 @@ export function UndraftedProfile({ player, vitals }: { player: UndraftedPlayer; 
   const color = (player.franchise && teamsByAbbr.get(player.franchise)?.color) || "#38BDF8";
   const current = player.currentTeam ? teamsByAbbr.get(player.currentTeam) : null;
   const retired = player.active === false;
+  const value = playerValue({ playerId: player.playerId, pick: null, retired });
 
   const share = (
     <ShareLauncher
@@ -116,9 +119,15 @@ export function UndraftedProfile({ player, vitals }: { player: UndraftedPlayer; 
         <StampRow stamps={player.stamps} />
         <ArchetypePill archetype={classify(nhlerFor(player.playerId))} />
       </div>
-      <PillGrid>
+      <PillGrid count={4}>
         <QuickPill label="Career Impact" value={player.qg.toFixed(1)} title="Impact puts skaters and goalies on one scale where 1.0 is about one average NHL game. Seasons since 2005-06." />
         <QuickPill label="Career GP" value={String(player.gpCareer)} title="NHL regular-season games since 2005-06" />
+        <QuickPill
+          label="Asset Value"
+          value={formatRating(value.rating)}
+          tone={ratingTone(value.rating)}
+          title="Trade value on a 0-100 scale. Retired and inactive players are 0, and so is anyone without an NHL contract."
+        />
         {player.group === "G" ? (
           <QuickPill label="SV%" value={player.savePct == null ? "—" : player.savePct.toFixed(3).replace(/^0/, "")} />
         ) : (
@@ -151,10 +160,10 @@ export function UndraftedProfile({ player, vitals }: { player: UndraftedPlayer; 
   );
 
   const panels: Record<string, ReactNode> = {
-    overview: <Overview player={player} />,
+    overview: <Overview player={player} value={value} />,
     draft: <DraftPanel player={player} />,
     development: <DevelopmentPanel player={player} />,
-    asset: <AssetValuePanel playerId={player.playerId} name={player.name} />,
+    asset: <AssetValuePanel playerId={player.playerId} name={player.name} value={value} />,
     luck: <ComingSoonPanel tab="luck" subject={player.name} />,
     matchups: <ComingSoonPanel tab="matchups" subject={player.name} />,
   };
@@ -167,7 +176,7 @@ export function UndraftedProfile({ player, vitals }: { player: UndraftedPlayer; 
   );
 }
 
-function Overview({ player }: { player: UndraftedPlayer }) {
+function Overview({ player, value }: { player: UndraftedPlayer; value: PlayerValue }) {
   const facts: [string, ReactNode][] = [
     ["Position", player.pos],
     ["Draft", "Undrafted"],
@@ -213,7 +222,7 @@ function Overview({ player }: { player: UndraftedPlayer }) {
       </div>
       <div className="lg:col-span-2">
         <div className="mb-3">
-          <AssetTeaser playerId={player.playerId} />
+          <AssetTeaser value={value} />
         </div>
         <ModulePreviews tabs={["luck", "matchups"]} />
       </div>

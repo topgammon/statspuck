@@ -5,7 +5,7 @@ import { ratedFrom, ratedTrades, teamOptions } from "@/lib/trade-rater";
 
 export const metadata: Metadata = {
   title: "Trade Rater",
-  description: "Every NHL trade since 2009-10, graded on what the players and picks actually became. Who really won the deal?",
+  description: "Every NHL trade since 2005-06, graded on what the players and picks actually became. Who really won the deal?",
   alternates: { canonical: "/trade-machine/rater" },
 };
 

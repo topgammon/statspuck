@@ -2,8 +2,8 @@ import { teams } from "./data";
 import { gmOn, tradeSides, tradesFrom, type TradePiece } from "./gm-grades";
 import { gradeForMargin } from "./rating";
 
-// Trade Rater: every NHL trade since 2009-10, graded by what the pieces became. Same numbers as the
-// GM Asset & Trades grade (five seasons of Impact after the deal), shown trade by trade.
+// Trade Rater: every NHL trade since 2005-06, graded by what the pieces became. Same numbers as the
+// GM Trades grade (five seasons of Impact after the deal), shown trade by trade.
 
 export type RatedSide = {
   t: string;

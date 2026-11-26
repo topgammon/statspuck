@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { BioCard, CapBar, ComingSoonPanel, DnaPills, ModulePreviews, ORG_TABS, PillarGrades, SectionLabel } from "@/components/entity/bio";
-import { AssetRankMini, DraftCapitalMatrix, FranchiseAssetCard, TradeRecord } from "@/components/entity/trades-cap";
+import { AssetMgmtSoon, AssetRankMini, DraftCapitalMatrix, FranchiseAssetCard, TradeRecord } from "@/components/entity/trades-cap";
 import { teamTradeReport } from "@/lib/gm-grades";
 import { OrgDevelopment } from "@/components/entity/org-development";
 import { devBoard, devGems, undraftedGems } from "@/lib/dev-board";
@@ -108,11 +108,12 @@ export default async function TeamPage({ params }: { params: Promise<Params> }) 
 
   const right = (
     <PillarGrades
+      assetMgmt
       pillars={[
         { label: "Draft", letter: team.letter, score: signed(team.avg), tone: scoreClass(team.avg), title: DRAFT_SCORE_TIP },
         { label: "Dev", letter: team.dev?.letter ?? null, score: team.dev ? signed(team.dev.avg) : "too new", tone: team.dev ? scoreClass(team.dev.avg) : undefined, title: DEV_SCORE_TIP },
         trades
-          ? { label: "Trades", letter: trades.letter, score: signed(trades.score), tone: scoreClass(trades.score), title: "Net Impact from every trade since 2009-10, five seasons out, shrunk for sample size. Ranked against the other franchises." }
+          ? { label: "Trades", letter: trades.letter, score: signed(trades.score), tone: scoreClass(trades.score), title: "Net Impact from every trade since 2005-06, five seasons out, shrunk for sample size. Ranked against the other franchises." }
           : { label: "Trades", letter: null, soon: true },
       ]}
       stats={[
@@ -157,6 +158,7 @@ export default async function TeamPage({ params }: { params: Promise<Params> }) 
         <FranchiseAssetCard abbr={team.abbr} />
         <DraftCapitalMatrix abbr={team.abbr} teamName={team.name} />
         {trades ? <TradeRecord report={trades} subject={team.name} /> : null}
+        <AssetMgmtSoon subject={team.name} />
       </div>
     ),
     luck: <ComingSoonPanel tab="luck" subject={team.name} />,

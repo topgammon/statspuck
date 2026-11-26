@@ -82,12 +82,15 @@ export function PillarGrades({
   stats,
   action,
   hero,
+  assetMgmt = false,
 }: {
   pillars: Pillar[];
   stats?: { label: string; value: string; tone?: string; title?: string }[];
   action?: ReactNode;
   /** Combined grade shown as a big stamp above the pillars, e.g. the Overall GM Grade. */
   hero?: { label: string; letter: string | null; note?: string; title?: string };
+  /** Show the separate Asset Management grade as coming soon. */
+  assetMgmt?: boolean;
 }) {
   return (
     <div className="flex h-full flex-col gap-3 rounded-xl border border-[#262B36] bg-[#0B0D10]/60 p-3">
@@ -115,6 +118,15 @@ export function PillarGrades({
           </div>
         ))}
       </div>
+      {assetMgmt ? (
+        <div
+          title="Asset Management will grade the whole picture: drafts, trades, signings, buyouts and waivers. We do not have all of that data yet."
+          className="flex items-center justify-between gap-2 rounded-lg border border-dashed border-[#262B36] px-2.5 py-1.5"
+        >
+          <span className="text-[9px] font-semibold tracking-[0.12em] text-[#94A3B8] uppercase">Asset Mgmt</span>
+          <span className="text-[10px] font-bold tracking-wider text-[#94A3B8]/70 uppercase">Soon</span>
+        </div>
+      ) : null}
       {stats && stats.length ? (
         <dl className="grid grid-cols-2 gap-2 text-center">
           {stats.map((item) => (

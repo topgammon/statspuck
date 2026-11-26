@@ -33,17 +33,17 @@ export function yearLabel(milestone: number): string {
   return `Year ${milestone}`;
 }
 
-/** Seasons after Draft +8 are veterans. The grade itself still stops at the position cap. */
-export const VETERAN_AFTER = 8;
+/** A veteran has played at least this many NHL games. Years since the draft alone do not make one. */
+export const VETERAN_MIN_GP = 350;
 
-export function draftLabel(draftPlus: number): string {
+export function draftLabel(draftPlus: number, careerGp = 0): string {
   if (draftPlus <= 0) return "Not started";
-  if (draftPlus > VETERAN_AFTER) return "Veteran";
+  if (isVeteran(careerGp)) return "Veteran";
   return `Draft +${draftPlus}`;
 }
 
-export function isVeteran(draftPlus: number): boolean {
-  return draftPlus > VETERAN_AFTER;
+export function isVeteran(careerGp: number): boolean {
+  return careerGp >= VETERAN_MIN_GP;
 }
 
 export function updatedLabel(iso: string): string {

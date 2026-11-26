@@ -45,7 +45,7 @@ export function Board({
   picks: PickRow[];
   teams: TeamInfo[];
   eras: Era[];
-  /** Development, Asset & Trades and Overall grades per GM tenure. Drafting still follows the filters above. */
+  /** Development, Trades and Overall grades per GM tenure. Drafting still follows the filters above. */
   gmReports: Record<string, GmReportLite>;
   official: TeamGrade[];
   firstYear: number;
@@ -374,7 +374,7 @@ export function Board({
                     Dev <Letter letter={gmReports[gm.slug]?.dev?.letter} />
                   </span>
                   <span className="flex flex-col items-center gap-0.5">
-                    Assets <Letter letter={gmReports[gm.slug]?.asset?.letter} />
+                    Trades <Letter letter={gmReports[gm.slug]?.asset?.letter} />
                   </span>
                 </div>
                 <div className="text-right">
@@ -393,10 +393,10 @@ export function Board({
                 <SortHeader label="#" sortKey="rank" active={sortKey} desc={sortDesc} onClick={toggle} />
                 <SortHeader label="GM" sortKey="name" active={sortKey} desc={sortDesc} onClick={toggle} />
                 <SortHeader label="Years" sortKey="years" active={sortKey} desc={sortDesc} onClick={toggle} />
-                <SortHeader label="Overall" sortKey="overall" active={sortKey} desc={sortDesc} onClick={toggle} tip="Average of the Drafting, Development and Asset & Trades ratings. Pillars with no data are left out." />
+                <SortHeader label="Overall" sortKey="overall" active={sortKey} desc={sortDesc} onClick={toggle} tip="Average of the Drafting, Development and Trades ratings. Pillars with no data are left out. Asset Management is not part of it yet." />
                 <SortHeader label="Drafting" sortKey="letter" active={sortKey} desc={sortDesc} onClick={toggle} />
                 <SortHeader label="Development" sortKey="dev" active={sortKey} desc={sortDesc} onClick={toggle} />
-                <SortHeader label="Asset & Trades" sortKey="asset" active={sortKey} desc={sortDesc} onClick={toggle} tip="Net Impact from his trades plus roster cap efficiency for current GMs. Trade data starts in 2009-10." />
+                <SortHeader label="Trades" sortKey="asset" active={sortKey} desc={sortDesc} onClick={toggle} tip="Net Impact from the trades he made, five seasons out. Trade data covers 2005-06 onward." />
                 <SortHeader label="Draft Score" sortKey="avg" active={sortKey} desc={sortDesc} onClick={toggle} tip={DRAFT_SCORE_TIP} />
                 <SortHeader label="Graded" sortKey="n" active={sortKey} desc={sortDesc} onClick={toggle} />
               </tr>

@@ -17,6 +17,8 @@ import { TeamLogo, TeamName } from "@/components/team-logo";
 import { classify, prospectTier } from "@/lib/archetypes";
 import { playerContract } from "@/lib/cap";
 import { nhlerFor } from "@/lib/nhlers";
+import { playerValue, type PlayerValue } from "@/lib/player-value";
+import { formatRating, ratingTone } from "@/lib/rating";
 import { countryName } from "@/lib/countries";
 import { meta, pickImage, picks, picksById, teamsByAbbr, undrafted, undraftedById } from "@/lib/data";
 import { draftLabel, isVeteran, scoreClass, signed } from "@/lib/format";
@@ -74,9 +76,10 @@ export default async function PlayerPage({ params }: { params: Promise<Params> }
   const color = teamsByAbbr.get(pick.franchise)?.color ?? "#E11D48";
   const grade = pick.developing ? null : pick.letter;
   const retired = pick.stamps.includes("RETIRED") || pick.active === false;
-  const veteran = isVeteran(pick.draftPlus) && !pick.stamps.includes("RETIRED");
+  const veteran = isVeteran(pick.gpCareer) && !pick.stamps.includes("RETIRED");
   const contract = retired ? null : playerContract(pick.playerId);
   const archetype = classify(nhlerFor(pick.playerId));
+  const value = playerValue({ playerId: pick.playerId, pick, retired });
   const tier = prospectTier(pick);
   const current = pick.currentTeam ? teamsByAbbr.get(pick.currentTeam) : null;
 
@@ -132,9 +135,15 @@ export default async function PlayerPage({ params }: { params: Promise<Params> }
         <ArchetypePill archetype={archetype} />
         <ProspectTierPill tier={tier} />
       </div>
-      <PillGrid>
+      <PillGrid count={4}>
         <QuickPill label="Career Impact" value={pick.qg.toFixed(1)} title="Impact puts skaters and goalies on one scale where 1.0 is about one average NHL game." />
         <QuickPill label="Career GP" value={String(pick.gpCareer)} />
+        <QuickPill
+          label="Asset Value"
+          value={formatRating(value.rating)}
+          tone={ratingTone(value.rating)}
+          title="Trade value on a 0-100 scale. Retired and inactive players are 0. Prospects are priced from draft slot and progress."
+        />
         {pick.group === "G" ? (
           <QuickPill label="SV%" value={pick.savePct == null ? "—" : pick.savePct.toFixed(3).replace(/^0/, "")} />
         ) : (
@@ -156,10 +165,10 @@ export default async function PlayerPage({ params }: { params: Promise<Params> }
   );
 
   const panels: Record<string, ReactNode> = {
-    overview: <Overview pick={pick} />,
+    overview: <Overview pick={pick} value={value} />,
     draft: <DraftPanel pick={pick} color={color} />,
     development: <PlayerDevelopment pick={pick} />,
-    asset: <AssetValuePanel playerId={pick.playerId} name={pick.name} tier={tier} />,
+    asset: <AssetValuePanel playerId={pick.playerId} name={pick.name} tier={tier} value={value} />,
     luck: <ComingSoonPanel tab="luck" subject={pick.name} />,
     matchups: <ComingSoonPanel tab="matchups" subject={pick.name} />,
   };
@@ -172,12 +181,12 @@ export default async function PlayerPage({ params }: { params: Promise<Params> }
   );
 }
 
-function Overview({ pick }: { pick: PickRow }) {
+function Overview({ pick, value }: { pick: PickRow; value: PlayerValue }) {
   const facts: [string, ReactNode][] = [
     ["Position", pick.pos],
     ["Drafted", `${pick.year} · Round ${pick.round} · #${pick.overall}`],
     ["Drafted by", <TeamName key="by" abbr={pick.team} name={pick.teamName} logoClassName="h-5 w-7" />],
-    ["Career stage", draftLabel(pick.draftPlus)],
+    ["Career stage", draftLabel(pick.draftPlus, pick.gpCareer)],
   ];
   if (pick.teamName !== pick.franchiseName) facts.push(["Franchise today", pick.franchiseName]);
   const from = originLabel(pick.amateur, pick.league);
@@ -217,7 +226,7 @@ function Overview({ pick }: { pick: PickRow }) {
       </div>
       <div className="lg:col-span-2">
         <div className="mb-3">
-          <AssetTeaser playerId={pick.playerId} />
+          <AssetTeaser value={value} />
         </div>
         <ModulePreviews tabs={["luck", "matchups"]} />
       </div>

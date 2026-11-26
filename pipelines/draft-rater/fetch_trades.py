@@ -1,6 +1,8 @@
-"""Trade track record: every NHL trade since 2009-10, valued by what actually happened.
+"""Trade track record and trade trees: every NHL trade since 2005-06, valued by what actually happened.
 
-Source: the public trade log pages on capwages.com (one page per season, allowed by its robots.txt).
+Sources: the public trade log on capwages.com for 2009-10 onward (one page per season, allowed by its
+robots.txt) and Wikipedia's season transaction lists for 2005-06 through 2008-09 (wiki_trades.py).
+
 For each team in each trade we add up the Impact (the Draft Rater's own metric) of what it received
 minus what it sent, over the five seasons that follow:
 
@@ -11,7 +13,11 @@ minus what it sent, over the five seasons that follow:
     not happened yet use the Draft Rater's expected Impact for that slot. A pick not made yet uses
     the middle slot of its round.
 
-Writes data/draft-rater/trades.json. If the site is down the last saved file is kept.
+It also links trades into trees: when a team trades away something it earlier got in a trade (or the
+player it drafted with a pick it got in a trade), that later trade grows the same tree.
+
+Writes data/draft-rater/trades.json and data/draft-rater/trade_trees.json. If a source is down the
+last saved files are kept.
 """
 
 from __future__ import annotations
@@ -30,13 +36,16 @@ from pathlib import Path
 from fetch_nhl import connect, season_calendar
 from grade_quality import ice_group, league_context, load_inputs, season_progress, season_quality
 from teams import FRANCHISES
+from wiki_trades import wiki_pages
 
 ROOT = Path(__file__).resolve().parent
 DATA = ROOT.parents[1] / "data" / "draft-rater"
 OUT = DATA / "trades.json"
+TREES = DATA / "trade_trees.json"
 NAMES = DATA / "player_names.json"
 USER_AGENT = "StatsPuckBot/1.0 (hockey stats research; contact via statspuck.com)"
-FIRST_SEASON = 2009
+FIRST_SEASON = 2005
+CAPWAGES_FROM = 2009
 HORIZON = 5
 FADE = 0.92
 
@@ -79,10 +88,10 @@ def norm(name: str) -> str:
     return re.sub(r"\s+", " ", re.sub(r"[^a-z ]", "", name.lower().replace("-", " "))).strip()
 
 
-def season_pages(today: dt.date) -> list[tuple[str, list[dict]]]:
+def capwages_pages(today: dt.date) -> list[tuple[str, list[dict]]]:
     start = today.year if today.month >= 7 else today.year - 1
     out = []
-    for year in range(FIRST_SEASON, start + 1):
+    for year in range(CAPWAGES_FROM, start + 1):
         label = f"{year}-{str(year + 1)[2:]}"
         html = get(f"https://capwages.com/trades/{label}")
         match = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', html, re.S)
@@ -119,9 +128,9 @@ def fill_names(conn) -> dict[int, str]:
 def build() -> None:
     today = dt.date.today()
     try:
-        pages = season_pages(today)
-    except Exception as error:  # noqa: BLE001 - keep the saved file
-        print(f"trades: fetch failed ({error}); keeping the saved file", flush=True)
+        pages = wiki_pages() + capwages_pages(today)
+    except Exception as error:  # noqa: BLE001 - keep the saved files
+        print(f"trades: fetch failed ({error}); keeping the saved files", flush=True)
         return
 
     conn = connect()
@@ -132,6 +141,7 @@ def build() -> None:
     current = in_progress or last_complete
     names = fill_names(conn)
     active = {int(k): v for k, v in json.loads((DATA / "active.json").read_text(encoding="utf-8")).items()}
+    rosters = {int(k): v for k, v in json.loads((DATA / "rosters.json").read_text(encoding="utf-8")).items()}
 
     # player -> season -> Impact (skater + goalie rows together), and games per season
     impact: dict[int, dict[int, float]] = defaultdict(dict)
@@ -155,6 +165,10 @@ def build() -> None:
     pick_rows = json.loads((DATA / "picks.json").read_text(encoding="utf-8"))
     by_slot = {(row["year"], row["overall"]): row for row in pick_rows if not row.get("forfeited")}
     latest_draft = max(row["year"] for row in pick_rows)
+    # Player id -> /players/[id] route id (a pick id for the drafted, the player id for the undrafted).
+    route_by_pid: dict[int, int] = {row["playerId"]: row["id"] for row in pick_rows if row.get("playerId") and not row.get("forfeited")}
+    for row in json.loads((DATA / "undrafted.json").read_text(encoding="utf-8")):
+        route_by_pid.setdefault(int(row["playerId"]), int(row["id"]))
 
     def expected_increment(slot: int, h: int) -> float:
         index = min(max(slot, 1), curves["maxPick"])
@@ -166,15 +180,19 @@ def build() -> None:
             out += weight * max(0.0, now - before)
         return out
 
-    def player_value(name: str, season0: int, first_weight: float) -> float:
+    def resolve(name: str, season0: int) -> int | None:
         candidates = by_name.get(norm(name), [])
         if not candidates:
-            return 0.0
+            return None
         if len(candidates) > 1:
             candidates = sorted(candidates, key=lambda pid: -sum(games[pid].get(s, 0) for s in range(season0 - 1, season0 + 3)))
-        pid = candidates[0]
+        return candidates[0]
+
+    def player_value(pid: int | None, season0: int, first_weight: float) -> float:
+        if pid is None:
+            return 0.0
         own = impact.get(pid, {})
-        # Full-season-equivalent Impact for each season, used to project seasons not played yet.
+
         def full(season: int) -> float | None:
             if season not in own:
                 return None
@@ -191,16 +209,12 @@ def build() -> None:
             if season <= last_complete:
                 total += weight * own.get(season, 0.0)
             elif season == in_progress:
-                # The season in progress counts as the full-season equivalent so a young season does not look like a bust.
                 total += weight * (full(season) or (latest or 0.0))
             elif active.get(pid) and latest:
                 total += weight * latest * (FADE ** (season - current))
         return total
 
-    def pick_value(item: dict) -> float:
-        year = int(item.get("year") or 0)
-        rnd = int(item.get("round") or 1)
-        overall = item.get("overall")
+    def pick_value(year: int, rnd: int, overall: int | None) -> float:
         slot = int(overall) if overall else (rnd - 1) * 32 + 16
         row = by_slot.get((year, int(overall))) if overall else None
         realized = row["seasons"] if row else []
@@ -213,10 +227,10 @@ def build() -> None:
         return total
 
     sides = []
+    steps: dict[str, dict] = {}
     unknown_slugs = set()
     for label, trades in pages:
         for trade in trades:
-            # The trade id starts with its date, which is the one format that never varies.
             date = str(trade["id"])[:10] if re.match(r"\d{4}-\d{2}-\d{2}", str(trade["id"])) else str(trade["date"])[:10]
             teams = [SLUG_TO_ABBR.get(slug) for slug in trade["teams"]]
             for slug, abbr in zip(trade["teams"], teams):
@@ -227,44 +241,164 @@ def build() -> None:
                 season0, first_weight = when.year, 1.0
             else:
                 season0, first_weight = when.year - 1, 0.5
-            # Every piece is kept: (label, value, kind) with kind "p" for a player and "k" for a pick.
-            got: dict[str, list[tuple[str, float, str]]] = defaultdict(list)
-            gave: dict[str, list[tuple[str, float, str]]] = defaultdict(list)
+            # A piece: (label, value, kind, identity, pid, derived-player (name, pid) or None)
+            got: dict[str, list[tuple]] = defaultdict(list)
+            gave: dict[str, list[tuple]] = defaultdict(list)
             for item in trade["items"]:
                 kind = item.get("type")
-                if kind == "player":
-                    value = player_value(item["name"], season0, first_weight)
-                    label_text = re.sub(r"^(.*), (.*)$", r"\2 \1", item["name"])
-                    piece = "p"
-                elif kind == "draft_pick":
-                    value = pick_value(item)
-                    label_text = f"{item.get('year')} R{item.get('round')}"
-                    piece = "k"
-                else:
-                    continue
                 src = SLUG_TO_ABBR.get(item.get("from", ""))
                 dst = SLUG_TO_ABBR.get(item.get("to", ""))
+                if kind == "player":
+                    pid = resolve(item["name"], season0)
+                    value = player_value(pid, season0, first_weight)
+                    text = re.sub(r"^(.*), (.*)$", r"\2 \1", item["name"])
+                    piece = (text, value, "p", f"p:{norm(item['name'])}", pid, None)
+                elif kind == "draft_pick":
+                    year, rnd = int(item.get("year") or 0), int(item.get("round") or 1)
+                    overall = int(item["overall"]) if item.get("overall") else None
+                    origin = SLUG_TO_ABBR.get(item.get("originTeam", "")) or src or "UNK"
+                    value = pick_value(year, rnd, overall)
+                    drafted = None
+                    row = by_slot.get((year, overall)) if overall and year <= latest_draft else None
+                    if row and row.get("playerId"):
+                        drafted = (row["name"], int(row["playerId"]))
+                    piece = (f"{year} R{rnd}", value, "k", f"k:{year}-{rnd}-{origin}", None, drafted)
+                else:
+                    continue
                 if dst:
-                    got[dst].append((label_text, value, piece))
+                    got[dst].append(piece)
                 if src:
-                    gave[src].append((label_text, value, piece))
+                    gave[src].append(piece)
             for abbr in {t for t in teams if t}:
                 incoming = got.get(abbr, [])
                 outgoing = gave.get(abbr, [])
-                net = sum(v for _, v, _ in incoming) - sum(v for _, v, _ in outgoing)
+                net = sum(p[1] for p in incoming) - sum(p[1] for p in outgoing)
                 # Players first (biggest first), then picks (biggest first). Nothing is cut off.
-                ordered = lambda rows: [[n, round(v), k] for n, v, k in sorted(rows, key=lambda r: (r[2] != "p", -r[1]))]  # noqa: E731
+                ordered = lambda rows: [[p[0], round(p[1]), p[2]] for p in sorted(rows, key=lambda r: (r[2] != "p", -r[1]))]  # noqa: E731
                 sides.append({"id": trade["id"], "d": date, "t": abbr, "net": round(net, 1), "in": ordered(incoming), "out": ordered(outgoing)})
+                others = [t for t in teams if t and t != abbr]
+                steps[f"{trade['id']}:{abbr}"] = {"id": trade["id"], "d": date, "t": abbr, "o": others[0] if others else "", "gave": outgoing, "got": incoming}
 
     if unknown_slugs:
         print(f"trades: unmapped teams {sorted(unknown_slugs)}", flush=True)
-    if len(sides) < 1500:
-        print(f"trades: only {len(sides)} sides found; keeping the saved file", flush=True)
+    if len(sides) < 2500:
+        print(f"trades: only {len(sides)} sides found; keeping the saved files", flush=True)
         return
     payload = {"asOf": today.isoformat(), "from": f"{FIRST_SEASON}-{str(FIRST_SEASON + 1)[2:]}", "horizon": HORIZON, "sides": sides}
     OUT.write_text(json.dumps(payload, separators=(",", ":"), ensure_ascii=False), encoding="utf-8")
-    conn.close()
     print(f"trades: {len(sides)} team sides from {len(pages)} seasons", flush=True)
+
+    write_trees(steps, today, latest_draft, active, rosters, route_by_pid)
+    conn.close()
+
+
+def write_trees(steps: dict[str, dict], today: dt.date, latest_draft: int, active: dict, rosters: dict, route_by_pid: dict) -> None:
+    """Link each team's trades into trees and write trade_trees.json."""
+    by_team: dict[str, list[str]] = defaultdict(list)
+    for key, step in steps.items():
+        by_team[step["t"]].append(key)
+    for keys in by_team.values():
+        keys.sort(key=lambda k: (steps[k]["d"], k))
+
+    # When did a team receive each identity? Drafted players count as received on draft day.
+    receipts: dict[tuple[str, str], list[tuple[str, str]]] = defaultdict(list)
+    for key, step in steps.items():
+        for piece in step["got"]:
+            receipts[(step["t"], piece[3])].append((step["d"], key))
+    drafted_at: dict[str, list[dict]] = defaultdict(list)  # step key -> drafted players
+    for key, step in steps.items():
+        for piece in step["got"]:
+            if piece[2] != "k" or not piece[5]:
+                continue
+            year = int(piece[3].split(":")[1].split("-")[0])
+            draft_day = f"{year}-06-30"
+            if step["d"] > draft_day:
+                continue
+            # Only the team still holding the pick on draft day makes the selection.
+            gave_later = any(s2["t"] == step["t"] and step["d"] <= s2["d"] <= draft_day and any(g[3] == piece[3] for g in s2["gave"]) and k2 != key for k2, s2 in steps.items())
+            if gave_later:
+                continue
+            name, pid = piece[5]
+            drafted_at[key].append({"name": name, "pid": pid, "pick": piece[0], "ident": f"p:{norm(name)}", "date": draft_day})
+            receipts[(step["t"], f"p:{norm(name)}")].append((draft_day, key))
+
+    parents: dict[str, str] = {}
+    for key, step in steps.items():
+        best = None
+        for piece in step["gave"]:
+            options = [r for r in receipts.get((step["t"], piece[3]), []) if r[0] <= step["d"] and r[1] != key]
+            if options:
+                candidate = max(options)
+                if best is None or candidate[0] < best[0]:
+                    best = candidate  # first parent in time keeps the child, so each trade sits under one parent
+        if best:
+            parents[key] = best[1]
+
+    children: dict[str, list[str]] = defaultdict(list)
+    for child, parent in parents.items():
+        children[parent].append(child)
+    for kids in children.values():
+        kids.sort(key=lambda k: (steps[k]["d"], k))
+
+    def status(step: dict, piece: tuple, kids: list[str]) -> str:
+        """For a player piece nobody moved on: 'a' on this team now, 'x' with another team, 'r' retired or inactive."""
+        if piece[2] != "p" or piece[4] is None:
+            return ""
+        used = any(any(g[3] == piece[3] for g in steps[k]["gave"]) for k in kids)
+        if used:
+            return ""
+        pid = piece[4]
+        if rosters.get(pid) == step["t"]:
+            return "a"
+        if rosters.get(pid):
+            return "x"
+        return "r" if active.get(pid) is False else ""
+
+    out_steps: dict[str, dict] = {}
+    trees = []
+    all_roots = [k for k in steps if k not in parents and children.get(k)]
+    for root in all_roots:
+        seen: list[str] = []
+        stack = [(root, 1)]
+        depth = 1
+        while stack:
+            key, level = stack.pop()
+            seen.append(key)
+            depth = max(depth, level)
+            for kid in children.get(key, []):
+                stack.append((kid, level + 1))
+        actives = 0
+        for key in seen:
+            step = steps[key]
+            kids = children.get(key, [])
+            got = []
+            for piece in step["got"]:
+                st = status(step, piece, kids)
+                actives += st == "a"
+                got.append([piece[0], round(piece[1]), piece[2], piece[4] or 0, route_by_pid.get(piece[4] or 0, 0), st])
+            drafted = []
+            for d in drafted_at.get(key, []):
+                used = any(any(g[3] == d["ident"] for g in steps[k]["gave"]) for k in kids)
+                st = ""
+                if not used:
+                    st = "a" if rosters.get(d["pid"]) == step["t"] else ("x" if rosters.get(d["pid"]) else ("r" if active.get(d["pid"]) is False else ""))
+                actives += st == "a"
+                drafted.append([d["name"], d["pick"], d["pid"], route_by_pid.get(d["pid"], 0), st])
+            out_steps[key] = {
+                "d": step["d"],
+                "t": step["t"],
+                "o": step["o"],
+                "gave": [[p[0], round(p[1]), p[2], p[4] or 0, route_by_pid.get(p[4] or 0, 0)] for p in sorted(step["gave"], key=lambda r: (r[2] != "p", -r[1]))],
+                "got": sorted(got, key=lambda r: (r[2] != "p", -r[1])),
+                "draft": drafted,
+                "kids": children.get(key, []),
+            }
+        first = min(steps[k]["d"] for k in seen)
+        last = max(steps[k]["d"] for k in seen)
+        trees.append({"root": root, "size": len(seen), "depth": depth, "from": first, "to": last, "active": actives, "team": steps[root]["t"]})
+    trees.sort(key=lambda t: (-t["depth"], -t["size"], t["root"]))
+    TREES.write_text(json.dumps({"asOf": today.isoformat(), "trees": trees, "steps": out_steps}, separators=(",", ":"), ensure_ascii=False), encoding="utf-8")
+    print(f"trade trees: {len(trees)} trees, deepest {trees[0]['depth'] if trees else 0} trades, {len(out_steps)} steps", flush=True)
 
 
 def main() -> None:

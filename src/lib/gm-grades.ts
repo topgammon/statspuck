@@ -30,8 +30,6 @@ export const tradesFrom = file.from;
 /** Trades count as 6 trades of zero before the real ones, so one lucky deal cannot make a grade. */
 const TRADE_PRIOR = 6;
 const MIN_TRADES = 2;
-const TRADE_WEIGHT = 0.65;
-const CONTRACT_WEIGHT = 0.35;
 
 export type PillarLite = { letter: string | null; rating: number | null; score: number | null };
 
@@ -42,7 +40,7 @@ export type AssetGrade = {
   trades: number;
   /** Net Impact across all his trades, over five seasons. */
   net: number;
-  /** Contract efficiency as % of the cap, current GMs only. */
+  /** Contract efficiency as % of the cap, current GMs only. A preview of Asset Management, not part of this grade. */
   efficiency: number | null;
   best: TradeSide | null;
   worst: TradeSide | null;
@@ -110,18 +108,8 @@ function build(): Map<string, GmReport> {
   const withTrades = rows.filter((row) => row.sides.length >= 1 && row.era.endYear !== undefined);
   const tradeMean = mean(withTrades.map((row) => row.tradeScore));
   const tradeSd = sd(withTrades.map((row) => row.tradeScore));
-  const effPool = [...efficiencyByTeam.values()].filter((v): v is number => v != null);
-  const effMean = mean(effPool);
-  const effSd = sd(effPool);
-
   const scored = rows.map((row) => {
-    const zTrade = row.sides.length >= 1 ? (row.tradeScore - tradeMean) / tradeSd : null;
-    const years = row.era.endYear == null ? new Date().getFullYear() - row.era.startYear + 1 : row.era.endYear - row.era.startYear + 1;
-    const zContract = row.efficiency != null ? ((row.efficiency - effMean) / effSd) * Math.min(1, years / 3) : null;
-    let z: number | null = null;
-    if (zTrade != null && zContract != null) z = TRADE_WEIGHT * zTrade + CONTRACT_WEIGHT * zContract;
-    else if (zTrade != null && row.sides.length >= MIN_TRADES) z = zTrade;
-    else if (zContract != null && zTrade == null) z = CONTRACT_WEIGHT * zContract;
+    const z = row.sides.length >= MIN_TRADES ? (row.tradeScore - tradeMean) / tradeSd : null;
     return { row, score: z == null ? null : Math.round(z * 100) / 10 };
   });
 
@@ -167,7 +155,7 @@ export function gmReportsLite(): Record<string, GmReportLite> {
   return out;
 }
 
-// ---- Team trade record (all GMs since 2009-10) --------------------------------------------------
+// ---- Team trade record (all GMs since 2005-06) --------------------------------------------------
 
 export type TeamTradeReport = { letter: string; rating: number; score: number; trades: number; net: number; best: TradeSide | null; worst: TradeSide | null; recent: TradeSide[] };
 
