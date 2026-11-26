@@ -378,7 +378,8 @@ export type ShareCardModel =
       mode: "Teams" | "GMs";
       rows: { rank: number; name: string; abbr?: string; letter: string; score: number; color: string }[];
     }
-  | { kind: "trade"; headline: string; sub: string; sides: TradeSide[]; capNotes: string[] };
+  | { kind: "trade"; headline: string; sub: string; sides: TradeSide[]; capNotes: string[] }
+  | { kind: "assets"; subtitle: string; rows: { rank: number; name: string; abbr: string; total: number; roster: number; prospects: number; picks: number }[] };
 
 export type TradeSide = {
   abbr: string;
@@ -393,6 +394,7 @@ export type TradeSide = {
 };
 
 export function ShareCardView({ format, card }: { format: ShareFormat; card: ShareCardModel }) {
+  if (card.kind === "assets") return <AssetsShareCard format={format} subtitle={card.subtitle} rows={card.rows} />;
   if (card.kind === "trade") return <TradeShareCard format={format} headline={card.headline} sub={card.sub} sides={card.sides} capNotes={card.capNotes} />;
   if (card.kind === "player") return <PlayerShareCard format={format} pick={card.pick} color={card.color} />;
   if (card.kind === "undrafted") return <UndraftedShareCard format={format} player={card.player} color={card.color} />;
@@ -923,6 +925,54 @@ export function BoardShareCard({
 /* ------------------------------------------------------------------ */
 /* Trade Machine                                                       */
 /* ------------------------------------------------------------------ */
+
+export function AssetsShareCard({
+  format,
+  subtitle,
+  rows,
+}: {
+  format: ShareFormat;
+  subtitle: string;
+  rows: { rank: number; name: string; abbr: string; total: number; roster: number; prospects: number; picks: number }[];
+}) {
+  const d = dims(format);
+  const shown = rows.slice(0, 10);
+  const rowH = d.wide ? 50 : 62;
+  const top = Math.max(1, ...shown.map((row) => row.total));
+  return (
+    <Frame format={format} accent={RED} product={{ name: "Trade Machine", path: "/trade-machine/rankings" }}>
+      <div>
+        <Eyebrow size={d.wide ? 15 : 18}>{subtitle}</Eyebrow>
+        <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: d.wide ? 50 : 68, lineHeight: 1.02, marginTop: 8 }}>Franchise Asset Rankings</div>
+        <div style={{ marginTop: 10, color: MUTED, fontSize: d.wide ? 19 : 24 }}>Roster + prospects + draft picks, on one Asset Value scale</div>
+      </div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: d.wide ? "repeat(2, minmax(0, 1fr))" : "1fr",
+          gridAutoFlow: d.wide ? "column" : "row",
+          gridTemplateRows: d.wide ? `repeat(${Math.ceil(shown.length / 2)}, ${rowH}px)` : undefined,
+          columnGap: 20,
+          rowGap: 8,
+        }}
+      >
+        {shown.map((row) => (
+          <div key={row.abbr} style={{ height: rowH, display: "flex", alignItems: "center", gap: 14, padding: "0 18px", background: PANEL, border: `1px solid ${LINE}`, borderRadius: 14, minWidth: 0 }}>
+            <span style={{ width: 26, flex: "none", fontFamily: DISPLAY, fontWeight: 700, fontSize: d.wide ? 20 : 24, color: row.rank === 1 ? GOLD : DIM }}>{row.rank}</span>
+            <Logo abbr={row.abbr} size={d.wide ? 40 : 50} />
+            <span style={{ flex: 1, fontSize: d.wide ? 19 : 24, fontWeight: 600, ...ellipsis }}>{row.name}</span>
+            <span style={{ width: d.wide ? 90 : 130, height: d.wide ? 10 : 14, flex: "none", borderRadius: 999, overflow: "hidden", display: "flex", background: BG }}>
+              <span style={{ width: `${(row.roster / top) * 100}%`, background: CYAN }} />
+              <span style={{ width: `${(row.prospects / top) * 100}%`, background: "#8B5CF6" }} />
+              <span style={{ width: `${(row.picks / top) * 100}%`, background: GOLD }} />
+            </span>
+            <span style={{ width: d.wide ? 60 : 80, textAlign: "right", flex: "none", fontFamily: DISPLAY, fontWeight: 700, fontSize: d.wide ? 22 : 28 }}>{Math.round(row.total).toLocaleString("en-US")}</span>
+          </div>
+        ))}
+      </div>
+    </Frame>
+  );
+}
 
 export function TradeShareCard({ format, headline, sub, sides, capNotes }: { format: ShareFormat; headline: string; sub: string; sides: TradeSide[]; capNotes: string[] }) {
   const d = dims(format);

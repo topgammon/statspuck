@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { EraProfile } from "@/components/era-profile";
+import { AssetRankMini, GmTradesPanel } from "@/components/entity/trades-cap";
+import { gmReport } from "@/lib/gm-grades";
 import { devBoard, devGems, undraftedGems } from "@/lib/dev-board";
 import { development } from "@/lib/development";
 import { eras, erasBySlug, meta, og, picks } from "@/lib/data";
@@ -45,9 +47,14 @@ export default async function GmPage({ params }: { params: Promise<Params> }) {
   const otherStops = samePerson
     .filter((item) => item.slug !== era.slug)
     .map((item) => ({ slug: item.slug, team: item.team, teamName: item.teamName, startYear: item.startYear, endYear: item.endYear }));
+  const report = gmReport(era.slug);
+  const current = era.endYear == null;
   return (
     <EraProfile
       era={era}
+      gm={report}
+      tradesPanel={<GmTradesPanel person={era.person} team={era.team} teamName={era.teamName} current={current} report={report} />}
+      assetMini={current ? <AssetRankMini abbr={era.team} /> : null}
       teamPicks={teamPicks}
       careerPicks={careerPicks}
       pool={pool}

@@ -123,6 +123,15 @@ export function MenuDrawer() {
             <span className="display text-xl font-bold text-[#F8FAFC]">Trade Machine</span>
             <span className="rounded-full bg-[#E11D48]/15 px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#E11D48] uppercase">Live</span>
           </Link>
+          <Link
+            href="/trade-machine/rankings"
+            className={`mt-2 ml-4 flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-sm transition ${
+              pathname.startsWith("/trade-machine/rankings") ? "border-[#38BDF8] bg-[#38BDF8]/10 text-[#38BDF8]" : "border-[#262B36] text-[#94A3B8] hover:border-[#38BDF8]/60 hover:text-white"
+            }`}
+          >
+            Franchise Asset Rankings
+            <span aria-hidden>→</span>
+          </Link>
 
           <p className="mt-7 text-[11px] font-semibold tracking-[0.16em] text-[#94A3B8] uppercase">Roadmap · Coming soon</p>
           <ul className="mt-2 divide-y divide-[#262B36]">

@@ -197,6 +197,35 @@ def fetch_nhl_ids(by_born: dict, by_name: dict, bios: dict) -> dict[str, set[int
     return out
 
 
+def write_draft_capital(owned_rows: list[dict], away: list[dict]) -> None:
+    """data/draft_capital.json: who owns every 2027-2029 pick, Rounds 1-7, for all 32 franchises.
+
+    Each slot is (year, round, original team). If a slot has no owner in the data it stays with the
+    original team, so the inventory is always complete.
+    """
+    owner: dict[tuple, dict] = {}
+    for row in owned_rows:
+        owner.setdefault((row["y"], row["r"], row["orig"]), row)
+    notes = {(row["y"], row["r"], row["orig"]): row["note"] for row in away}
+    picks = []
+    for year in sorted(int(y) for y in PICK_YEARS):
+        for rnd in range(1, 8):
+            for orig in sorted(FRANCHISES):
+                row = owner.get((year, rnd, orig))
+                entry = {"y": year, "r": rnd, "orig": orig, "owner": row["owner"] if row else orig}
+                if row and row.get("cond"):
+                    entry["cond"] = True
+                if entry["owner"] != orig and notes.get((year, rnd, orig)):
+                    entry["note"] = notes[(year, rnd, orig)]
+                picks.append(entry)
+    traded = sum(1 for p in picks if p["owner"] != p["orig"])
+    (DATA / "draft_capital.json").write_text(
+        json.dumps({"asOf": dt.date.today().isoformat(), "years": sorted(int(y) for y in PICK_YEARS), "picks": picks}, separators=(",", ":")),
+        encoding="utf-8",
+    )
+    print(f"draft capital: {len(picks)} slots, {traded} held by another team", flush=True)
+
+
 def main() -> None:
     season = season_label()
     by_born, by_name = build_index()
@@ -204,7 +233,8 @@ def main() -> None:
     nhl_ids = fetch_nhl_ids(by_born, by_name, bios)
     players: dict[str, dict] = {}
     teams: dict[str, dict] = {}
-    picks: dict[str, list[dict]] = {}
+    owned_rows: list[dict] = []
+    away: list[dict] = []
     floor = ceiling = None
     unmatched = 0
     try:
@@ -232,14 +262,20 @@ def main() -> None:
                     unmatched += 1
                     continue
                 players[str(player_id)] = {**contract, "team": abbr}
-            owned = []
             for pick in props.get("draftPicks") or []:
-                if str(pick.get("year")) not in PICK_YEARS or pick.get("isTradedAway"):
+                if str(pick.get("year")) not in PICK_YEARS:
                     continue
                 origin = NAME_TO_ABBR.get(str(pick.get("team", "")).lower())
-                if origin:
-                    owned.append({"y": int(pick["year"]), "r": int(pick["round"]), "from": origin})
-            picks[abbr] = sorted(owned, key=lambda p: (p["y"], p["r"], p["from"]))
+                if not origin:
+                    continue
+                row = {"y": int(pick["year"]), "r": int(pick["round"]), "orig": origin}
+                if pick.get("isTradedAway"):
+                    # This team's own slot, now held by someone else. Keep the trade note for the traded-away list.
+                    away.append({**row, "note": str(pick.get("tradeDetails") or "")[:160]})
+                else:
+                    if pick.get("conditions"):
+                        row["cond"] = True
+                    owned_rows.append({**row, "owner": abbr})
             time.sleep(1.0)
     except Exception as error:  # noqa: BLE001 - keep the last saved file on any failure
         print(f"contracts: sync failed ({error}); keeping the saved file", flush=True)
@@ -255,8 +291,8 @@ def main() -> None:
         "asOf": dt.date.today().isoformat(),
         "players": dict(sorted(players.items(), key=lambda item: int(item[0]))),
         "teams": teams,
-        "picks": picks,
     }
+    write_draft_capital(owned_rows, away)
     OUT.write_text(json.dumps(payload, separators=(",", ":")), encoding="utf-8")
     if len(bios) >= 500:
         BIOS.write_text(json.dumps(dict(sorted(bios.items(), key=lambda item: int(item[0]))), separators=(",", ":")), encoding="utf-8")

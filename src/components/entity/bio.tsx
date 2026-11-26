@@ -81,13 +81,23 @@ export function PillarGrades({
   pillars,
   stats,
   action,
+  hero,
 }: {
   pillars: Pillar[];
   stats?: { label: string; value: string; tone?: string; title?: string }[];
   action?: ReactNode;
+  /** Combined grade shown as a big stamp above the pillars, e.g. the Overall GM Grade. */
+  hero?: { label: string; letter: string | null; note?: string; title?: string };
 }) {
   return (
     <div className="flex h-full flex-col gap-3 rounded-xl border border-[#262B36] bg-[#0B0D10]/60 p-3">
+      {hero ? (
+        <div title={hero.title} className="flex flex-col items-center gap-1 border-b border-[#262B36] pb-3 text-center">
+          <span className="text-[9px] font-semibold tracking-[0.14em] text-[#94A3B8] uppercase">{hero.label}</span>
+          <span className={`display flex h-16 w-24 items-center justify-center rounded-xl border-2 text-5xl leading-none font-bold ${letterTone(hero.letter)}`}>{hero.letter ?? "—"}</span>
+          {hero.note ? <span className="text-[10px] text-[#94A3B8]">{hero.note}</span> : null}
+        </div>
+      ) : null}
       <div className="grid grid-cols-3 gap-1.5">
         {pillars.map((pillar) => (
           <div key={pillar.label} title={pillar.title} className="flex flex-col items-center gap-1 text-center">
@@ -289,7 +299,7 @@ export const ORG_TABS = [
   { id: "overview", label: "Overview" },
   { id: "draft", label: "Draft" },
   { id: "development", label: "Development" },
-  { id: "trades", label: "Trades & Cap", soon: true },
+  { id: "trades-cap", label: "Trades & Cap" },
   { id: "luck", label: "Luck", soon: true },
   { id: "matchups", label: "Matchups", soon: true },
 ];

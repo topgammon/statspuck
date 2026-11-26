@@ -30,7 +30,7 @@ jobs:
         run: |
           git config user.name "statspuck-data-bot"
           git config user.email "statspuck-data-bot@users.noreply.github.com"
-          git add data/draft-rater data/contracts.json public/draft-rater/og public/draft-rater/charts
+          git add data/draft-rater data/contracts.json data/draft_capital.json public/draft-rater/og public/draft-rater/charts
           if git diff --staged --quiet; then
             echo "No data changes"
           else

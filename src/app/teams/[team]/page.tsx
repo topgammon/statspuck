@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { BioCard, CapBar, ComingSoonPanel, DnaPills, ModulePreviews, ORG_TABS, PillarGrades, SectionLabel } from "@/components/entity/bio";
+import { AssetRankMini, DraftCapitalMatrix, FranchiseAssetCard, TradeRecord } from "@/components/entity/trades-cap";
+import { teamTradeReport } from "@/lib/gm-grades";
 import { OrgDevelopment } from "@/components/entity/org-development";
 import { devBoard, devGems, undraftedGems } from "@/lib/dev-board";
 import { development } from "@/lib/development";
@@ -53,6 +55,7 @@ export default async function TeamPage({ params }: { params: Promise<Params> }) 
   const teamEras = eras.filter((era) => era.team === team.abbr);
   const currentGm = teamEras.filter((era) => era.endYear == null).sort((a, b) => b.startYear - a.startYear)[0] ?? null;
   const report = scoutingReport(owned, picks);
+  const trades = teamTradeReport(team.abbr);
 
   const share = (
     <ShareLauncher
@@ -98,6 +101,7 @@ export default async function TeamPage({ params }: { params: Promise<Params> }) 
   const middle = (
     <div className="flex h-full flex-col gap-4">
       <CapBar abbr={team.abbr} />
+      <AssetRankMini abbr={team.abbr} />
       <DnaPills report={report} />
     </div>
   );
@@ -107,7 +111,9 @@ export default async function TeamPage({ params }: { params: Promise<Params> }) 
       pillars={[
         { label: "Draft", letter: team.letter, score: signed(team.avg), tone: scoreClass(team.avg), title: DRAFT_SCORE_TIP },
         { label: "Dev", letter: team.dev?.letter ?? null, score: team.dev ? signed(team.dev.avg) : "too new", tone: team.dev ? scoreClass(team.dev.avg) : undefined, title: DEV_SCORE_TIP },
-        { label: "Trades", letter: null, soon: true },
+        trades
+          ? { label: "Trades", letter: trades.letter, score: signed(trades.score), tone: scoreClass(trades.score), title: "Net Impact from every trade since 2009-10, five seasons out, shrunk for sample size. Ranked against the other franchises." }
+          : { label: "Trades", letter: null, soon: true },
       ]}
       stats={[
         { label: "Draft rank", value: `#${team.rank} of ${leaderboard.length}` },
@@ -146,7 +152,13 @@ export default async function TeamPage({ params }: { params: Promise<Params> }) 
         matureThrough={development.matureThrough}
       />
     ),
-    trades: <ComingSoonPanel tab="trades" subject={team.name} />,
+    "trades-cap": (
+      <div className="grid gap-5">
+        <FranchiseAssetCard abbr={team.abbr} />
+        <DraftCapitalMatrix abbr={team.abbr} teamName={team.name} />
+        {trades ? <TradeRecord report={trades} subject={team.name} /> : null}
+      </div>
+    ),
     luck: <ComingSoonPanel tab="luck" subject={team.name} />,
     matchups: <ComingSoonPanel tab="matchups" subject={team.name} />,
   };
@@ -219,7 +231,17 @@ function Overview({ team, currentGm, eraCount }: { team: TeamGrade; currentGm: E
         </TabLink>
       </div>
       <div className="lg:col-span-2">
-        <ModulePreviews tabs={["trades", "luck", "matchups"]} />
+        <div className="mb-3 rounded-xl border border-[#E11D48]/40 bg-[#14171F] p-4">
+          <div className="flex items-center justify-between gap-2">
+            <p className="display text-lg font-bold">Trades &amp; Cap</p>
+            <span className="rounded-full bg-[#E11D48]/15 px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#E11D48] uppercase">Live</span>
+          </div>
+          <p className="mt-1 text-sm text-[#94A3B8]">Franchise asset rank, draft capital for 2027–2029 and the trade record.</p>
+          <TabLink tab="trades-cap" className="mt-2 text-sm font-semibold text-[#38BDF8] hover:underline">
+            Open Trades &amp; Cap →
+          </TabLink>
+        </div>
+        <ModulePreviews tabs={["luck", "matchups"]} />
       </div>
     </div>
   );

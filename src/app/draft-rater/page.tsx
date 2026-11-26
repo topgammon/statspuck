@@ -1,4 +1,5 @@
 import { Board } from "@/components/board";
+import { gmReportsLite } from "@/lib/gm-grades";
 import { assertGradesMatch, eras, leaderboard, meta, picks, teams } from "@/lib/data";
 
 export default function HomePage() {
@@ -18,6 +19,7 @@ export default function HomePage() {
         picks={picks}
         teams={teams}
         eras={eras}
+        gmReports={gmReportsLite()}
         official={leaderboard}
         firstYear={meta.curveFirstYear}
         latestYear={meta.latestDraftYear}

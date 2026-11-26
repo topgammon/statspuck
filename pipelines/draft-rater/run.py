@@ -14,6 +14,7 @@ from asset_data import build as build_asset_data
 from cards import render
 from fetch_bios import main as fetch_bios
 from fetch_contracts import main as fetch_contracts
+from fetch_trades import build as build_trades
 from fetch_gm_photos import main as fetch_gm_photos
 from fetch_nhl import fetch_all, sample
 from fetch_paths import main as fetch_paths
@@ -40,6 +41,7 @@ def main() -> None:
         fetch_bios()
         fetch_contracts()
     build()
+    build_trades()
     build_asset_data()
     if not args.skip_cards:
         render()

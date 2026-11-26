@@ -372,6 +372,17 @@ export const pickRatings = Object.fromEntries(
   (Object.entries(pickValuesUsd) as [PickTierId, number][]).map(([tier, value]) => [tier, toRating(value, scale.uref)]),
 ) as PickTable;
 
+const PROSPECT_MULTIPLIER: Record<0 | 1 | 2 | 3, number> = { 3: 1.35, 2: 1.0, 1: 0.7, 0: 0.4 };
+
+/**
+ * Value of a drafted prospect who is not in the NHL yet, in dollars. It starts from what his draft slot
+ * is worth, scales by his projection tier, and shrinks as his seven-year window runs out.
+ */
+export function prospectUsd(overall: number, level: 0 | 1 | 2 | 3, draftPlus: number): number {
+  const remaining = Math.max(0.3, (PICK_HORIZON - draftPlus) / PICK_HORIZON);
+  return slotValue(Math.min(overall, 224), priceF) * PROSPECT_MULTIPLIER[level] * remaining;
+}
+
 /** A pick's value for a given draft year, in dollars. */
 export function pickUsd(tier: PickTierId, year: number): number {
   return pickValuesUsd[tier] * Math.pow(DISCOUNT, Math.max(0, year - FIRST_PICK_YEAR));

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { TradeMachine } from "@/components/trade/trade-machine";
 import { SectionLabel } from "@/components/entity/bio";
 import { buildTradeData } from "@/lib/trade-data";
@@ -20,6 +21,17 @@ export default function TradeMachinePage() {
   return (
     <div>
       <TradeMachine data={data} />
+
+      <Link
+        href="/trade-machine/rankings"
+        className="mt-10 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#E11D48]/40 bg-[#14171F] p-5 transition hover:border-[#38BDF8]"
+      >
+        <span>
+          <span className="display block text-2xl font-bold">Franchise Asset Rankings</span>
+          <span className="text-sm text-[#94A3B8]">All 32 teams ranked by roster, prospect and draft-pick value.</span>
+        </span>
+        <span className="text-sm font-semibold text-[#38BDF8]">See the rankings →</span>
+      </Link>
 
       <section className="mt-14 grid gap-5 lg:grid-cols-3">
         <div className="rounded-2xl border border-[#262B36] bg-[#14171F] p-5">

@@ -421,6 +421,7 @@ function TeamColumn(props: ColumnProps) {
   const roster = useMemo(() => data.players.filter((player) => player.team === abbr), [data.players, abbr]);
   const shown = roster.filter((player) => (pos === "ALL" || player.group === pos) && player.name.toLowerCase().includes(query.trim().toLowerCase()));
   const ownedPicks = data.picks.filter((pick) => pick.team === abbr);
+  const tradedAway = data.away.filter((pick) => pick.team === abbr);
   const inTrade = new Set(items.map((item) => item.key));
 
   return (
@@ -465,7 +466,7 @@ function TeamColumn(props: ColumnProps) {
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-semibold">{player ? player.name : `${pick!.year} Round ${pick!.round}`}</p>
                       <p className="truncate text-xs text-[#94A3B8]">
-                        {player ? `${money(player.aav)} AAV · ${player.yearsLeft} yr${player.yearsLeft === 1 ? "" : "s"} left` : `Own pick${pick!.from !== pick!.team ? ` (from ${pick!.from})` : ""}`}
+                        {player ? `${money(player.aav)} AAV · ${player.yearsLeft} yr${player.yearsLeft === 1 ? "" : "s"} left` : pick!.from !== pick!.team ? `Pick acquired from ${pick!.from}` : "Own pick"}
                       </p>
                     </div>
                     <span className={`display text-2xl font-bold ${ratingTone(value)}`}>{formatRating(value)}</span>
@@ -593,6 +594,12 @@ function TeamColumn(props: ColumnProps) {
       ) : (
         <ul className="mt-3 max-h-[28rem] space-y-1.5 overflow-y-auto pr-1">
           {ownedPicks.length === 0 ? <li className="py-4 text-center text-sm text-[#94A3B8]">No 2027–2029 picks on file.</li> : null}
+          {tradedAway.length ? (
+            <li className="rounded-xl border border-dashed border-[#262B36] px-3 py-2 text-[11px] text-[#94A3B8]">
+              <span className="font-semibold tracking-wider uppercase">Own picks traded away: </span>
+              {tradedAway.map((a) => `${a.year} R${a.round} → ${a.to}`).join(" · ")}
+            </li>
+          ) : null}
           {ownedPicks.map((pick) => {
             const key = pickKey(pick);
             const on = inTrade.has(key);
@@ -602,9 +609,15 @@ function TeamColumn(props: ColumnProps) {
               <li key={key} className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 transition ${on ? "border-[#38BDF8]/60 bg-[#38BDF8]/[0.07]" : "border-[#262B36] bg-[#0B0D10]/40 hover:border-[#38BDF8]/40"}`}>
                 <span className="display w-14 shrink-0 text-lg font-bold text-[#F8FAFC]">{pick.year}</span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold">
+                  <p className="flex items-center gap-1.5 text-sm font-semibold">
                     Round {pick.round}
-                    {pick.from !== pick.team ? <span className="font-normal text-[#94A3B8]"> · from {pick.from}</span> : null}
+                    {pick.from !== pick.team ? (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-[#262B36] bg-[#0B0D10] py-px pr-2 pl-1 text-[10px] font-semibold text-[#94A3B8]" title={`Acquired from ${pick.from}`}>
+                        <TeamLogo abbr={pick.from} className="h-4 w-5" />
+                        {pick.from}
+                      </span>
+                    ) : null}
+                    {pick.cond ? <span className="rounded-full bg-[#F59E0B]/15 px-1.5 text-[9px] font-bold tracking-wider text-[#F59E0B] uppercase">Cond.</span> : null}
                   </p>
                   <p className="text-[11px] text-[#94A3B8]">Projected {data.pickLabel[tier]}</p>
                 </div>

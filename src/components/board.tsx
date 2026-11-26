@@ -8,11 +8,12 @@ import { TogglePill } from "@/components/toggle-pill";
 import { InfoTip } from "@/components/info-tip";
 import { DRAFT_SCORE_TIP, letterRank, scoreClass, signed } from "@/lib/format";
 import { gradeEras, gradeTeams, heroSet, type GmGrade, type RoundFilter } from "@/lib/grade";
+import type { GmReportLite } from "@/lib/gm-grades";
 import type { Era, PickRow, TeamGrade, TeamInfo } from "@/lib/types";
 import { gmHref, playerHref, teamHref } from "@/lib/routes";
 import { draftRaterBase } from "@/lib/site";
 
-type SortKey = "rank" | "name" | "letter" | "avg" | "n" | "developing" | "years";
+type SortKey = "rank" | "name" | "letter" | "avg" | "n" | "developing" | "years" | "overall" | "dev" | "asset";
 type GroupId = "ALL" | "F" | "D" | "G";
 type View = "cards" | "table";
 type BoardTab = "teams" | "gms";
@@ -39,10 +40,13 @@ export function Board({
   official,
   firstYear,
   latestYear,
+  gmReports,
 }: {
   picks: PickRow[];
   teams: TeamInfo[];
   eras: Era[];
+  /** Development, Asset & Trades and Overall grades per GM tenure. Drafting still follows the filters above. */
+  gmReports: Record<string, GmReportLite>;
   official: TeamGrade[];
   firstYear: number;
   latestYear: number;
@@ -138,7 +142,7 @@ export function Board({
   const sortedTeams = [...rankedTeams].sort((a, b) => compareRows(sortKey, sortDesc, a.rank, b.rank, teamValue(a.team, sortKey), teamValue(b.team, sortKey), a.team.name, b.team.name));
   const sortedGms = gmRows
     .map((gm, index) => ({ gm, rank: index + 1 }))
-    .sort((a, b) => compareRows(sortKey === "developing" ? "n" : sortKey, sortDesc, a.rank, b.rank, gmValue(a.gm, sortKey), gmValue(b.gm, sortKey), a.gm.person, b.gm.person));
+    .sort((a, b) => compareRows(sortKey === "developing" ? "n" : sortKey, sortDesc, a.rank, b.rank, gmValue(a.gm, sortKey, gmReports), gmValue(b.gm, sortKey, gmReports), a.gm.person, b.gm.person));
 
   return (
     <section className="mt-8">
@@ -361,11 +365,22 @@ export function Board({
               <p className="mt-2 text-sm text-zinc-500" title={DRAFT_SCORE_TIP}>
                 Draft Score <span className={`font-semibold ${scoreClass(gm.avg)}`}>{signed(gm.avg)}</span>
               </p>
-              <div className="mt-3 flex items-end justify-between">
-                <p className="text-xs text-zinc-500">{gm.n} graded</p>
-                <p className="display text-4xl leading-none font-bold" style={{ color: gm.color }}>
-                  {gm.letter}
-                </p>
+              <div className="mt-3 flex items-end justify-between gap-3">
+                <div className="flex gap-3 text-[10px] tracking-wide text-zinc-500 uppercase">
+                  <span className="flex flex-col items-center gap-0.5">
+                    Draft <span className="display text-xl font-bold normal-case" style={{ color: gm.color }}>{gm.letter}</span>
+                  </span>
+                  <span className="flex flex-col items-center gap-0.5">
+                    Dev <Letter letter={gmReports[gm.slug]?.dev?.letter} />
+                  </span>
+                  <span className="flex flex-col items-center gap-0.5">
+                    Assets <Letter letter={gmReports[gm.slug]?.asset?.letter} />
+                  </span>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] tracking-wide text-zinc-500 uppercase">Overall</p>
+                  <Letter letter={gmReports[gm.slug]?.overall?.letter} big />
+                </div>
               </div>
             </Link>
           ))}
@@ -378,7 +393,10 @@ export function Board({
                 <SortHeader label="#" sortKey="rank" active={sortKey} desc={sortDesc} onClick={toggle} />
                 <SortHeader label="GM" sortKey="name" active={sortKey} desc={sortDesc} onClick={toggle} />
                 <SortHeader label="Years" sortKey="years" active={sortKey} desc={sortDesc} onClick={toggle} />
-                <SortHeader label="Grade" sortKey="letter" active={sortKey} desc={sortDesc} onClick={toggle} />
+                <SortHeader label="Overall" sortKey="overall" active={sortKey} desc={sortDesc} onClick={toggle} tip="Average of the Drafting, Development and Asset & Trades ratings. Pillars with no data are left out." />
+                <SortHeader label="Drafting" sortKey="letter" active={sortKey} desc={sortDesc} onClick={toggle} />
+                <SortHeader label="Development" sortKey="dev" active={sortKey} desc={sortDesc} onClick={toggle} />
+                <SortHeader label="Asset & Trades" sortKey="asset" active={sortKey} desc={sortDesc} onClick={toggle} tip="Net Impact from his trades plus roster cap efficiency for current GMs. Trade data starts in 2009-10." />
                 <SortHeader label="Draft Score" sortKey="avg" active={sortKey} desc={sortDesc} onClick={toggle} tip={DRAFT_SCORE_TIP} />
                 <SortHeader label="Graded" sortKey="n" active={sortKey} desc={sortDesc} onClick={toggle} />
               </tr>
@@ -396,9 +414,18 @@ export function Board({
                     {gm.team} · {gm.startYear}–{gm.endYear ?? "now"}
                   </td>
                   <td className="border-t border-white/10 px-3 py-3">
+                    <Letter letter={gmReports[gm.slug]?.overall?.letter} big />
+                  </td>
+                  <td className="border-t border-white/10 px-3 py-3">
                     <span className="display text-2xl font-bold" style={{ color: gm.color }}>
                       {gm.letter}
                     </span>
+                  </td>
+                  <td className="border-t border-white/10 px-3 py-3">
+                    <Letter letter={gmReports[gm.slug]?.dev?.letter} />
+                  </td>
+                  <td className="border-t border-white/10 px-3 py-3">
+                    <Letter letter={gmReports[gm.slug]?.asset?.letter} />
                   </td>
                   <td className={`border-t border-white/10 px-3 py-3 font-medium ${scoreClass(gm.avg)}`}>{signed(gm.avg)}</td>
                   <td className="border-t border-white/10 px-3 py-3 text-zinc-300">{gm.n}</td>
@@ -409,6 +436,16 @@ export function Board({
         </div>
       )}
     </section>
+  );
+}
+
+/** A grade letter in the brand grade colors, or a dash when that pillar has no data. */
+function Letter({ letter, big = false }: { letter: string | null | undefined; big?: boolean }) {
+  const color = !letter ? "#64748B" : letter === "A+" ? "#F59E0B" : letter.startsWith("A") ? "#10B981" : letter.startsWith("B") ? "#38BDF8" : letter.startsWith("C") ? "#F97316" : "#EF4444";
+  return (
+    <span className={`display font-bold ${big ? "text-3xl" : "text-xl"}`} style={{ color }}>
+      {letter ?? "—"}
+    </span>
   );
 }
 
@@ -543,7 +580,11 @@ function teamValue(team: { name: string; letter: string; avg: number; n: number;
   return null;
 }
 
-function gmValue(gm: GmGrade, key: SortKey): string | number | null {
+function gmValue(gm: GmGrade, key: SortKey, reports: Record<string, GmReportLite>): string | number | null {
+  const report = reports[gm.slug];
+  if (key === "overall") return letterRank(report?.overall?.letter);
+  if (key === "dev") return letterRank(report?.dev?.letter);
+  if (key === "asset") return letterRank(report?.asset?.letter);
   if (key === "name") return gm.person;
   if (key === "letter") return letterRank(gm.letter);
   if (key === "avg") return gm.avg;

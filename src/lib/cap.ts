@@ -22,8 +22,6 @@ export type TeamCap = {
   deadCap: number;
 };
 
-export type OwnedPick = { y: number; r: number; from: string };
-
 export type ContractsFile = {
   season: string;
   /** NHL Salary Cap Ceiling (upper limit). */
@@ -34,7 +32,6 @@ export type ContractsFile = {
   asOf: string | null;
   players: Record<string, PlayerContract>;
   teams: Record<string, TeamCap>;
-  picks?: Record<string, OwnedPick[]>;
 };
 
 export const contracts = contractsJson as unknown as ContractsFile;

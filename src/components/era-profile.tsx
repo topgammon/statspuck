@@ -14,6 +14,8 @@ import { TeamName } from "@/components/team-logo";
 import { TogglePill } from "@/components/toggle-pill";
 import { DEV_SCORE_TIP, DRAFT_SCORE_TIP, scoreClass, signed } from "@/lib/format";
 import { gradeOwned } from "@/lib/grade";
+import type { GmReport } from "@/lib/gm-grades";
+import { letterTone } from "@/lib/search";
 import { gmHref, playerHref, teamHref } from "@/lib/routes";
 import type { ScoutingReport } from "@/lib/scouting";
 import type { Era, PickRow } from "@/lib/types";
@@ -28,6 +30,9 @@ export function EraProfile({
   league,
   multiTeam,
   otherStops,
+  gm,
+  tradesPanel,
+  assetMini,
   devGems,
   undraftedGems,
   devBoard,
@@ -42,6 +47,11 @@ export function EraProfile({
   league: number;
   multiTeam: boolean;
   otherStops: Stop[];
+  /** Three-pillar report card for this tenure, built on the server. */
+  gm: GmReport | null;
+  /** Server-rendered panels, passed in so this client file stays light. */
+  tradesPanel: ReactNode;
+  assetMini: ReactNode;
   devGems: DevGem[];
   undraftedGems: UndraftedGem[];
   devBoard: DevLeaderRow[];
@@ -132,6 +142,7 @@ export function EraProfile({
   const middle = (
     <div className="flex h-full flex-col gap-4">
       {active ? <CapBar abbr={era.team} /> : null}
+      {active ? assetMini : null}
       <DnaPills report={report} graded={graded} />
     </div>
   );
@@ -142,8 +153,16 @@ export function EraProfile({
       pillars={[
         { label: "Draft", letter, score: signed(avg), tone: scoreClass(avg), title: DRAFT_SCORE_TIP },
         { label: "Dev", letter: dev?.letter ?? null, score: dev ? signed(dev.avg) : "too new", tone: dev ? scoreClass(dev.avg) : undefined, title: DEV_SCORE_TIP },
-        { label: "Trades", letter: null, soon: true },
+        gm?.asset
+          ? { label: "Assets", letter: gm.asset.letter, score: signed(gm.asset.score), tone: scoreClass(gm.asset.score), title: ASSET_SCORE_TIP }
+          : { label: "Assets", letter: null, soon: true },
       ]}
+      hero={{
+        label: "Overall GM Grade",
+        letter: gm?.overall?.letter ?? null,
+        note: gm?.overall ? `${gm.overall.rating}/100 · ${gm.overall.pillars} pillars` : "Needs 2 pillars",
+        title: "Average of the Drafting, Development and Asset & Trades ratings. A pillar with no data yet (for example trades before 2009) is left out.",
+      }}
       stats={[{ label: "Draft rating", value: rating == null ? "—" : `${rating}/100` }, { label: "Dev picks", value: dev ? String(dev.n) : "—" }]}
       action={share}
     />
@@ -210,8 +229,26 @@ export function EraProfile({
             ))}
           </ul>
         </div>
+        <div className="rounded-2xl border border-[#E11D48]/40 bg-[#14171F] p-5 lg:col-span-2">
+          <div className="flex items-center justify-between gap-2">
+            <SectionLabel>GM report card</SectionLabel>
+            <span className="rounded-full bg-[#E11D48]/15 px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#E11D48] uppercase">3 pillars</span>
+          </div>
+          <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <ReportTile label="Drafting" letter={gm?.draft.letter ?? null} note={gm?.draft.rating != null ? `${gm.draft.rating}/100` : "needs 5 graded picks"} />
+            <ReportTile label="Development" letter={gm?.dev.letter ?? null} note={gm?.dev.rating != null ? `${gm.dev.rating}/100` : "too new"} />
+            <ReportTile label="Asset & Trades" letter={gm?.asset?.letter ?? null} note={gm?.asset ? `${gm.asset.rating}/100 · ${gm.asset.trades} trades` : "no trade data"} />
+            <ReportTile label="Overall GM Grade" letter={gm?.overall?.letter ?? null} note={gm?.overall ? `${gm.overall.rating}/100 · ${gm.overall.pillars} pillars` : "needs 2 pillars"} hero />
+          </dl>
+          <p className="mt-3 text-xs text-[#94A3B8]">
+            The overall grade averages the pillars that have data. Trades start in 2009-10, so earlier general managers are graded on drafting and development only.
+          </p>
+          <TabLink tab="trades-cap" className="mt-3 text-sm font-semibold text-[#38BDF8] hover:underline">
+            Open the Asset &amp; Trades breakdown →
+          </TabLink>
+        </div>
         <div className="lg:col-span-2">
-          <ModulePreviews tabs={["trades", "luck", "matchups"]} />
+          <ModulePreviews tabs={["luck", "matchups"]} />
         </div>
       </div>
     ),
@@ -228,7 +265,7 @@ export function EraProfile({
         note="The Development Grade covers this team's run only. GM letters are compared with other general managers; the leaderboard below ranks franchises."
       />
     ),
-    trades: <ComingSoonPanel tab="trades" subject={era.person} />,
+    "trades-cap": tradesPanel,
     luck: <ComingSoonPanel tab="luck" subject={era.person} />,
     matchups: <ComingSoonPanel tab="matchups" subject={era.person} />,
   };
@@ -237,6 +274,19 @@ export function EraProfile({
     <div>
       <BioCard left={left} middle={middle} right={right} />
       <EntityTabs tabs={ORG_TABS} panels={panels} />
+    </div>
+  );
+}
+
+const ASSET_SCORE_TIP =
+  "Asset & Trades: net Impact from the trades he made plus (for current GMs) how efficiently his roster uses the cap. 0.0 is the league-average GM, and short tenures are pulled toward it.";
+
+function ReportTile({ label, letter, note, hero }: { label: string; letter: string | null; note: string; hero?: boolean }) {
+  return (
+    <div className={`rounded-xl border bg-[#0B0D10]/60 px-3 py-3 text-center ${hero ? "border-[#F59E0B]/40" : "border-[#262B36]"}`}>
+      <dt className="text-[10px] font-semibold tracking-[0.12em] text-[#94A3B8] uppercase">{label}</dt>
+      <dd className={`display mx-auto mt-1.5 flex h-14 w-20 items-center justify-center rounded-xl border text-4xl leading-none font-bold ${letterTone(letter)}`}>{letter ?? "—"}</dd>
+      <dd className="mt-1.5 text-[11px] text-[#94A3B8]">{note}</dd>
     </div>
   );
 }
