@@ -44,6 +44,7 @@ export default async function EraPage({ params }: { params: Promise<Params> }) {
       teamPicks={teamPicks}
       careerPicks={careerPicks}
       pool={pool}
+      league={meta.leagueAvg}
       multiTeam={samePerson.length > 1}
       teamReport={scoutingReport(teamPicks, picks)}
       careerReport={scoutingReport(careerPicks, picks)}

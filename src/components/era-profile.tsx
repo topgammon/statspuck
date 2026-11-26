@@ -17,6 +17,7 @@ export function EraProfile({
   teamPicks,
   careerPicks,
   pool,
+  league,
   multiTeam,
   teamReport,
   careerReport,
@@ -25,6 +26,7 @@ export function EraProfile({
   teamPicks: PickRow[];
   careerPicks: PickRow[];
   pool: number[];
+  league: number;
   multiTeam: boolean;
   teamReport: ScoutingReport;
   careerReport: ScoutingReport;
@@ -32,7 +34,7 @@ export function EraProfile({
   const [scope, setScope] = useState<"team" | "career">("team");
   const rows = scope === "career" ? careerPicks : teamPicks;
   const stored = scope === "team";
-  const computed = useMemo(() => gradeOwned(rows, pool), [rows, pool]);
+  const computed = useMemo(() => gradeOwned(rows, pool, league), [rows, pool, league]);
   const avg = stored ? era.avg : computed.avg;
   const letter = stored ? era.letter : computed.letter;
   const rating = stored ? era.rating : computed.rating;
@@ -62,7 +64,7 @@ export function EraProfile({
           <h1 className="text-4xl font-bold sm:text-5xl">{era.person}</h1>
           <p className="mt-2 text-zinc-400">
             {scope === "team" ? tenure : "All teams"}
-            {avg != null ? ` · ${signed(avg)} vs the slot · ${graded} graded` : ""}
+            {avg != null ? ` · Draft Score ${signed(avg)} · ${graded} graded` : ""}
             {developing > 0 ? ` · ${developing} ${developing === 1 ? "prospect" : "prospects"}` : ""}
           </p>
         </div>

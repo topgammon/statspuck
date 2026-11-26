@@ -158,6 +158,8 @@ export type Meta = {
   skaterWindow: number;
   goalieWindow: number;
   graduateQg: number;
+  /** Raw league-average team score. Team and GM Draft Scores are centered on it. */
+  leagueAvg: number;
   skater: FitSummary;
   goalie: FitSummary;
   examples: BriefPick[];

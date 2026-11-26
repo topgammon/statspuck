@@ -5,7 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { ShareLauncher } from "@/components/share-modal";
 import { TeamLogo, TeamName } from "@/components/team-logo";
 import { TogglePill } from "@/components/toggle-pill";
-import { letterRank, scoreClass, signed } from "@/lib/format";
+import { InfoTip } from "@/components/info-tip";
+import { DRAFT_SCORE_TIP, letterRank, scoreClass, signed } from "@/lib/format";
 import { gradeEras, gradeTeams, heroSet, type GmGrade, type RoundFilter } from "@/lib/grade";
 import type { Era, PickRow, TeamGrade, TeamInfo } from "@/lib/types";
 
@@ -288,7 +289,9 @@ export function Board({
                       <TeamLogo abbr={team.abbr} name={team.name} />
                       {team.name}
                     </h3>
-                    <p className={`mt-1 text-sm ${scoreClass(team.avg)}`}>{signed(team.avg)} vs the slot</p>
+                    <p className="mt-1 text-sm text-zinc-500" title={DRAFT_SCORE_TIP}>
+                      Draft Score <span className={`font-semibold ${scoreClass(team.avg)}`}>{signed(team.avg)}</span>
+                    </p>
                   </div>
                   <div className="text-right">
                     <p className="display text-4xl leading-none font-bold" style={{ color: team.color }}>
@@ -312,7 +315,7 @@ export function Board({
                   <SortHeader label="#" sortKey="rank" active={sortKey} desc={sortDesc} onClick={toggle} />
                   <SortHeader label="Team" sortKey="name" active={sortKey} desc={sortDesc} onClick={toggle} />
                   <SortHeader label="Grade" sortKey="letter" active={sortKey} desc={sortDesc} onClick={toggle} />
-                  <SortHeader label="Vs slot" sortKey="avg" active={sortKey} desc={sortDesc} onClick={toggle} />
+                  <SortHeader label="Draft Score" sortKey="avg" active={sortKey} desc={sortDesc} onClick={toggle} tip={DRAFT_SCORE_TIP} />
                   <SortHeader label="Graded" sortKey="n" active={sortKey} desc={sortDesc} onClick={toggle} />
                   <SortHeader label="Prospect" sortKey="developing" active={sortKey} desc={sortDesc} onClick={toggle} />
                 </tr>
@@ -353,7 +356,9 @@ export function Board({
               <p className="mt-1 text-sm text-zinc-400">
                 <TeamName abbr={gm.team} name={gm.teamName} logoClassName="h-5 w-8" /> · {gm.startYear}–{gm.endYear ?? "now"}
               </p>
-              <p className={`mt-2 text-sm ${scoreClass(gm.avg)}`}>{signed(gm.avg)} vs the slot</p>
+              <p className="mt-2 text-sm text-zinc-500" title={DRAFT_SCORE_TIP}>
+                Draft Score <span className={`font-semibold ${scoreClass(gm.avg)}`}>{signed(gm.avg)}</span>
+              </p>
               <div className="mt-3 flex items-end justify-between">
                 <p className="text-xs text-zinc-500">{gm.n} graded</p>
                 <p className="display text-4xl leading-none font-bold" style={{ color: gm.color }}>
@@ -372,7 +377,7 @@ export function Board({
                 <SortHeader label="GM" sortKey="name" active={sortKey} desc={sortDesc} onClick={toggle} />
                 <SortHeader label="Years" sortKey="years" active={sortKey} desc={sortDesc} onClick={toggle} />
                 <SortHeader label="Grade" sortKey="letter" active={sortKey} desc={sortDesc} onClick={toggle} />
-                <SortHeader label="Vs slot" sortKey="avg" active={sortKey} desc={sortDesc} onClick={toggle} />
+                <SortHeader label="Draft Score" sortKey="avg" active={sortKey} desc={sortDesc} onClick={toggle} tip={DRAFT_SCORE_TIP} />
                 <SortHeader label="Graded" sortKey="n" active={sortKey} desc={sortDesc} onClick={toggle} />
               </tr>
             </thead>
@@ -511,14 +516,17 @@ function Segment({ value, options, onChange }: { value: string; options: { id: s
   return <TogglePill value={value} options={options} onChange={onChange} />;
 }
 
-function SortHeader({ label, sortKey, active, desc, onClick }: { label: string; sortKey: SortKey; active: SortKey; desc: boolean; onClick: (key: SortKey) => void }) {
+function SortHeader({ label, sortKey, active, desc, onClick, tip }: { label: string; sortKey: SortKey; active: SortKey; desc: boolean; onClick: (key: SortKey) => void; tip?: string }) {
   const on = active === sortKey;
   return (
     <th className="px-3 py-3 font-medium">
-      <button type="button" className="hover:text-white" onClick={() => onClick(sortKey)}>
-        {label}
-        {on ? (desc ? " ↓" : " ↑") : ""}
-      </button>
+      <span className="inline-flex items-center gap-1.5">
+        <button type="button" className="hover:text-white" onClick={() => onClick(sortKey)}>
+          {label}
+          {on ? (desc ? " ↓" : " ↑") : ""}
+        </button>
+        {tip ? <InfoTip text={tip} /> : null}
+      </span>
     </th>
   );
 }

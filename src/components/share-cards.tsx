@@ -547,7 +547,7 @@ export function TeamShareCard({
             {name}
           </Title>
           <div style={{ marginTop: d.wide ? 12 : 16, fontSize: d.wide ? 22 : 26, color: MUTED }}>
-            <span style={{ fontFamily: DISPLAY, fontWeight: 700, color: scoreColor(avg) }}>{signed(avg)}</span> Impact vs the slot
+            Draft Score <span style={{ fontFamily: DISPLAY, fontWeight: 700, color: scoreColor(avg) }}>{signed(avg)}</span>
           </div>
         </div>
         <GradeBadge letter={letter} rating={rating} size={d.wide ? 170 : 230} />
@@ -615,7 +615,7 @@ export function GmShareCard({
             {person}
           </Title>
           <div style={{ marginTop: d.wide ? 12 : 16, fontSize: d.wide ? 22 : 26, color: MUTED, ...ellipsis }}>
-            <span style={{ fontFamily: DISPLAY, fontWeight: 700, color: scoreColor(avg) }}>{signed(avg)}</span> vs the slot · {meta}
+            Draft Score <span style={{ fontFamily: DISPLAY, fontWeight: 700, color: scoreColor(avg) }}>{signed(avg)}</span> · {meta}
           </div>
         </div>
         <GradeBadge letter={letter} rating={rating} size={d.wide ? 170 : 230} />
@@ -749,7 +749,7 @@ export function BoardShareCard({
           <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: d.wide ? 50 : 68, lineHeight: 1.02 }}>Who actually wins the NHL draft?</div>
         </div>
         <div style={{ marginTop: 10, color: MUTED, fontSize: d.wide ? 19 : 24 }}>
-          {mode === "Teams" ? "Top 10 franchises" : "Top 10 general managers"} by draft grade · score is Impact vs the slot
+          {mode === "Teams" ? "Top 10 franchises" : "Top 10 general managers"} by draft grade · Draft Score, 0.0 = NHL average
         </div>
       </div>
       <div

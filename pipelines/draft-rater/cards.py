@@ -105,7 +105,7 @@ def _team_card(team: dict, size: tuple[int, int]) -> Image.Image:
     y = _paint(draw, 48, y, f"{team['rating']} / 100", _font("Oswald-Medium.ttf", 34), _hex(team["color"]), 8)
     score = _signed(team["avg"])
     score_color = GREEN if team["avg"] > 0 else RED if team["avg"] < 0 else INK
-    y = _paint(draw, 48, y, f"{score} vs the slot", _font("Barlow-Bold.ttf", 28), score_color, 8)
+    y = _paint(draw, 48, y, f"Draft Score {score}", _font("Barlow-Bold.ttf", 28), score_color, 8)
     developing = f"  ·  {team['developing']} prospects" if team.get("developing") else ""
     _paint(
         draw,
@@ -241,7 +241,7 @@ def _era_card(era: dict, size: tuple[int, int]) -> Image.Image:
     if era["letter"]:
         mark = era["letter"]
         mark_size = 180 if not square else 240
-        detail = f"{_signed(era['avg'])} vs the slot   ·   {era['n']} graded   ·   {era.get('developing', 0)} prospects"
+        detail = f"Draft Score {_signed(era['avg'])}   ·   {era['n']} graded   ·   {era.get('developing', 0)} prospects"
     elif era["n"] == 0:
         mark = "NOT YET"
         mark_size = 100
@@ -249,7 +249,7 @@ def _era_card(era: dict, size: tuple[int, int]) -> Image.Image:
     else:
         mark = "EARLY"
         mark_size = 100
-        detail = f"{_signed(era['avg'])} vs the slot across {era['n']} graded picks. Sample is too small for a letter."
+        detail = f"Draft Score {_signed(era['avg'])} across {era['n']} graded picks. Sample is too small for a letter."
     y = _paint(draw, 48, y, mark, _font("Oswald-Bold.ttf", mark_size), INK, 16)
     detail_font = _fit(draw, detail, "Barlow-Regular.ttf", 22, size[0] - 96, floor=16)
     _paint(draw, 48, y, detail, detail_font, MUTED, 0)

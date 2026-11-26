@@ -245,7 +245,7 @@ def scouting_total(rows: list[dict]) -> float:
 
 
 def shrink_gm(avg: float, graded: int) -> float:
-    """Pull a short GM sample toward zero. Six picks keep half, sixty keep about 91 percent."""
+    """Pull a short GM sample toward the league average (0.0 once centered). Six picks keep half, sixty keep about 91 percent."""
     if graded <= 0:
         return 0.0
     return avg * (graded / (graded + GM_SHRINK))
@@ -398,6 +398,25 @@ def expected_at(curves: dict[int, list[float]], pick: int, milestone: int, progr
     if progress >= 0.999:
         return high
     return low + progress * (high - low)
+
+
+EXPECTED_CAP = 21
+
+
+def expected_series_for(
+    curves: dict[int, list[float]], overall: int, milestone: int, partial: bool, progress: float
+) -> list[float]:
+    """Cumulative Expected for each year since the draft.
+
+    Elapsed years stop at 21. After that the line stays flat. When the current
+    season is still inside the cap, it is prorated by how far the season has gone.
+    """
+    points: list[float] = []
+    for year in range(1, max(milestone, 0) + 1):
+        elapsed = min(year, EXPECTED_CAP)
+        prorate = partial and year == milestone and year <= EXPECTED_CAP
+        points.append(round1(expected_at(curves, overall, elapsed, progress if prorate else 1.0)))
+    return points
 
 
 def enforce_growth(curves: dict[int, list[float]], max_pick: int, cap: int) -> None:
@@ -879,12 +898,12 @@ def build() -> None:
         return quality
 
     slot_curves: dict[str, dict[int, list[float]]] = {"S": {}, "G": {}}
-    peer_curves: dict[str, dict[int, list[float]]] = {"S": {}, "G": {}}
     fits: dict[str, dict] = {}
     dots: dict[str, list[tuple[int, float]]] = {"S": [], "G": []}
     horizon = 1
     for pick in picks:
         horizon = max(horizon, draft_plus(pick["draft_year"], last_complete, in_progress))
+    horizon = min(horizon, EXPECTED_CAP)
 
     def extend_curve(family: dict[str, dict[int, list[float]]], group: str, milestone: int) -> None:
         previous = family[group][milestone - 1]
@@ -897,61 +916,31 @@ def build() -> None:
 
     for group in ("S", "G"):
         anchor = []
-        peer_anchor = []
         for pick in picks:
             pick_group = "G" if position_group(pick["position"]) == "G" else "S"
             if pick_group != group:
                 continue
             if pick["draft_year"] + SKATER_CAP - 1 <= last_complete:
-                value = through(pick, SKATER_CAP)
-                anchor.append((pick["overall"], value))
-                if value >= GRADUATE_QG:
-                    peer_anchor.append((pick["overall"], value))
+                anchor.append((pick["overall"], through(pick, SKATER_CAP)))
         dots[group] = anchor
         sigmas = [8, 12, 18] if group == "S" else [12, 18, 28]
         fits[group] = fit_family(anchor, max_pick, sigmas)
-        peer_fit = fit_family(peer_anchor or anchor, max_pick, sigmas)
         for milestone in range(1, horizon + 1):
             slot_records = []
-            graduated = []
-            appeared = []
             for pick in picks:
                 pick_group = "G" if position_group(pick["position"]) == "G" else "S"
                 if pick_group != group:
                     continue
                 if pick["draft_year"] + milestone - 1 > last_complete:
                     continue
-                value = through(pick, milestone)
-                slot_records.append((pick["overall"], value))
-                if value >= GRADUATE_QG:
-                    graduated.append((pick["overall"], value))
-                if value > 0:
-                    appeared.append((pick["overall"], value))
+                slot_records.append((pick["overall"], through(pick, milestone)))
             if len(slot_records) >= 40:
                 slot_curves[group][milestone] = refit(slot_records, fits[group]["chosen"], max_pick)
             elif milestone > 1 and slot_curves[group].get(milestone - 1):
                 extend_curve(slot_curves, group, milestone)
             else:
                 slot_curves[group][milestone] = refit(slot_records, fits[group]["chosen"], max_pick)
-            # Arrivals are compared with peers who had also arrived, not with
-            # the zeros. Goalies rarely reach 25 quality games early, so use
-            # peers who had played once that group is large enough.
-            if len(graduated) >= 40:
-                peer_sample = graduated
-            elif len(appeared) >= 40:
-                peer_sample = appeared
-            else:
-                peer_sample = graduated
-            if len(peer_sample) >= 40:
-                peer_curves[group][milestone] = refit(peer_sample, peer_fit["chosen"], max_pick)
-            elif milestone > 1 and peer_curves[group].get(milestone - 1):
-                extend_curve(peer_curves, group, milestone)
-            elif peer_sample:
-                peer_curves[group][milestone] = refit(peer_sample, peer_fit["chosen"], max_pick)
-            else:
-                peer_curves[group][milestone] = [0.0] * (max_pick + 1)
         enforce_growth(slot_curves[group], max_pick, horizon)
-        enforce_growth(peer_curves[group], max_pick, horizon)
     curves = slot_curves
 
     write_chart(
@@ -986,49 +975,17 @@ def build() -> None:
         seasons_played = season_series(
             player_seasons, pick["draft_year"], max(milestone, 0), group, toi_avg, save_avg
         )
-        def table_for(year_quality: float) -> dict[int, list[float]]:
-            # Once a player has graduated, hold him to peers who had also graduated.
-            if year_quality >= GRADUATE_QG:
-                return peer_curves[curve_key]
-            return slot_curves[curve_key]
-
-        def path_through(limit: int, partial_year: bool) -> list[float]:
-            if limit <= 0:
-                return []
-            points = []
-            for year in range(1, limit + 1):
-                year_quality, _year_games, _year_career = cumulative(
-                    player_seasons, pick["draft_year"], year, group, toi_avg, save_avg
-                )
-                year_progress = progress if partial_year and year == limit else 1.0
-                points.append(
-                    round1(expected_at(table_for(year_quality), pick["overall"], year, year_progress))
-                )
-            return points
-
-        expected_path = path_through(max(milestone, 0), partial)
-        # Active players stay on the current season, prorated by how far that
-        # season has gone. Inactive players, including early washouts, are
-        # measured against every season since the draft, capped at year 21,
-        # with that year counted in full. Their actual line stays flat.
-        inactive = bool(pick["player_id"]) and actives.get(pick["player_id"]) is False
-        if inactive and milestone > 0:
-            horizon_year = min(milestone, 21)
-            quality, games, career = cumulative(
-                player_seasons, pick["draft_year"], horizon_year, group, toi_avg, save_avg
-            )
-            seasons_played = season_series(
-                player_seasons, pick["draft_year"], horizon_year, group, toi_avg, save_avg
-            )
-            expected_path = path_through(horizon_year, False)
-            milestone = horizon_year
-            partial = False
+        table = slot_curves[curve_key]
+        # One rule for every pick, whatever his games played or active status:
+        # Expected is the slot curve at the years elapsed since the draft,
+        # capped at year 21, with the season in progress prorated.
+        expected_path = expected_series_for(table, pick["overall"], milestone, partial, progress)
         developing = is_developing(group, milestone, quality)
         window = window_for(group)
         window_score = None
         if milestone > window:
             window_quality = through(pick, window)
-            window_expected = expected_at(table_for(window_quality), pick["overall"], window, 1.0)
+            window_expected = expected_at(table, pick["overall"], window, 1.0)
             window_score = round1(window_quality - window_expected)
         if milestone <= 0:
             expected = None
@@ -1047,7 +1004,7 @@ def build() -> None:
                 judged_quality, _judged_games, _judged_career = cumulative(
                     player_seasons, pick["draft_year"], judge, group, toi_avg, save_avg
                 )
-                judged_expected = expected_at(table_for(judged_quality), pick["overall"], judge, 1.0)
+                judged_expected = expected_at(table, pick["overall"], judge, 1.0)
                 bloom_score = round1(judged_quality - judged_expected)
         included = not developing and score is not None
         also = [other for other in duplicates.get(pick["player_id"], []) if other != pick["pick_uid"]]
@@ -1160,7 +1117,7 @@ def build() -> None:
                 "name": info["name"],
                 "short": info["short"],
                 "color": info["color"],
-                "avg": round1(scouting_average(official)),
+                "_raw": scouting_average(official),
                 "total": round1(scouting_total(official)),
                 "n": len(official),
                 "developing": developing,
@@ -1182,6 +1139,12 @@ def build() -> None:
         point["rating"] = rating
         point["letter"] = letter
 
+    # Draft Score: 0.0 is the average NHL franchise. The #1 overall cap pulls
+    # the raw league average below zero, so every team and GM is measured
+    # against that average instead. Order and letters do not change.
+    league_avg = sum(row["_raw"] for row in leaderboard) / len(leaderboard)
+    for row in leaderboard:
+        row["avg"] = round1(row.pop("_raw") - league_avg)
     team_pool = [row["avg"] for row in leaderboard]
     for row in leaderboard:
         rating, letter = rating_and_letter(row["avg"], team_pool)
@@ -1249,7 +1212,7 @@ def build() -> None:
             "letter": None,
         }
         if official:
-            avg = round1(shrink_gm(scouting_average(official), len(official)))
+            avg = round1(shrink_gm(scouting_average(official) - league_avg, len(official)))
             entry["avg"] = avg
             entry["total"] = round1(scouting_total(official))
         eras.append(entry)
@@ -1320,6 +1283,7 @@ def build() -> None:
         "skaterWindow": SKATER_WINDOW,
         "goalieWindow": GOALIE_WINDOW,
         "graduateQg": GRADUATE_QG,
+        "leagueAvg": round(league_avg, 4),
         "skater": describe(fits["S"]),
         "goalie": describe(fits["G"]),
         "examples": examples,

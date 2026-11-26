@@ -118,29 +118,55 @@ export function scoutingTotal(rows: { overall: number; score: number }[]): numbe
   return scoutingTenths(rows) / 10;
 }
 
-/** A short GM sample moves toward zero. Six graded picks keep half. Sixty keep about 91 percent. */
+/** A short GM sample moves toward the league average (0.0 once centered). Six graded picks keep half. Sixty keep about 91 percent. */
 export function shrinkGm(avg: number, graded: number): number {
   if (graded <= 0) return 0;
   return avg * (graded / (graded + 6));
 }
 
-/** Team averages for a filter. Developing picks are left out. A plain average, with only the #1 overall upside capped. */
+function gradedScores(rows: PickRow[]): { overall: number; score: number }[] {
+  return rows
+    .filter((pick) => pick.included && pick.score != null)
+    .map((pick) => ({ overall: pick.overall, score: pick.score as number }));
+}
+
+/**
+ * League-average team score for a filter: the plain mean of every franchise's raw average.
+ * Draft Score = raw average minus this, so 0.0 is the average NHL franchise. Must match pipeline/grade_quality.py.
+ */
+export function leagueAverage(picks: PickRow[], filter: GradeFilter): number {
+  const byTeam = new Map<string, PickRow[]>();
+  for (const pick of picks) {
+    if (!inRange(pick, filter)) continue;
+    const list = byTeam.get(pick.franchise) ?? [];
+    list.push(pick);
+    byTeam.set(pick.franchise, list);
+  }
+  const raws: number[] = [];
+  for (const rows of byTeam.values()) {
+    const scores = gradedScores(rows);
+    if (scores.length) raws.push(scoutingAverage(scores));
+  }
+  return raws.length ? raws.reduce((sum, value) => sum + value, 0) / raws.length : 0;
+}
+
+/** Team Draft Scores for a filter. Developing picks are left out. A plain average, with only the #1 overall upside capped, centered on the league. */
 export function gradeTeams(
   picks: PickRow[],
   teams: { abbr: string; name: string; short: string; color: string }[],
   filter: GradeFilter,
 ): FilteredTeam[] {
+  const league = leagueAverage(picks, filter);
   const rows: FilteredTeam[] = [];
   for (const team of teams) {
     const owned = picks.filter((pick) => pick.franchise === team.abbr && inRange(pick, filter));
-    const graded = owned.filter((pick) => pick.included && pick.score != null);
-    if (graded.length === 0) continue;
-    const weighted = graded.map((pick) => ({ overall: pick.overall, score: pick.score as number }));
+    const weighted = gradedScores(owned);
+    if (weighted.length === 0) continue;
     rows.push({
       ...team,
-      avg: round1(scoutingAverage(weighted)),
+      avg: round1(scoutingAverage(weighted) - league),
       total: round1(scoutingTotal(weighted)),
-      n: graded.length,
+      n: weighted.length,
       developing: owned.filter((pick) => pick.developing).length,
       rating: 0,
       letter: "D-",
@@ -173,6 +199,7 @@ export type GmGrade = {
 
 /** All-time GM grades. Short runs under the minimum are left off so interims do not lead the list. */
 export function gradeEras(picks: PickRow[], eras: Era[], filter: GradeFilter, minimum = 15): GmGrade[] {
+  const league = leagueAverage(picks, filter);
   const rows: GmGrade[] = [];
   for (const era of eras) {
     const end = era.endYear ?? filter.maxYear;
@@ -191,7 +218,7 @@ export function gradeEras(picks: PickRow[], eras: Era[], filter: GradeFilter, mi
       endYear: era.endYear,
       avg: round1(
         shrinkGm(
-          scoutingAverage(graded.map((pick) => ({ overall: pick.overall, score: pick.score as number }))),
+          scoutingAverage(graded.map((pick) => ({ overall: pick.overall, score: pick.score as number }))) - league,
           graded.length,
         ),
       ),
@@ -330,14 +357,18 @@ export function heroSet(picks: PickRow[], teams: TeamInfo[], filter: GradeFilter
   return { bestClass: classes[0] ?? null, bust, gems, bustRate };
 }
 
-/** GM grade for an arbitrary set of picks. The pool is other GM averages, so the letter stays comparable. */
-export function gradeOwned(rows: PickRow[], pool: number[]): { avg: number | null; n: number; developing: number; rating: number | null; letter: string | null } {
+/** GM grade for an arbitrary set of picks. The pool is other GM Draft Scores, so the letter stays comparable. */
+export function gradeOwned(
+  rows: PickRow[],
+  pool: number[],
+  league: number,
+): { avg: number | null; n: number; developing: number; rating: number | null; letter: string | null } {
   const graded = rows.filter((pick) => pick.included && pick.score != null);
   const developing = rows.filter((pick) => pick.developing).length;
   if (graded.length === 0) return { avg: null, n: 0, developing, rating: null, letter: null };
   const avg = round1(
     shrinkGm(
-      scoutingAverage(graded.map((pick) => ({ overall: pick.overall, score: pick.score as number }))),
+      scoutingAverage(graded.map((pick) => ({ overall: pick.overall, score: pick.score as number }))) - league,
       graded.length,
     ),
   );

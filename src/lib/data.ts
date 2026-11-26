@@ -7,7 +7,7 @@ import metaJson from "../../data/draft-rater/meta.json";
 import ogJson from "../../data/draft-rater/og.json";
 import picksJson from "../../data/draft-rater/picks.json";
 import teamsJson from "../../data/draft-rater/teams.json";
-import { gradeTeams, type GradeFilter } from "./grade";
+import { gradeEras, gradeTeams, type GradeFilter } from "./grade";
 import type { CurveSet, DraftClass, Era, Headlines, Meta, OgIndex, PickRow, TeamGrade, TeamInfo } from "./types";
 
 export const picks = picksJson as PickRow[];
@@ -48,6 +48,13 @@ export function assertGradesMatch(): void {
       throw new Error(
         `Grade mismatch for ${row.abbr}: file ${row.letter} ${row.rating} ${row.avg} n${row.n} d${row.developing}, code ${other.letter} ${other.rating} ${other.avg} n${other.n} d${other.developing}`,
       );
+    }
+  }
+  const gms = gradeEras(picks, eras, officialFilter(), 15);
+  for (const gm of gms) {
+    const row = erasBySlug.get(gm.slug);
+    if (!row || row.avg == null || Math.abs(row.avg - gm.avg) > 0.051) {
+      throw new Error(`GM Draft Score mismatch for ${gm.slug}: file ${row?.avg}, code ${gm.avg}`);
     }
   }
 }

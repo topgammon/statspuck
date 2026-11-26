@@ -4,6 +4,9 @@ export function signed(value: number | null | undefined, digits = 1): string {
   return value > 0 ? `+${text}` : text;
 }
 
+export const DRAFT_SCORE_TIP =
+  "Average Impact above or below expected per graded pick, centered relative to the NHL league average of 0.0";
+
 const LETTER_ORDER = ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-"];
 
 /** A+ is 0 and D- is 11, so an ascending sort reads best grade first. */
