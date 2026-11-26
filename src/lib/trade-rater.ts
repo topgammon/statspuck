@@ -1,11 +1,20 @@
 import { teams } from "./data";
-import { tradeSides, tradesFrom, type TradePiece } from "./gm-grades";
+import { gmOn, tradeSides, tradesFrom, type TradePiece } from "./gm-grades";
 import { gradeForMargin } from "./rating";
 
 // Trade Rater: every NHL trade since 2009-10, graded by what the pieces became. Same numbers as the
 // GM Asset & Trades grade (five seasons of Impact after the deal), shown trade by trade.
 
-export type RatedSide = { t: string; net: number; grade: string; margin: number; in: TradePiece[]; out: TradePiece[] };
+export type RatedSide = {
+  t: string;
+  /** The general manager running the team on the trade date. */
+  gm: { slug: string; person: string } | null;
+  net: number;
+  grade: string;
+  margin: number;
+  in: TradePiece[];
+  out: TradePiece[];
+};
 
 export type RatedTrade = {
   id: string;
@@ -29,7 +38,7 @@ function build(): RatedTrade[] {
     const moved = sides.reduce((sum, side) => sum + side.in.reduce((s, piece) => s + piece[1], 0), 0);
     // A floor keeps tiny deals from reading as lopsided.
     const size = Math.max(60, moved / 2);
-    const rated: RatedSide[] = sides.map((side) => ({ t: side.t, net: side.net, margin: side.net / size, grade: gradeForMargin(side.net / size), in: side.in, out: side.out }));
+    const rated: RatedSide[] = sides.map((side) => ({ t: side.t, gm: gmOn(side.t, side.d), net: side.net, margin: side.net / size, grade: gradeForMargin(side.net / size), in: side.in, out: side.out }));
     const best = [...rated].sort((a, b) => b.margin - a.margin)[0];
     out.push({ id, d: sides[0].d, sides: rated, winner: best.margin >= 0.06 ? best.t : null, margin: best.margin, moved: Math.round(moved) });
   }

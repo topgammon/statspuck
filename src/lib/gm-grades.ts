@@ -60,6 +60,16 @@ function tenure(era: Era): { from: string; to: string } {
   return { from: `${era.startYear}-06-25`, to: era.endYear == null ? "9999-12-31" : `${era.endYear + 1}-06-25` };
 }
 
+/** The general manager who held a team's job on a given date, if we have one on file. */
+export function gmOn(team: string, date: string): { slug: string; person: string } | null {
+  for (const era of eras) {
+    if (era.team !== team) continue;
+    const window = tenure(era);
+    if (date >= window.from && date < window.to) return { slug: era.slug, person: era.person };
+  }
+  return null;
+}
+
 const mean = (values: number[]) => values.reduce((sum, v) => sum + v, 0) / values.length;
 const sd = (values: number[]) => {
   const m = mean(values);

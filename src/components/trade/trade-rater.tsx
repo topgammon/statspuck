@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
+import { gmHref } from "@/lib/routes";
 import type { TradeSide as ShareSide } from "@/components/share-cards";
 import { ShareLauncher } from "@/components/share-modal";
 import { TeamLogo } from "@/components/team-logo";
@@ -47,7 +49,7 @@ export function TradeRater({
       if (team !== "ALL" && !trade.sides.some((side) => side.t === team)) return false;
       if (season !== "ALL" && seasonOf(trade.d) !== season) return false;
       if (needle.length >= 2) {
-        const hit = trade.sides.some((side) => [...side.in, ...side.out].some((piece) => piece[0].toLowerCase().includes(needle)));
+        const hit = trade.sides.some((side) => (side.gm?.person.toLowerCase().includes(needle) ?? false) || [...side.in, ...side.out].some((piece) => piece[0].toLowerCase().includes(needle)));
         if (!hit) return false;
       }
       return true;
@@ -91,7 +93,7 @@ export function TradeRater({
             ))}
           </select>
         </Field>
-        <Field label="Player or pick">
+        <Field label="Player, pick or GM">
           <input
             type="search"
             value={query}
@@ -192,6 +194,14 @@ function TradeCard({ trade, nameOf, early }: { trade: RatedTrade; nameOf: Map<st
                 <TeamLogo abbr={side.t} name={info?.name} className="h-9 w-11" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold">{info?.name ?? side.t}</p>
+                  {side.gm ? (
+                    <p className="truncate text-xs text-[#94A3B8]">
+                      GM{" "}
+                      <Link href={gmHref(side.gm.slug, "trades-cap")} className="font-semibold text-[#38BDF8] hover:underline">
+                        {side.gm.person}
+                      </Link>
+                    </p>
+                  ) : null}
                   <p className="text-xs text-[#94A3B8]">
                     Gets {fmt(total)} · net{" "}
                     <span className={side.net >= 0 ? "font-semibold text-[#10B981]" : "font-semibold text-[#EF4444]"}>

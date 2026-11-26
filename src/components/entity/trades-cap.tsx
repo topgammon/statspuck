@@ -259,10 +259,12 @@ function Pieces({ rows }: { rows: TradePiece[] }) {
   return (
     <>
       {rows.map(([label, value, kind], index) => (
-        <span key={label + index} className="whitespace-nowrap">
-          <span className={kind === "p" ? "font-semibold" : ""}>{label}</span>
-          <span className="text-[11px] text-[#94A3B8]"> {fmt(value)}</span>
-          {index < rows.length - 1 ? ", " : ""}{" "}
+        <span key={label + index}>
+          <span className="inline-block whitespace-nowrap">
+            <span className={kind === "p" ? "font-semibold" : ""}>{label}</span>
+            <span className="text-[11px] text-[#94A3B8]"> {fmt(value)}</span>
+            {index < rows.length - 1 ? "," : ""}
+          </span>{" "}
         </span>
       ))}
     </>
@@ -271,7 +273,7 @@ function Pieces({ rows }: { rows: TradePiece[] }) {
 
 function SideLine({ side, showTeam }: { side: TradeSide; showTeam?: boolean }) {
   return (
-    <li className="rounded-xl border border-[#262B36] bg-[#0B0D10]/50 px-3 py-2.5 text-sm">
+    <li className="min-w-0 rounded-xl border border-[#262B36] bg-[#0B0D10]/50 px-3 py-2.5 text-sm break-words">
       <div className="flex items-center justify-between gap-3">
         <span className="text-[11px] text-[#94A3B8]">
           {side.d}
