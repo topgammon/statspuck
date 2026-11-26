@@ -1,26 +1,20 @@
 import Link from "next/link";
-import { StatsPuckLockup } from "@/components/wordmark";
-
-const links = [
-  { href: "/draft-rater", label: "Draft Rater" },
-  { href: "/draft-rater/drafts", label: "Drafts" },
-  { href: "/draft-rater/methodology", label: "Method" },
-];
+import { GlobalSearch } from "@/components/global-search";
+import { MenuDrawer } from "@/components/menu-drawer";
+import { StatsPuckBadge } from "@/components/wordmark";
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-20 border-b border-[#262B36] bg-[#0B0D10]/85 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
+    <header className="sticky top-0 z-30 border-b border-[#262B36] bg-[#0B0D10]/90 backdrop-blur">
+      <div className="mx-auto grid max-w-6xl grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3 sm:gap-5">
         <Link href="/" className="flex items-center gap-3" aria-label="StatsPuck home">
-          <StatsPuckLockup />
+          <StatsPuckBadge height={40} />
+          <span className="display hidden text-xl font-bold tracking-[0.04em] lg:block">STATSPUCK</span>
         </Link>
-        <nav className="flex items-center gap-5 text-sm text-[#94A3B8]">
-          {links.map((link) => (
-            <Link key={link.href} href={link.href} className="hover:text-white">
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+        <div className="mx-auto w-full max-w-xl">
+          <GlobalSearch />
+        </div>
+        <MenuDrawer />
       </div>
     </header>
   );
