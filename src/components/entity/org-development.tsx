@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Carousel } from "@/components/carousel";
 import { DevLeaderboard, type DevLeaderRow } from "@/components/entity/dev-leaderboard";
 import { DEV_SCORE_TIP, scoreClass, signed } from "@/lib/format";
 import { playerHref } from "@/lib/routes";
@@ -43,7 +44,7 @@ export function OrgDevelopment({
   note?: string;
 }) {
   return (
-    <div className="grid gap-5">
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5">
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
         <div className="rounded-2xl border border-[#38BDF8]/40 bg-[#14171F] p-5">
           <div className="flex items-start justify-between gap-3">
@@ -137,7 +138,8 @@ export function OrgDevelopment({
           <span className="text-xs text-[#94A3B8]">NHL debut here · 100+ Impact earns Development credit</span>
         </div>
         {undrafted.length ? (
-          <div className="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 pb-1">
+          <div className="mt-3">
+            <Carousel label="Top undrafted gems signed">
             {undrafted.slice(0, 8).map((gem) => (
               <Link
                 key={gem.id}
@@ -158,6 +160,7 @@ export function OrgDevelopment({
                 </p>
               </Link>
             ))}
+            </Carousel>
           </div>
         ) : (
           <p className="mt-3 text-sm text-[#94A3B8]">No undrafted signings with 25+ NHL games debuted here since 2005-06.</p>
