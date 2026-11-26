@@ -1,7 +1,25 @@
 import type { DevLeaderRow } from "@/components/entity/dev-leaderboard";
-import type { DevGem } from "@/components/entity/org-development";
-import { leaderboard, picksById } from "@/lib/data";
+import type { DevGem, UndraftedGem } from "@/components/entity/org-development";
+import { leaderboard, picksById, undrafted } from "@/lib/data";
 import type { DevGrade } from "@/lib/types";
+
+/** Undrafted signings who debuted with a franchise (or under a GM era), best first. */
+export function undraftedGems(filter: { franchise?: string; era?: string }): UndraftedGem[] {
+  return undrafted
+    .filter((player) => player.debut >= 2005)
+    .filter((player) => (filter.era ? player.creditEra === filter.era : player.franchise === filter.franchise))
+    .sort((a, b) => b.qg - a.qg)
+    .map((player) => ({
+      id: player.id,
+      name: player.name,
+      pos: player.pos,
+      debut: player.debut,
+      qg: player.qg,
+      gp: player.gpCareer,
+      devCredit: player.devCredit,
+      origin: player.origin?.league ?? null,
+    }));
+}
 
 /** Team Development leaderboard rows, best first. Teams with no mature picks (e.g. Seattle) are left off. */
 export const devBoard: DevLeaderRow[] = leaderboard

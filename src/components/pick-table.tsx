@@ -2,18 +2,22 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { CountryBadge } from "@/components/country-badge";
 import { PlayerHeadshot } from "@/components/player-headshot";
+import { countryName } from "@/lib/countries";
 import { StampRow } from "@/components/stamps";
 import { TeamLogo } from "@/components/team-logo";
 import { letterRank, scoreClass, signed } from "@/lib/format";
 import type { PickRow, YearPoint } from "@/lib/types";
 import { playerHref, teamHref } from "@/lib/routes";
 
-type SortKey = "year" | "overall" | "redraft" | "franchise" | "name" | "pos" | "gp" | "qg" | "expected" | "score" | "letter";
+type SortKey = "year" | "overall" | "redraft" | "franchise" | "name" | "pos" | "from" | "nat" | "gp" | "qg" | "expected" | "score" | "letter";
 
 const tips: Partial<Record<SortKey, string>> = {
   redraft: "Where this player ranks in their draft class based on total Impact produced.",
   franchise: "The franchise that made the pick.",
+  from: "The junior, college, or European club and league the player was drafted from.",
+  nat: "Country of birth.",
   gp: "Total career NHL regular-season games played. Impact counts every season since the draft.",
   qg: "Total Impact across every post-draft season. 1.0 is about one average NHL game: skaters earn a base per game plus two-way box-score events and minutes trust; goalies earn 1.35 per start plus goals saved above average. The current season is prorated.",
   expected: "Historical average Impact produced by this exact draft slot at the same career stage. The current season is prorated.",
@@ -28,6 +32,8 @@ const columns: { key: SortKey; label: string }[] = [
   { key: "franchise", label: "Team" },
   { key: "name", label: "Player" },
   { key: "pos", label: "Position" },
+  { key: "from", label: "Drafted From" },
+  { key: "nat", label: "Nat." },
   { key: "gp", label: "GP" },
   { key: "qg", label: "Impact" },
   { key: "expected", label: "Expected" },
@@ -46,6 +52,8 @@ function sortValue(pick: PickRow, key: SortKey): string | number | null {
   if (key === "letter") return pick.developing ? null : letterRank(pick.letter);
   if (key === "gp") return pick.gpCareer;
   if (key === "franchise") return pick.franchise;
+  if (key === "from") return pick.league ? `${pick.league} ${pick.amateur ?? ""}` : (pick.amateur ?? null);
+  if (key === "nat") return pick.country ? countryName(pick.country) : null;
   if (key === "expected" || key === "score") return pick[key];
   return pick[key];
 }
@@ -54,16 +62,23 @@ export function PickTable({
   picks,
   showYear = true,
   showTeam = false,
+  showOrigin = false,
   sortNonce = 0,
   sortOverride,
 }: {
   picks: PickRow[];
   showYear?: boolean;
   showTeam?: boolean;
+  showOrigin?: boolean;
   sortNonce?: number;
   sortOverride?: SortKey;
 }) {
-  const visible = columns.filter((column) => (column.key !== "year" || showYear) && (column.key !== "franchise" || showTeam));
+  const visible = columns.filter(
+    (column) =>
+      (column.key !== "year" || showYear) &&
+      (column.key !== "franchise" || showTeam) &&
+      ((column.key !== "from" && column.key !== "nat") || showOrigin),
+  );
   const [sortKey, setSortKey] = useState<SortKey>(showYear ? "year" : "overall");
   const [sortDesc, setSortDesc] = useState(false);
 
@@ -137,6 +152,12 @@ export function PickTable({
               {pick.qg.toFixed(1)} Impact · {pick.expected == null ? "—" : pick.expected.toFixed(1)} expected ·{" "}
               <span className={gapClass(pick)}>{signed(pick.score)}</span>
             </p>
+            {showOrigin && (pick.amateur || pick.league || pick.country) ? (
+              <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-zinc-500">
+                {pick.country ? <CountryBadge code={pick.country} name={countryName(pick.country)} /> : null}
+                <span className="truncate">{[pick.amateur, pick.league].filter(Boolean).join(" · ")}</span>
+              </p>
+            ) : null}
           </Link>
           ),
         )}
@@ -222,6 +243,15 @@ function Cell({ pick, column }: { pick: PickRow; column: SortKey }) {
     );
   }
   if (column === "pos") return <span className="text-zinc-400">{pick.pos}</span>;
+  if (column === "from") {
+    return (
+      <span className="block max-w-48 truncate text-zinc-300" title={[pick.amateur, pick.league].filter(Boolean).join(" · ")}>
+        {pick.amateur ?? "—"}
+        {pick.league && pick.league !== pick.amateur ? <span className="text-zinc-500"> · {pick.league}</span> : null}
+      </span>
+    );
+  }
+  if (column === "nat") return pick.country ? <CountryBadge code={pick.country} name={countryName(pick.country)} /> : <span className="text-zinc-600">—</span>;
   if (column === "gp") return <span className="text-zinc-300">{pick.gpCareer}</span>;
   if (column === "qg") return <span className="text-zinc-200">{pick.qg.toFixed(1)}</span>;
   if (column === "expected") return <span className="text-zinc-400">{pick.expected == null ? "—" : pick.expected.toFixed(1)}</span>;

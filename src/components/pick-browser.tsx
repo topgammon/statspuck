@@ -25,6 +25,7 @@ export function PickBrowser({
   onTeamChange,
   showYear = true,
   showTeam = false,
+  showOrigin = false,
   sortNonce = 0,
   sortOverride,
 }: {
@@ -39,6 +40,8 @@ export function PickBrowser({
   onTeamChange?: (team: string) => void;
   showYear?: boolean;
   showTeam?: boolean;
+  /** Adds Drafted From and Nationality columns. */
+  showOrigin?: boolean;
   sortNonce?: number;
   sortOverride?: "year" | "overall" | "redraft" | "franchise" | "name" | "pos" | "gp" | "qg" | "expected" | "score" | "letter";
 }) {
@@ -124,7 +127,7 @@ export function PickBrowser({
       ) : null}
       {developing > 0 ? <p className="mt-2 text-sm text-sky-200/80">{developing} still {developing === 1 ? "a prospect" : "prospects"}</p> : null}
       <div className="mt-3">
-        <PickTable picks={shown} showYear={showYear} showTeam={showTeam} sortNonce={sortNonce} sortOverride={sortOverride} />
+        <PickTable picks={shown} showYear={showYear} showTeam={showTeam} showOrigin={showOrigin} sortNonce={sortNonce} sortOverride={sortOverride} />
       </div>
     </div>
   );

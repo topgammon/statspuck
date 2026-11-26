@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 
 from cards import render
+from fetch_bios import main as fetch_bios
 from fetch_gm_photos import main as fetch_gm_photos
 from fetch_nhl import fetch_all, sample
 from fetch_paths import main as fetch_paths
@@ -34,6 +35,7 @@ def main() -> None:
         fetch_rosters()
         fetch_gm_photos()
         fetch_paths()
+        fetch_bios()
     build()
     if not args.skip_cards:
         render()

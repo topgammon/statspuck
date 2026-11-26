@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
 import { BioCard, CapBar, ComingSoonPanel, DnaPills, ModulePreviews, ORG_TABS, PillarGrades, SectionLabel } from "@/components/entity/bio";
 import type { DevLeaderRow } from "@/components/entity/dev-leaderboard";
-import { OrgDevelopment, type DevGem } from "@/components/entity/org-development";
+import { OrgDevelopment, type DevGem, type UndraftedGem } from "@/components/entity/org-development";
 import { EntityTabs, TabLink } from "@/components/entity/entity-tabs";
 import { GmPhoto } from "@/components/entity/gm-photo";
 import { PickBrowser } from "@/components/pick-browser";
@@ -30,6 +30,7 @@ export function EraProfile({
   otherStops,
   capHit,
   devGems,
+  undraftedGems,
   devBoard,
   matureThrough,
   teamReport,
@@ -44,6 +45,7 @@ export function EraProfile({
   otherStops: Stop[];
   capHit: number | null;
   devGems: DevGem[];
+  undraftedGems: UndraftedGem[];
   devBoard: DevLeaderRow[];
   matureThrough: number;
   teamReport: ScoutingReport;
@@ -221,6 +223,7 @@ export function EraProfile({
         subject={`${era.person} · ${era.teamName}, ${tenure}`}
         dev={dev}
         gems={devGems}
+        undrafted={undraftedGems}
         board={devBoard}
         highlight={era.team}
         matureThrough={matureThrough}

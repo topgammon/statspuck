@@ -23,10 +23,12 @@ from collections import Counter
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-from development import build_development
+from development import build_development, is_event
 from fetch_nhl import backfill_season_details, connect, season_calendar
 from model import fit_family, isotonic_increasing, refit, round0, round1
+from origins import clean_club, clean_league, feeder_for
 from teams import FRANCHISES
+from undrafted import build_undrafted, load_bios, merge_vitals, vitals_from_bio, vitals_from_pick
 
 ROOT = Path(__file__).resolve().parent
 DATA = ROOT.parents[1] / "data" / "draft-rater"
@@ -729,6 +731,24 @@ def season_series(
     return [round1(value) for value in buckets]
 
 
+def draft_origin(pick: dict, league_seasons: dict) -> tuple[str | None, str, str | None]:
+    """(clean league, feeder group, club) for where a pick was playing when drafted.
+
+    The draft feed's league comes first. When it is blank (e.g. the newest class),
+    the league he played most games in during his draft season stands in.
+    """
+    league = clean_league(pick.get("amateur_league"))
+    if not league and pick.get("player_id"):
+        record = league_seasons.get(str(pick["player_id"]))
+        if record:
+            shift = pick["draft_year"] - record["y"]
+            rows = record["s"][shift] if 0 <= shift < len(record["s"]) else []
+            options = [row for row in rows if row[1] > 0 and not is_event(row[0])]
+            if options:
+                league = clean_league(options[0][0])
+    return league, feeder_for(league, pick.get("country")), clean_club(pick.get("amateur_club"), league)
+
+
 def headshot_map() -> dict[int, bool]:
     if not HEADSHOTS.exists():
         return {}
@@ -973,6 +993,9 @@ def build() -> None:
     actives = active_map()
     rosters = optional_json(ROSTERS)
     gm_photos = optional_json(GM_PHOTOS)
+    league_seasons = optional_json(DATA / "league_seasons.json")
+    bios = load_bios()
+    vitals: dict[str, dict] = {}
     duplicates: dict[int, list[int]] = {}
     for pick in picks:
         if pick["player_id"]:
@@ -1031,6 +1054,10 @@ def build() -> None:
                 bloom_score = round1(judged_quality - judged_expected)
         included = not developing and score is not None
         also = [other for other in duplicates.get(pick["player_id"], []) if other != pick["pick_uid"]]
+        league, feeder, club = draft_origin(pick, league_seasons)
+        if not is_forfeit(pick):
+            bio = bios.get(str(pick["player_id"])) if pick["player_id"] else None
+            vitals[str(pick["pick_uid"])] = merge_vitals(vitals_from_bio(bio), vitals_from_pick(pick))
         scored.append(
             {
                 "id": pick["pick_uid"],
@@ -1048,7 +1075,9 @@ def build() -> None:
                 "active": actives.get(pick["player_id"]) if pick["player_id"] else None,
                 "name": pick["player_name"],
                 "country": pick["country"],
-                "amateur": pick["amateur_club"],
+                "amateur": club,
+                "league": league,
+                "feeder": feeder,
                 "gpCareer": career,
                 "gp": games,
                 "goals": box["goals"],
@@ -1255,8 +1284,22 @@ def build() -> None:
             era["rating"] = rating
             era["letter"] = letter
 
-    # Pillar 2: league paths and Team / GM Development Grades.
-    build_development(scored, curves, expected_at, last_complete, leaderboard, eras, rating_and_letter)
+    # Undrafted NHL graduates: their own profiles, never in Draft Rater averages.
+    undrafted = build_undrafted(
+        bios,
+        seasons,
+        eras,
+        rosters,
+        toi_avg,
+        save_avg,
+        in_progress if in_progress is not None else last_complete,
+    )
+    for row in undrafted:
+        vitals[str(row["id"])] = vitals_from_bio(bios.get(str(row["playerId"])))
+        vitals[str(row["id"])] = {key: value for key, value in vitals[str(row["id"])].items() if value not in (None, "")}
+
+    # Pillar 2: league paths and Team / GM Development Grades (plus undrafted gem credit).
+    build_development(scored, curves, expected_at, last_complete, leaderboard, eras, rating_and_letter, undrafted)
 
     conn.execute("DELETE FROM gm_eras")
     for era in eras:
@@ -1393,6 +1436,9 @@ def build() -> None:
     dump(DATA / "headlines.json", headlines)
     dump(DATA / "meta.json", meta)
     dump(DATA / "teams.json", teams)
+    dump(DATA / "undrafted.json", undrafted)
+    dump(DATA / "vitals.json", dict(sorted(vitals.items(), key=lambda item: int(item[0]))))
+    print(f"undrafted: {len(undrafted)} graduates, {sum(1 for row in undrafted if row['devCredit'] is not None)} credited gems")
 
     print(f"curves through {meta['curveLastYear']}, {meta['gradedPickCount']} graded, {meta['developingCount']} developing")
     print(f"skaters {meta['skater']['model']} mae {meta['skater']['mae']}")

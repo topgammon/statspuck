@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
-import { BioCard, ComingSoonPanel, ContractPill, HeroGrade, ModulePreviews, PillGrid, PLAYER_TABS, QuickPill, SectionLabel } from "@/components/entity/bio";
+import { BioCard, ComingSoonPanel, ContractPill, HeroGrade, ModulePreviews, PillGrid, PLAYER_TABS, QuickPill, SectionLabel, VitalsRow } from "@/components/entity/bio";
 import { EntityTabs, TabLink } from "@/components/entity/entity-tabs";
 import { PlayerDevelopment } from "@/components/entity/player-development";
+import { UndraftedProfile } from "@/components/entity/undrafted-profile";
+import { originLabel, vitalItems } from "@/components/entity/vital-items";
 import { InfoTip } from "@/components/info-tip";
 import { PlayerCharts } from "@/components/player-charts";
 import { PlayerHeadshot } from "@/components/player-headshot";
@@ -12,15 +14,20 @@ import { ShareLauncher } from "@/components/share-modal";
 import { StampRow, VeteranMark } from "@/components/stamps";
 import { TeamLogo, TeamName } from "@/components/team-logo";
 import { playerContract } from "@/lib/cap";
-import { meta, pickImage, picks, picksById, teamsByAbbr } from "@/lib/data";
+import { countryName } from "@/lib/countries";
+import { meta, pickImage, picks, picksById, teamsByAbbr, undrafted, undraftedById } from "@/lib/data";
 import { draftLabel, isVeteran, scoreClass, signed } from "@/lib/format";
 import { playerHref, teamHref } from "@/lib/routes";
 import type { PickRow } from "@/lib/types";
+import { vitalsFor } from "@/lib/vitals";
 
 type Params = { id: string };
 
 export function generateStaticParams() {
-  return picks.filter((pick) => !pick.forfeited).map((pick) => ({ id: String(pick.id) }));
+  return [
+    ...picks.filter((pick) => !pick.forfeited).map((pick) => ({ id: String(pick.id) })),
+    ...undrafted.map((player) => ({ id: String(player.id) })),
+  ];
 }
 
 export const dynamicParams = false;
@@ -28,7 +35,17 @@ export const dynamicParams = false;
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { id } = await params;
   const pick = picksById.get(Number(id));
-  if (!pick) return {};
+  if (!pick) {
+    const player = undraftedById.get(Number(id));
+    if (!player) return {};
+    const description = `${player.name}, undrafted ${player.pos}, NHL debut ${player.debut}${player.firstTeamName ? ` with the ${player.firstTeamName}` : ""}. ${player.qg.toFixed(1)} career Impact in ${player.gpCareer} games.`;
+    return {
+      title: player.name,
+      description,
+      alternates: { canonical: playerHref(player.id) },
+      openGraph: { title: player.name, description },
+    };
+  }
   const title = pick.name;
   const description = pick.developing
     ? `${pick.name}, ${pick.year} pick ${pick.overall}, still a prospect at ${signed(pick.score)} versus the slot.`
@@ -46,7 +63,11 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 export default async function PlayerPage({ params }: { params: Promise<Params> }) {
   const { id } = await params;
   const pick = picksById.get(Number(id));
-  if (!pick) notFound();
+  if (!pick) {
+    const player = undraftedById.get(Number(id));
+    if (!player) notFound();
+    return <UndraftedProfile player={player} vitals={vitalItems(vitalsFor(player.id), player.group, { label: "Pre-NHL", value: originLabel(player.origin?.club, player.origin?.league) })} />;
+  }
   const color = teamsByAbbr.get(pick.franchise)?.color ?? "#E11D48";
   const grade = pick.developing ? null : pick.letter;
   const retired = pick.stamps.includes("RETIRED") || pick.active === false;
@@ -65,6 +86,7 @@ export default async function PlayerPage({ params }: { params: Promise<Params> }
   );
 
   const left = (
+    <div>
     <div className="flex items-start gap-4">
       <PlayerHeadshot playerId={pick.playerId} name={pick.name} available={pick.hasHeadshot} color={color} className="h-24 w-24 sm:h-28 sm:w-28" />
       <div className="min-w-0">
@@ -86,6 +108,8 @@ export default async function PlayerPage({ params }: { params: Promise<Params> }
           <ContractPill contract={contract} />
         </div>
       </div>
+    </div>
+      <VitalsRow items={vitalItems(vitalsFor(pick.id), pick.group, { label: "Drafted from", value: originLabel(pick.amateur, pick.league) })} />
     </div>
   );
 
@@ -149,8 +173,9 @@ function Overview({ pick }: { pick: PickRow }) {
     ["Career stage", draftLabel(pick.draftPlus)],
   ];
   if (pick.teamName !== pick.franchiseName) facts.push(["Franchise today", pick.franchiseName]);
-  if (pick.amateur) facts.push(["Drafted from", pick.amateur]);
-  if (pick.country) facts.push(["Country", pick.country]);
+  const from = originLabel(pick.amateur, pick.league);
+  if (from) facts.push(["Drafted from", from]);
+  if (pick.country) facts.push(["Nationality", countryName(pick.country)]);
   return (
     <div className="grid gap-5 lg:grid-cols-2">
       <div className="rounded-2xl border border-[#262B36] bg-[#14171F] p-5">

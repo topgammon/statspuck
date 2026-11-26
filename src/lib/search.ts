@@ -2,7 +2,7 @@
 // Results open each entity's Overview tab.
 import { gmHref, playerHref, teamHref } from "./routes";
 
-/** [id, name, year, overall, franchise, headshotPlayerId (0 = none), letter, stamp] */
+/** [id, name, year, overall, franchise, headshotPlayerId (0 = none), letter, stamp]. Undrafted: year = NHL debut, overall = 0. */
 export type PlayerEntry = [number, string, number, number, string, number, string, string];
 /** [abbr, name, short, letter, rank] */
 export type TeamEntry = [string, string, string, string, number];
@@ -90,7 +90,9 @@ export function searchIndex(index: SearchIndex, raw: string): SearchGroup[] {
       const score = scoreText(normalize(entry[1]), words);
       if (score >= 0) players.push({ entry, score });
     }
-    players.sort((a, b) => a.score - b.score || a.entry[3] - b.entry[3]);
+    // Overall 0 marks an undrafted player; rank them with late picks, not ahead of #1.
+    const slot = (entry: PlayerEntry) => entry[3] || 120;
+    players.sort((a, b) => a.score - b.score || slot(a.entry) - slot(b.entry));
     const hits = players
       .slice(0, LIMITS.player)
       .map(({ entry }): SearchHit => ({ kind: "player", href: playerHref(entry[0]), entry }));
@@ -99,7 +101,7 @@ export function searchIndex(index: SearchIndex, raw: string): SearchGroup[] {
   } else if (yearToken) {
     // "2015" alone: show the top picks of that draft too.
     const hits = index.p
-      .filter((entry) => entry[2] === Number(yearToken))
+      .filter((entry) => entry[2] === Number(yearToken) && entry[3] > 0)
       .sort((a, b) => a[3] - b[3])
       .slice(0, LIMITS.player)
       .map((entry): SearchHit => ({ kind: "player", href: playerHref(entry[0]), entry }));
@@ -127,4 +129,5 @@ export const stampTone: Record<string, string> = {
   BUST: "text-[#EF4444]",
   DEVELOPING: "text-[#3B82F6]",
   RETIRED: "text-[#64748B]",
+  UNDRAFTED: "text-[#38BDF8]",
 };

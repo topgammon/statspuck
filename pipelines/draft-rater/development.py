@@ -14,6 +14,8 @@ more often, and grow faster, than history says that draft slot should?
      usually gains over the same years.
 Both parts are put on the same scale (standard deviations), averaged per pick,
 then averaged per team and centered so 0.0 is the average NHL franchise.
+Undrafted signings who reach 100+ career Impact join their debut franchise's
+(and GM's) average as a half-weight bonus row; they never enter Draft Rater.
 Only picks whose D+6 season is complete count, so every pick is judged over the
 same six years. Forfeited slots never count.
 """
@@ -34,6 +36,8 @@ HORIZON = 6
 GM_SHRINK = 6
 MIN_GRADED = 5
 DEV_SCALE = 100.0
+UNDRAFTED_GEM = 100.0
+UNDRAFTED_WEIGHT = 0.5
 
 BUCKETS = ["NHL", "AHL", "CHL", "NCAA", "USHL", "SHL", "Liiga", "KHL", "Other", "None"]
 # Higher level wins a tie on games played.
@@ -157,6 +161,7 @@ def build_development(
     leaderboard: list[dict],
     eras: list[dict],
     rating_and_letter,
+    undrafted: list[dict] | None = None,
 ) -> dict:
     seasons = json.loads(SEASONS_PATH.read_text(encoding="utf-8")) if SEASONS_PATH.exists() else {}
     max_pick = max(pick["overall"] for pick in scored)
@@ -236,14 +241,33 @@ def build_development(
         best = sorted(rows, key=lambda row: -row["dev"])[:5]
         return [{"id": row["id"], "dev": round1(row["dev"]), "q6": round1(row["q6"])} for row in best]
 
+    # 2b. Undrafted gems: a signing who reached UNDRAFTED_GEM Impact is scored like a
+    # pick from a slot where history expects nothing (0% graduation, zero growth),
+    # over his first six NHL seasons, and joins the debut franchise's (and GM's)
+    # average as one extra row. That is the Development Grade bonus.
+    bonus: list[dict] = []
+    for player in undrafted or []:
+        if player["qg"] < UNDRAFTED_GEM or not player.get("franchise") or player["debut"] < 2005:
+            continue
+        per_year = player.get("seasons") or []
+        q1 = per_year[0] if per_year else 0.0
+        q6 = sum(per_year[:HORIZON])
+        grad = (1.0 if q6 >= 25 else 0.0) + (1.0 if q6 >= 100 else 0.0)
+        # Half weight: only the hits are visible (undrafted misses never reach the NHL),
+        # so full credit would let signings outweigh a team's whole draft record.
+        dev = UNDRAFTED_WEIGHT * DEV_SCALE * ((grad / grad_sd) + ((q6 - q1) / growth_sd)) / 2
+        player["devCredit"] = round1(dev)
+        bonus.append({"franchise": player["franchise"], "era": player.get("creditEra"), "dev": dev})
+
     # 3. Teams, centered on the league.
     team_raw: dict[str, float] = {}
     team_rows: dict[str, list[dict]] = {}
     for team in leaderboard:
         rows = [row for row in mature if row["franchise"] == team["abbr"]]
         team_rows[team["abbr"]] = rows
+        extra = [row["dev"] for row in bonus if row["franchise"] == team["abbr"]]
         if rows:
-            team_raw[team["abbr"]] = sum(row["dev"] for row in rows) / len(rows)
+            team_raw[team["abbr"]] = (sum(row["dev"] for row in rows) + sum(extra)) / (len(rows) + len(extra))
     league = sum(team_raw.values()) / len(team_raw) if team_raw else 0.0
     team_scores = {abbr: round1(raw - league) for abbr, raw in team_raw.items()}
     pool = list(team_scores.values())
@@ -263,6 +287,7 @@ def build_development(
             "n": len(rows),
             "rounds": _round_rates(rows, mature),
             "gems": gems(rows),
+            "undrafted": sum(1 for row in bonus if row["franchise"] == team["abbr"]),
         }
 
     # 4. GMs, shrunk toward the league average like the Draft grade.
@@ -273,9 +298,19 @@ def build_development(
         era["dev"] = None
         if not rows:
             continue
-        raw = sum(row["dev"] for row in rows) / len(rows) - league
-        score = round1(raw * (len(rows) / (len(rows) + GM_SHRINK)))
-        era["dev"] = {"avg": score, "rating": None, "letter": None, "n": len(rows), "rounds": _round_rates(rows, mature), "gems": gems(rows)}
+        extra = [row["dev"] for row in bonus if row["era"] == era["slug"]]
+        count = len(rows) + len(extra)
+        raw = (sum(row["dev"] for row in rows) + sum(extra)) / count - league
+        score = round1(raw * (count / (count + GM_SHRINK)))
+        era["dev"] = {
+            "avg": score,
+            "rating": None,
+            "letter": None,
+            "n": len(rows),
+            "rounds": _round_rates(rows, mature),
+            "gems": gems(rows),
+            "undrafted": len(extra),
+        }
         if len(rows) >= MIN_GRADED:
             gm_scores.append(score)
     for era in eras:

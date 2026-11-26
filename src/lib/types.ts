@@ -1,6 +1,9 @@
 export type PickGroup = "F" | "D" | "G";
 
-export type Stamp = "DEVELOPING" | "STALLED" | "BUST" | "STEAL" | "LATE BLOOMER" | "ELITE" | "RETIRED";
+export type Stamp = "DEVELOPING" | "STALLED" | "BUST" | "STEAL" | "LATE BLOOMER" | "ELITE" | "RETIRED" | "UNDRAFTED";
+
+/** Draft-origin buckets for the draft class filters. */
+export type Feeder = "OHL" | "WHL" | "QMJHL" | "USHL/NCAA" | "Sweden" | "Finland" | "Russia" | "Other";
 
 export type PickRow = {
   id: number;
@@ -18,7 +21,11 @@ export type PickRow = {
   active: boolean | null;
   name: string;
   country: string | null;
+  /** Club he was drafted from, e.g. "London" or "USNTDP". */
   amateur: string | null;
+  /** Clean league he was drafted from, e.g. "OHL", "NCAA", "Sweden Jr.". */
+  league?: string | null;
+  feeder?: Feeder;
   gpCareer: number;
   gp: number;
   goals: number | null;
@@ -105,6 +112,58 @@ export type DevGrade = {
   n: number;
   rounds: DevRound[];
   gems: { id: number; dev: number; q6: number }[];
+  /** Undrafted 100+ Impact signings counted as a bonus in this grade. */
+  undrafted?: number;
+};
+
+/** An NHL player who was never drafted, with 25+ NHL games since 2005-06. */
+export type UndraftedPlayer = {
+  /** NHL player id. Also the /players/[id] route id. */
+  id: number;
+  playerId: number;
+  name: string;
+  pos: string;
+  group: PickGroup;
+  active: boolean | null;
+  currentTeam: string | null;
+  /** First NHL season (start year). */
+  debut: number;
+  firstTeam: string | null;
+  firstTeamName: string | null;
+  /** Franchise today for the debut team; gets Development credit. */
+  franchise: string | null;
+  franchiseName: string | null;
+  creditEra: string | null;
+  creditGm: string | null;
+  gpCareer: number;
+  qg: number;
+  /** Impact per NHL season from firstSeason on. */
+  seasons: number[];
+  firstSeason: number;
+  goals: number | null;
+  assists: number | null;
+  points: number | null;
+  ppg: number | null;
+  savePct: number | null;
+  gaa: number | null;
+  starts: number;
+  origin: { league: string | null; club: string | null; season: number } | null;
+  /** [seasonStart, league, team, gp] around the debut. */
+  path: [number, string, string, number][];
+  /** Development value credited to the debut franchise (100+ Impact gems only). */
+  devCredit: number | null;
+  stamps: Stamp[];
+};
+
+/** Bio vitals from the NHL player feed (draft-day record as backup). */
+export type Vitals = {
+  h?: number;
+  w?: number;
+  sc?: string;
+  bd?: string;
+  city?: string;
+  prov?: string;
+  ctry?: string;
 };
 
 export type TeamGrade = {

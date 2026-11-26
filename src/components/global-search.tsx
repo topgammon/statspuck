@@ -222,7 +222,7 @@ function HitRow({ hit }: { hit: SearchHit }) {
         <span className="min-w-0">
           <span className="block truncate text-sm font-medium text-[#F8FAFC]">{name}</span>
           <span className="block truncate text-xs text-[#94A3B8]">
-            {year} · Pick #{overall} · {franchise}
+            {overall === 0 ? `Undrafted · NHL debut ${year}${franchise ? ` · ${franchise}` : ""}` : `${year} · Pick #${overall} · ${franchise}`}
             {stamp ? (
               <span className={`ml-1.5 font-semibold ${stampTone[stamp] ?? ""}`}>· {stamp === "DEVELOPING" ? "PROSPECT" : stamp}</span>
             ) : null}

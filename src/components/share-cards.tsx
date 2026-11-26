@@ -6,7 +6,7 @@ import { teamLogoFile } from "@/components/team-logo";
 import { signed } from "@/lib/format";
 import type { ScoutingReport } from "@/lib/scouting";
 import { publicPath } from "@/lib/site";
-import type { PickRow, YearPoint } from "@/lib/types";
+import type { PickRow, UndraftedPlayer, YearPoint } from "@/lib/types";
 
 // Brand kit
 const BG = "#0B0D10";
@@ -318,6 +318,7 @@ function Stamps({ stamps, size = 15 }: { stamps: string[]; size?: number }) {
 
 export type ShareCardModel =
   | { kind: "player"; pick: PickRow; color: string }
+  | { kind: "undrafted"; player: UndraftedPlayer; color: string }
   | {
       kind: "team";
       name: string;
@@ -370,6 +371,7 @@ export type ShareCardModel =
 
 export function ShareCardView({ format, card }: { format: ShareFormat; card: ShareCardModel }) {
   if (card.kind === "player") return <PlayerShareCard format={format} pick={card.pick} color={card.color} />;
+  if (card.kind === "undrafted") return <UndraftedShareCard format={format} player={card.player} color={card.color} />;
   if (card.kind === "team") {
     const { kind: _kind, ...props } = card;
     return <TeamShareCard format={format} {...props} />;
@@ -498,6 +500,111 @@ export function PlayerShareCard({ format, pick, color }: { format: ShareFormat; 
           <Spark seasons={pick.seasons ?? []} expected={pick.expectedPath ?? []} color={color} width={620} height={130} />
         </div>
       </div>
+      {tiles}
+    </Frame>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Undrafted player                                                    */
+/* ------------------------------------------------------------------ */
+
+export function UndraftedShareCard({ format, player, color }: { format: ShareFormat; player: UndraftedPlayer; color: string }) {
+  const photo = useSameOriginImage(`https://assets.nhle.com/mugs/nhl/latest/${player.playerId}.png`);
+  const d = dims(format);
+  const rate = player.group === "G" ? (player.savePct == null ? "—" : player.savePct.toFixed(3)) : player.ppg == null ? "—" : player.ppg.toFixed(2);
+  const nameSize = d.wide ? fitSize(player.name, 64, 16) : 80;
+  const size = d.wide ? 196 : 230;
+  const tiles = (
+    <Grid columns={4} gap={d.wide ? 14 : 18}>
+      <Tile label="Impact" value={player.qg.toFixed(0)} note="Career, since 2005-06" />
+      <Tile label="Games" value={String(player.gpCareer)} note="NHL regular season" />
+      <Tile label={player.group === "G" ? "SV%" : "PPG"} value={rate} />
+      <Tile
+        label="Dev credit"
+        value={player.devCredit == null ? "—" : signed(player.devCredit)}
+        valueColor={player.devCredit == null ? INK : EMERALD}
+        note={player.franchise ?? "—"}
+      />
+    </Grid>
+  );
+  const badge = (
+    <div
+      style={{
+        width: size,
+        height: size,
+        flex: "none",
+        borderRadius: 24,
+        background: PANEL,
+        border: `1px solid ${hexA("#38BDF8", 0.5)}`,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 10,
+        color: "#38BDF8",
+      }}
+    >
+      <span style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: d.wide ? 30 : 36, letterSpacing: 3 }}>UNDRAFTED</span>
+      <span style={{ color: MUTED, fontSize: d.wide ? 16 : 19 }}>NHL debut {player.debut}</span>
+    </div>
+  );
+  const identity = (
+    <div style={{ minWidth: 0, flex: 1, display: "flex", flexDirection: "column" }}>
+      <Eyebrow size={d.wide ? 15 : 18}>Undrafted · {player.pos}</Eyebrow>
+      <Title size={nameSize} wrap={!d.wide}>
+        {player.name}
+      </Title>
+      {player.firstTeam ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: d.wide ? 14 : 18, color: MUTED, fontSize: d.wide ? 20 : 24, minWidth: 0 }}>
+          <span style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: d.wide ? 22 : 28 }}>First NHL team</span>
+          <Logo abbr={player.firstTeam} name={player.firstTeamName ?? undefined} size={d.wide ? 44 : 54} />
+          <span style={ellipsis}>{player.firstTeamName}</span>
+        </div>
+      ) : null}
+      <div style={{ marginTop: d.wide ? 16 : 22 }}>
+        <Stamps stamps={player.stamps} size={d.wide ? 14 : 17} />
+      </div>
+    </div>
+  );
+  const photoBox = (w: number, h: number) => (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={photo || SILHOUETTE}
+      alt=""
+      width={w}
+      height={h}
+      style={{
+        width: w,
+        height: h,
+        flex: "none",
+        objectFit: "cover",
+        objectPosition: "center top",
+        borderRadius: 22,
+        border: `1px solid ${LINE}`,
+        background: `linear-gradient(180deg, ${hexA(color, 0.35)}, ${PANEL})`,
+      }}
+    />
+  );
+  if (d.wide) {
+    return (
+      <Frame format={format} accent={color}>
+        <div style={{ display: "flex", gap: 28, alignItems: "stretch" }}>
+          {photoBox(196, 236)}
+          {identity}
+          {badge}
+        </div>
+        {tiles}
+      </Frame>
+    );
+  }
+  return (
+    <Frame format={format} accent={color}>
+      <div style={{ display: "flex", gap: 36, alignItems: "center" }}>
+        {photoBox(260, 300)}
+        {identity}
+      </div>
+      <div style={{ display: "flex", justifyContent: "center" }}>{badge}</div>
       {tiles}
     </Frame>
   );
@@ -901,6 +1008,7 @@ function stampColor(stamp: string): string {
   if (stamp === "LATE BLOOMER") return "#8B5CF6";
   if (stamp === "STALLED") return "#F97316";
   if (stamp === "DEVELOPING") return "#3B82F6";
+  if (stamp === "UNDRAFTED") return "#38BDF8";
   return DIM;
 }
 

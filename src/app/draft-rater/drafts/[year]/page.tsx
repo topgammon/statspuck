@@ -3,8 +3,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DraftYearBoard } from "@/components/draft-year-board";
 import { ShareLauncher } from "@/components/share-modal";
+import { CountryBadge } from "@/components/country-badge";
+import { countryName } from "@/lib/countries";
 import { draftClasses, picks } from "@/lib/data";
 import { scoreClass, signed } from "@/lib/format";
+import type { PickRow } from "@/lib/types";
 
 type Params = { year: string };
 
@@ -27,6 +30,58 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
     openGraph: { title, description, images: [{ url: image, width: 1200, height: 630 }] },
     twitter: { card: "summary_large_image", images: [image] },
   };
+}
+
+/** Most common values, ties broken alphabetically. */
+function leaders(values: (string | null | undefined)[]): { value: string; count: number }[] {
+  const tally = new Map<string, number>();
+  for (const value of values) if (value) tally.set(value, (tally.get(value) ?? 0) + 1);
+  return [...tally.entries()].map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
+}
+
+/** Top feeder league, club, and nationality for a draft class. */
+function OriginStrip({ picks: rows }: { picks: PickRow[] }) {
+  if (rows.length === 0) return null;
+  const leagues = leaders(rows.map((pick) => pick.league));
+  const clubs = leaders(rows.map((pick) => (pick.amateur ? `${pick.amateur}${pick.league && pick.league !== pick.amateur ? ` (${pick.league})` : ""}` : null)));
+  const nations = leaders(rows.map((pick) => pick.country));
+  const topClubs = clubs.filter((club) => club.count === clubs[0]?.count).slice(0, 2);
+  const share = (count: number) => `${((count / rows.length) * 100).toFixed(1)}%`;
+  const cards = [
+    {
+      label: "Top feeder league",
+      value: leagues[0]?.value ?? "—",
+      detail: leagues[0] ? `${leagues[0].count} picks · ${share(leagues[0].count)}` : "",
+      tip: leagues.slice(1, 4).map((league) => `${league.value} (${league.count})`).join(", ") || undefined,
+    },
+    {
+      label: "Top feeder club",
+      value: topClubs.map((club) => club.value).join(" / ") || "—",
+      detail: topClubs[0] ? `${topClubs[0].count} picks${topClubs.length > 1 ? " each" : ""}` : "",
+      tip: clubs.slice(topClubs.length, topClubs.length + 3).map((club) => `${club.value} (${club.count})`).join(", ") || undefined,
+    },
+    {
+      label: "Top nationality",
+      value: nations[0] ? countryName(nations[0].value) : "—",
+      code: nations[0]?.value,
+      detail: nations[0] ? `${nations[0].count} picks · ${share(nations[0].count)}` : "",
+      tip: nations.slice(1, 4).map((nation) => `${countryName(nation.value)} (${nation.count})`).join(", ") || undefined,
+    },
+  ];
+  return (
+    <div className="mt-6 grid gap-2 sm:grid-cols-3">
+      {cards.map((card) => (
+        <div key={card.label} title={card.tip ? `Next: ${card.tip}` : undefined} className="rounded-xl border border-[#262B36] bg-[#14171F] px-4 py-3">
+          <p className="text-[10px] font-semibold tracking-[0.16em] text-[#94A3B8] uppercase">{card.label}</p>
+          <p className="display mt-1 flex items-center gap-2 truncate text-xl leading-tight font-bold text-[#F8FAFC]">
+            {"code" in card && card.code ? <CountryBadge code={card.code} name={card.value} /> : null}
+            <span className="truncate">{card.value}</span>
+          </p>
+          <p className="mt-0.5 text-xs text-[#94A3B8]">{card.detail}</p>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default async function DraftYearPage({ params }: { params: Promise<Params> }) {
@@ -92,6 +147,7 @@ export default async function DraftYearPage({ params }: { params: Promise<Params
           </div>
         </div>
       </div>
+      <OriginStrip picks={owned.filter((pick) => !pick.forfeited)} />
       <DraftYearBoard
         picks={owned}
         teams={row.teams}

@@ -40,19 +40,24 @@ export function HeroGrade({
   label = "Draft Grade",
   stats,
   action,
+  badge,
 }: {
   letter: string | null;
   label?: string;
   stats: { label: string; value: string; tone?: string; title?: string }[];
   action?: ReactNode;
+  /** Replaces the letter box, e.g. an UNDRAFTED stamp. */
+  badge?: ReactNode;
 }) {
   return (
     <div className="flex h-full flex-col gap-3 rounded-xl border border-[#262B36] bg-[#0B0D10]/60 p-4">
       <div className="flex items-center justify-between gap-3 lg:flex-col lg:items-stretch lg:text-center">
         <SectionLabel>{label}</SectionLabel>
-        <span className={`display inline-flex min-w-[4.5rem] items-center justify-center self-center rounded-xl border px-3 py-1 text-5xl leading-none font-bold ${letterTone(letter)}`}>
-          {letter ?? "—"}
-        </span>
+        {badge ?? (
+          <span className={`display inline-flex min-w-[4.5rem] items-center justify-center self-center rounded-xl border px-3 py-1 text-5xl leading-none font-bold ${letterTone(letter)}`}>
+            {letter ?? "—"}
+          </span>
+        )}
       </div>
       <dl className="grid grid-cols-2 gap-2 text-center">
         {stats.map((item) => (
@@ -110,6 +115,26 @@ export function PillarGrades({
       ) : null}
       {action ? <div className="mt-auto flex justify-center">{action}</div> : null}
     </div>
+  );
+}
+
+export { CountryBadge } from "@/components/country-badge";
+
+export type VitalItem = { label: string; value: ReactNode; title?: string };
+
+/** Compact scouting-profile row: height, weight, hand, age, birthplace, drafted from. */
+export function VitalsRow({ items }: { items: VitalItem[] }) {
+  const shown = items.filter((item) => item.value != null && item.value !== "");
+  if (shown.length === 0) return null;
+  return (
+    <dl className="mt-3 flex flex-wrap gap-x-4 gap-y-2 border-t border-[#262B36] pt-3">
+      {shown.map((item) => (
+        <div key={item.label} title={item.title} className="min-w-0">
+          <dt className="text-[9px] font-semibold tracking-[0.16em] text-[#94A3B8] uppercase">{item.label}</dt>
+          <dd className="mt-0.5 flex items-center gap-1.5 text-sm leading-tight font-semibold text-[#F8FAFC]">{item.value}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 

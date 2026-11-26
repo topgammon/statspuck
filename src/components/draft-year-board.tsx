@@ -4,9 +4,150 @@ import Link from "next/link";
 import { useState } from "react";
 import { PickBrowser, type GradeCaption } from "@/components/pick-browser";
 import { TeamName } from "@/components/team-logo";
+import { countryName } from "@/lib/countries";
 import { scoreClass, signed } from "@/lib/format";
-import type { ClassTeam, PickRow } from "@/lib/types";
+import type { ClassTeam, Feeder, PickGroup, PickRow } from "@/lib/types";
 import { playerHref } from "@/lib/routes";
+
+const FEEDERS: Feeder[] = ["OHL", "WHL", "QMJHL", "USHL/NCAA", "Sweden", "Finland", "Russia", "Other"];
+
+const FEEDER_COLOR: Record<Feeder, string> = {
+  OHL: "#E11D48",
+  WHL: "#F97316",
+  QMJHL: "#F59E0B",
+  "USHL/NCAA": "#8B5CF6",
+  Sweden: "#10B981",
+  Finland: "#38BDF8",
+  Russia: "#3B82F6",
+  Other: "#64748B",
+};
+
+const FEEDER_TIP: Record<Feeder, string> = {
+  OHL: "Ontario Hockey League",
+  WHL: "Western Hockey League",
+  QMJHL: "Quebec Maritimes Junior Hockey League",
+  "USHL/NCAA": "USHL, US National Team Development Program, NCAA, US high school and other US junior leagues",
+  Sweden: "SHL, Allsvenskan and Swedish junior leagues",
+  Finland: "Liiga, Mestis and Finnish junior leagues",
+  Russia: "KHL, VHL and the MHL junior league",
+  Other: "Canadian Junior A, Czechia, Slovakia, Switzerland, Germany and everywhere else",
+};
+
+function countBy(values: string[]): [string, number][] {
+  const tally = new Map<string, number>();
+  for (const value of values) tally.set(value, (tally.get(value) ?? 0) + 1);
+  return [...tally.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+}
+
+function OriginFilters({
+  picks,
+  feeder,
+  onFeeder,
+  group,
+  onGroup,
+  nation,
+  onNation,
+  nations,
+  shown,
+}: {
+  picks: PickRow[];
+  feeder: Feeder | "all";
+  onFeeder: (value: Feeder | "all") => void;
+  group: "all" | PickGroup;
+  onGroup: (value: "all" | PickGroup) => void;
+  nation: string;
+  onNation: (value: string) => void;
+  nations: [string, number][];
+  shown: number;
+}) {
+  const counts = new Map(countBy(picks.map((pick) => pick.feeder ?? "Other")));
+  const total = picks.length || 1;
+  const present = FEEDERS.filter((key) => counts.get(key));
+  const pill = (on: boolean) =>
+    `rounded-full border px-3 py-1 text-xs font-semibold transition ${
+      on ? "border-[#38BDF8] bg-[#38BDF8]/15 text-[#F8FAFC]" : "border-[#262B36] bg-[#0B0D10]/60 text-[#94A3B8] hover:text-white"
+    }`;
+  return (
+    <div className="mt-4 rounded-2xl border border-[#262B36] bg-[#14171F] p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="text-[11px] font-semibold tracking-[0.16em] text-[#94A3B8] uppercase">Picks by feeder league</p>
+        <p className="text-xs text-[#94A3B8]">Click a segment or pill to filter</p>
+      </div>
+      <div className="mt-2 flex h-4 overflow-hidden rounded-full bg-[#0B0D10] ring-1 ring-[#262B36]" role="img" aria-label="Share of picks by feeder league">
+        {present.map((key) => {
+          const count = counts.get(key) ?? 0;
+          const dim = feeder !== "all" && feeder !== key;
+          return (
+            <button
+              key={key}
+              type="button"
+              title={`${key}: ${count} picks (${((count / total) * 100).toFixed(1)}%)`}
+              onClick={() => onFeeder(feeder === key ? "all" : key)}
+              className="h-full transition-opacity"
+              style={{ width: `${(count / total) * 100}%`, backgroundColor: FEEDER_COLOR[key], opacity: dim ? 0.3 : 1 }}
+            >
+              <span className="sr-only">{`Show ${key} picks`}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        <button type="button" onClick={() => onFeeder("all")} className={pill(feeder === "all")}>
+          All Leagues
+        </button>
+        {present.map((key) => (
+          <button key={key} type="button" title={FEEDER_TIP[key]} onClick={() => onFeeder(feeder === key ? "all" : key)} className={pill(feeder === key)}>
+            <span className="mr-1.5 inline-block h-2 w-2 rounded-full align-middle" style={{ backgroundColor: FEEDER_COLOR[key] }} />
+            {key} <span className="font-normal opacity-70">{counts.get(key)}</span>
+          </button>
+        ))}
+      </div>
+      <div className="mt-3 flex flex-wrap items-end gap-3">
+        <label className="text-xs text-zinc-400">
+          Position
+          <select
+            className="mt-1 block rounded-lg border border-white/10 bg-[#0B0D10] px-3 py-2 text-sm text-white"
+            value={group}
+            onChange={(event) => onGroup(event.target.value as "all" | PickGroup)}
+          >
+            <option value="all">All positions</option>
+            <option value="F">Forwards</option>
+            <option value="D">Defense</option>
+            <option value="G">Goalies</option>
+          </select>
+        </label>
+        <label className="text-xs text-zinc-400">
+          Nationality
+          <select
+            className="mt-1 block rounded-lg border border-white/10 bg-[#0B0D10] px-3 py-2 text-sm text-white"
+            value={nation}
+            onChange={(event) => onNation(event.target.value)}
+          >
+            <option value="all">All nations</option>
+            {nations.map(([code, count]) => (
+              <option key={code} value={code}>
+                {countryName(code)} ({count})
+              </option>
+            ))}
+          </select>
+        </label>
+        {feeder !== "all" || group !== "all" || nation !== "all" ? (
+          <button
+            type="button"
+            onClick={() => {
+              onFeeder("all");
+              onGroup("all");
+              onNation("all");
+            }}
+            className="mb-1 text-xs font-semibold text-[#38BDF8] hover:underline"
+          >
+            Clear filters · {shown} of {picks.length} picks
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
 
 export function DraftYearBoard({
   picks,
@@ -21,6 +162,20 @@ export function DraftYearBoard({
 }) {
   const [team, setTeam] = useState("all");
   const [sortNonce, setSortNonce] = useState(0);
+  const [feeder, setFeeder] = useState<Feeder | "all">("all");
+  const [group, setGroup] = useState<"all" | PickGroup>("all");
+  const [nation, setNation] = useState("all");
+  const real = picks.filter((pick) => !pick.forfeited);
+  const nations = countBy(real.map((pick) => pick.country ?? "")).filter(([code]) => code);
+  const filtering = feeder !== "all" || group !== "all" || nation !== "all";
+  const shown = filtering
+    ? real.filter(
+        (pick) =>
+          (feeder === "all" || (pick.feeder ?? "Other") === feeder) &&
+          (group === "all" || pick.group === group) &&
+          (nation === "all" || pick.country === nation),
+      )
+    : picks;
   const redraft = picks.filter((pick) => !pick.forfeited).sort((a, b) => a.redraft - b.redraft || a.overall - b.overall)[0];
   const steals = picks.filter((pick) => !pick.developing && pick.overall >= 20 && (pick.score ?? 0) > 0);
   const steal = [...steals].sort((a, b) => (b.score ?? 0) - (a.score ?? 0))[0];
@@ -80,9 +235,21 @@ export function DraftYearBoard({
             </button>
           ) : null}
         </div>
+        <OriginFilters
+          picks={real}
+          feeder={feeder}
+          onFeeder={setFeeder}
+          group={group}
+          onGroup={setGroup}
+          nation={nation}
+          onNation={setNation}
+          nations={nations}
+          shown={shown.filter((pick) => !pick.forfeited).length}
+        />
         <div className="mt-3">
           <PickBrowser
-            picks={picks}
+            picks={shown}
+            showOrigin
             captions={captions}
             idleCaption={idleCaption}
             team={team}

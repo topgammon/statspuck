@@ -7,8 +7,9 @@ import metaJson from "../../data/draft-rater/meta.json";
 import ogJson from "../../data/draft-rater/og.json";
 import picksJson from "../../data/draft-rater/picks.json";
 import teamsJson from "../../data/draft-rater/teams.json";
+import undraftedJson from "../../data/draft-rater/undrafted.json";
 import { gradeEras, gradeTeams, type GradeFilter } from "./grade";
-import type { CurveSet, DraftClass, Era, Headlines, Meta, OgIndex, PickRow, TeamGrade, TeamInfo } from "./types";
+import type { CurveSet, DraftClass, Era, Headlines, Meta, OgIndex, PickRow, TeamGrade, TeamInfo, UndraftedPlayer } from "./types";
 
 export const picks = picksJson as PickRow[];
 export const draftClasses = classesJson as DraftClass[];
@@ -20,7 +21,11 @@ export const meta = metaJson as Meta;
 export const teams = teamsJson as TeamInfo[];
 export const og = ogJson as OgIndex;
 
+/** Undrafted NHL graduates. Never part of Draft Rater grades. */
+export const undrafted = undraftedJson as unknown as UndraftedPlayer[];
+
 export const picksById = new Map(picks.map((pick) => [pick.id, pick]));
+export const undraftedById = new Map(undrafted.map((player) => [player.id, player]));
 export const teamsByAbbr = new Map(leaderboard.map((team) => [team.abbr, team]));
 export const erasBySlug = new Map(eras.map((era) => [era.slug, era]));
 

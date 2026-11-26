@@ -8,6 +8,7 @@ const tones: Record<Stamp, string> = {
   "LATE BLOOMER": "border-fuchsia-400 text-teal-200",
   ELITE: "border-[#e8c56b] text-[#f6e3a1]",
   RETIRED: "border-[#b7bdc7] text-[#c5ccd6]",
+  UNDRAFTED: "border-[#38BDF8] text-[#bae6fd]",
 };
 
 export function StampMark({ stamp }: { stamp: Stamp }) {

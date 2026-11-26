@@ -197,6 +197,17 @@ SEASON_COLUMNS = (
 )
 
 
+# Draft-day origin and vitals from the records draft feed, stored on each pick.
+PICK_DETAIL_COLUMNS = (
+    ("amateur_league", "TEXT"),
+    ("birth_date", "TEXT"),
+    ("birth_place", "TEXT"),
+    ("height", "INTEGER"),
+    ("weight", "INTEGER"),
+    ("shoots_catches", "TEXT"),
+)
+
+
 def connect() -> sqlite3.Connection:
     DATA.mkdir(parents=True, exist_ok=True)
     CACHE.mkdir(parents=True, exist_ok=True)
@@ -207,6 +218,10 @@ def connect() -> sqlite3.Connection:
     for name, kind in SEASON_DETAIL_COLUMNS:
         if name not in existing:
             conn.execute(f"ALTER TABLE player_seasons ADD COLUMN {name} {kind}")
+    existing = {row[1] for row in conn.execute("PRAGMA table_info(picks)")}
+    for name, kind in PICK_DETAIL_COLUMNS:
+        if name not in existing:
+            conn.execute(f"ALTER TABLE picks ADD COLUMN {name} {kind}")
     return conn
 
 
@@ -331,8 +346,9 @@ def load_draft_year(conn: sqlite3.Connection, year: int, refresh: bool) -> int:
             INSERT INTO picks (
               pick_uid, draft_year, round, pick_in_round, overall, team_abbr,
               franchise_abbr, historic_name, team_id, player_id, player_name,
-              position, country, amateur_club
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              position, country, amateur_club, amateur_league, birth_date,
+              birth_place, height, weight, shoots_catches
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 row["id"],
@@ -349,6 +365,12 @@ def load_draft_year(conn: sqlite3.Connection, year: int, refresh: bool) -> int:
                 _position(row.get("position")),
                 row.get("countryCode"),
                 row.get("amateurClubName"),
+                (row.get("amateurLeague") or "").strip() or None,
+                row.get("birthDate"),
+                " ".join((row.get("birthPlace") or "").split()) or None,
+                row.get("height") or None,
+                row.get("weight") or None,
+                row.get("shootsCatches") or None,
             ),
         )
         inserted += 1
@@ -558,7 +580,13 @@ def fetch_all(rebuild: bool = False) -> None:
             "SELECT COUNT(*) AS n FROM picks WHERE draft_year = ?",
             (year,),
         ).fetchone()["n"]
-        needed = rebuild or existing == 0 or year >= latest - 1
+        # Years stored before origin details (league, birth date) were kept get
+        # reloaded once. The raw draft response on disk already has them.
+        detailed = conn.execute(
+            "SELECT COUNT(*) AS n FROM picks WHERE draft_year = ? AND (amateur_league IS NOT NULL OR birth_date IS NOT NULL)",
+            (year,),
+        ).fetchone()["n"]
+        needed = rebuild or existing == 0 or year >= latest - 1 or detailed == 0
         if not needed:
             print(f"draft {year}: cached ({existing})", flush=True)
             continue

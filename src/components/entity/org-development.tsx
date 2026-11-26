@@ -8,6 +8,9 @@ import { SectionLabel } from "./bio";
 
 export type DevGem = { id: number; name: string; year: number; overall: number; q6: number; dev: number };
 
+/** An undrafted signing this team (or GM) gave an NHL debut. */
+export type UndraftedGem = { id: number; name: string; pos: string; debut: number; qg: number; gp: number; devCredit: number | null; origin: string | null };
+
 function pct(value: number | null | undefined): string {
   return value == null ? "—" : `${Math.round(value * 100)}%`;
 }
@@ -24,6 +27,7 @@ export function OrgDevelopment({
   subject,
   dev,
   gems,
+  undrafted = [],
   board,
   highlight,
   matureThrough,
@@ -32,6 +36,7 @@ export function OrgDevelopment({
   subject: string;
   dev: DevGrade | null | undefined;
   gems: DevGem[];
+  undrafted?: UndraftedGem[];
   board: DevLeaderRow[];
   highlight?: string;
   matureThrough: number;
@@ -56,6 +61,7 @@ export function OrgDevelopment({
               </p>
               <p className="mt-3 text-sm leading-6 text-[#94A3B8]">
                 {DEV_SCORE_TIP} Based on {dev.n} picks from {matureThrough} and earlier, so every pick has had six full seasons.
+                {dev.undrafted ? ` Plus ${dev.undrafted} undrafted ${dev.undrafted === 1 ? "signing" : "signings"} who reached 100+ Impact, counted as a half-weight bonus.` : ""}
               </p>
             </>
           ) : (
@@ -122,6 +128,39 @@ export function OrgDevelopment({
           </div>
         ) : (
           <p className="mt-3 text-sm text-[#94A3B8]">None yet.</p>
+        )}
+      </div>
+
+      <div className="rounded-2xl border border-[#38BDF8]/40 bg-[#14171F] p-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <SectionLabel>Top undrafted gems signed</SectionLabel>
+          <span className="text-xs text-[#94A3B8]">NHL debut here · 100+ Impact earns Development credit</span>
+        </div>
+        {undrafted.length ? (
+          <div className="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 pb-1">
+            {undrafted.slice(0, 8).map((gem) => (
+              <Link
+                key={gem.id}
+                href={playerHref(gem.id, "development")}
+                className="w-44 shrink-0 rounded-xl border border-[#262B36] bg-[#0B0D10]/60 p-3 hover:border-[#38BDF8]/60"
+              >
+                <span className="display inline-block border-2 border-[#38BDF8] px-1 py-0.5 text-[9px] leading-none font-bold tracking-[0.14em] text-[#bae6fd]">UNDRAFTED</span>
+                <p className="mt-2 truncate font-semibold">{gem.name}</p>
+                <p className="truncate text-xs text-[#94A3B8]">
+                  {gem.pos} · debut {gem.debut}
+                  {gem.origin ? ` · from ${gem.origin}` : ""}
+                </p>
+                <p className="mt-2 text-xs text-[#94A3B8]">
+                  <span className="display text-lg font-bold text-[#F8FAFC]">{gem.qg.toFixed(0)}</span> Impact · {gem.gp} GP
+                </p>
+                <p className={`text-xs font-semibold ${gem.devCredit != null ? "text-[#10B981]" : "text-[#94A3B8]"}`}>
+                  {gem.devCredit != null ? `${signed(gem.devCredit)} dev credit` : "Below 100 Impact, no credit"}
+                </p>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-3 text-sm text-[#94A3B8]">No undrafted signings with 25+ NHL games debuted here since 2005-06.</p>
         )}
       </div>
 

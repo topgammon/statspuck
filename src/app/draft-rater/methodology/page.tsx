@@ -82,6 +82,7 @@ export default function MethodologyPage() {
         <Rule stamp="LATE BLOOMER" text="Behind the slot through all of the first four post-draft seasons. The score then turns positive for the first time in year 5 or later, and it is still positive today. A steal can wear this stamp too." />
         <Rule stamp="ELITE" text="A franchise peak, not just a long career. Forwards need three seasons of 105 Impact, a career points-per-game of at least 0.80, and either 850 career Impact or 1.15 Impact per game across 300 games. Defensemen use the same peak and volume, without the scoring-rate bar. Goalies need three seasons of 90 Impact, and either 650 career Impact or 1.45 Impact per start across 200 starts." />
         <Rule stamp="RETIRED" text="The NHL lists the player as inactive, they played at least 25 NHL games, and the draft was at least seven years ago. During the 2026–27 season that is the 2019 draft and earlier. A cup of coffee, or a prospect still in the NCAA or Europe, does not get this stamp." />
+        <Rule stamp="UNDRAFTED" text="Never selected in any NHL Entry Draft, with 25+ NHL regular-season games since 2005-06. These players get a profile but never count in Draft Score, slot curves, or team and GM draft grades. Once one reaches 100+ career Impact, the franchise that gave him his NHL debut (and its GM that season) earns a half-weight bonus in its Development Grade." />
       </div>
 
       <h2 className="display mt-10 text-2xl font-bold">The letter</h2>
@@ -152,7 +153,7 @@ export default function MethodologyPage() {
   );
 }
 
-function Rule({ stamp, text }: { stamp: "DEVELOPING" | "STALLED" | "BUST" | "STEAL" | "LATE BLOOMER" | "ELITE" | "RETIRED"; text: string }) {
+function Rule({ stamp, text }: { stamp: "DEVELOPING" | "STALLED" | "BUST" | "STEAL" | "LATE BLOOMER" | "ELITE" | "RETIRED" | "UNDRAFTED"; text: string }) {
   return (
     <div className="flex items-start gap-3 rounded-2xl border border-white/10 px-4 py-3">
       <StampMark stamp={stamp} />

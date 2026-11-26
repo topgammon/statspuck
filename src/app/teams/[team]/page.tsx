@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { BioCard, CapBar, ComingSoonPanel, DnaPills, ModulePreviews, ORG_TABS, PillarGrades, SectionLabel } from "@/components/entity/bio";
 import { OrgDevelopment } from "@/components/entity/org-development";
-import { devBoard, devGems } from "@/lib/dev-board";
+import { devBoard, devGems, undraftedGems } from "@/lib/dev-board";
 import { development } from "@/lib/development";
 import { EntityTabs, TabLink } from "@/components/entity/entity-tabs";
 import { ShareLauncher } from "@/components/share-modal";
@@ -141,6 +141,7 @@ export default async function TeamPage({ params }: { params: Promise<Params> }) 
         subject={team.name}
         dev={team.dev}
         gems={devGems(team.dev)}
+        undrafted={undraftedGems({ franchise: team.abbr })}
         board={devBoard}
         highlight={team.abbr}
         matureThrough={development.matureThrough}
