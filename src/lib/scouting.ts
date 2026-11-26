@@ -2,7 +2,6 @@ import { skillWeightedMean } from "@/lib/grade";
 import type { PickRow } from "@/lib/types";
 
 const BUST_LETTERS = new Set(["D+", "D", "D-"]);
-const HIT_LETTERS = new Set(["B-", "B", "B+", "A-", "A", "A+"]);
 
 export type RateStat = {
   rate: number | null;
@@ -55,9 +54,9 @@ export function scoutingReport(subject: PickRow[], league: PickRow[]): ScoutingR
     .sort((a, b) => a - b);
   return {
     bust: rate(subject, inBustWindow, (pick) => BUST_LETTERS.has(pick.letter ?? "")),
-    late: rate(subject, lateRoundGraded, (pick) => HIT_LETTERS.has(pick.letter ?? "")),
+    late: rate(subject, lateRoundPool, lateRoundHit),
     leagueBust: rate(league, inBustWindow, (pick) => BUST_LETTERS.has(pick.letter ?? "")),
-    leagueLate: rate(league, lateRoundGraded, (pick) => HIT_LETTERS.has(pick.letter ?? "")),
+    leagueLate: rate(league, lateRoundPool, lateRoundHit),
     steals: subject.filter((pick) => pick.stamps.includes("STEAL")).length,
     bloomers: subject.filter((pick) => pick.stamps.includes("LATE BLOOMER")).length,
     ...gemSummary(subject),
@@ -71,14 +70,15 @@ function inBustWindow(pick: PickRow): boolean {
   return pick.group === "G" ? pick.milestone >= 8 : pick.milestone >= 6;
 }
 
-function lateRoundGraded(pick: PickRow): boolean {
-  return (
-    pick.round >= 4 &&
-    pick.round <= 7 &&
-    !pick.developing &&
-    pick.letter != null &&
-    (pick.qg ?? 0) >= GRADUATE_QG
-  );
+/** Every round 4–7 pick counts unless it still carries the prospect (DEVELOPING) badge. */
+function lateRoundPool(pick: PickRow): boolean {
+  return pick.round >= 4 && pick.round <= 7 && !pick.developing && !pick.stamps.includes("DEVELOPING");
+}
+
+/** A late-round hit beat its slot (positive score) and played 100+ NHL games. */
+export const LATE_HIT_GP = 100;
+function lateRoundHit(pick: PickRow): boolean {
+  return (pick.score ?? 0) > 0 && Math.max(pick.gpCareer ?? 0, pick.gp ?? 0) >= LATE_HIT_GP;
 }
 
 export function isGemPick(pick: PickRow): boolean {

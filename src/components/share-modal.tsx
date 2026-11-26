@@ -3,6 +3,7 @@
 import { domToBlob } from "modern-screenshot";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ShareCardView, type ShareCardModel } from "@/components/share-cards";
+import { TogglePill } from "@/components/toggle-pill";
 import { canonicalUrl } from "@/lib/site";
 
 export type ShareFormat = "wide" | "square";
@@ -33,7 +34,7 @@ export function ShareLauncher({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 rounded-full bg-[#E11D48] px-4 py-2 text-sm font-semibold text-white hover:bg-[#ff4545]"
+        className="inline-flex items-center gap-2 rounded-full bg-[#E11D48] px-4 py-2 text-sm font-semibold text-white shadow-[0_6px_20px_-8px_rgba(225,29,72,0.7)] transition-colors hover:bg-[#F43F5E]"
       >
         <ShareIcon />
         Share
@@ -74,9 +75,11 @@ function ShareModal({
   const [toast, setToast] = useState("");
   const [busy, setBusy] = useState("");
   const cardRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [stage, setStage] = useState({ width: 0, height: 0 });
   const size = SIZE[format];
-  const frame = 680;
-  const scale = Math.min(frame / size.width, 520 / size.height);
+  // Fit the whole card inside the preview area, never crop it.
+  const scale = stage.width > 0 ? Math.min(stage.width / size.width, stage.height / size.height) : 0;
   const url = canonicalUrl(path, search);
 
   useEffect(() => {
@@ -84,8 +87,28 @@ function ShareModal({
       if (event.key === "Escape") onClose();
     }
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previous;
+    };
   }, [onClose]);
+
+  useEffect(() => {
+    const node = stageRef.current;
+    if (!node) return;
+    const measure = () =>
+      setStage({ width: node.clientWidth, height: Math.max(220, Math.min(560, window.innerHeight * 0.56)) });
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    window.addEventListener("resize", measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, []);
 
   function note(message: string) {
     setToast(message);
@@ -154,71 +177,99 @@ function ShareModal({
 
   const post = `${summary} ${url}`;
 
+  const previewW = Math.floor(size.width * scale);
+  const previewH = Math.floor(size.height * scale);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-3 sm:items-center" role="dialog" aria-modal="true" aria-label="Share card">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 backdrop-blur-sm sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label="Share card">
       <button type="button" className="absolute inset-0 cursor-default" aria-label="Close share dialog" onClick={onClose} />
-      <div className="relative max-h-[94vh] w-full max-w-3xl overflow-auto rounded-3xl border border-white/10 bg-[#0c0d12] p-4 shadow-2xl sm:p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs tracking-[0.16em] text-zinc-500 uppercase">Share card</p>
-            <h2 className="mt-1 text-xl font-semibold">{title}</h2>
+      <div className="relative max-h-[96dvh] w-full max-w-3xl overflow-y-auto rounded-t-3xl border border-[#262B36] bg-[#14171F] shadow-2xl sm:rounded-3xl">
+        <div className="flex items-center justify-between gap-4 border-b border-[#262B36] px-5 py-4 sm:px-6">
+          <div className="min-w-0">
+            <p className="text-[11px] tracking-[0.18em] text-[#94A3B8] uppercase">Share</p>
+            <h2 className="truncate text-lg font-semibold text-[#F8FAFC]">{title}</h2>
           </div>
-          <button type="button" onClick={onClose} className="rounded-full border border-white/15 px-3 py-1 text-sm text-zinc-300 hover:text-white">
-            Close
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="grid h-9 w-9 flex-none place-items-center rounded-full text-[#94A3B8] hover:bg-white/5 hover:text-white"
+          >
+            <CloseIcon />
           </button>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex rounded-full border border-white/10 p-0.5">
-            {(Object.keys(SIZE) as ShareFormat[]).map((id) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setFormat(id)}
-                className={`rounded-full px-3 py-1.5 text-xs tracking-wide uppercase ${format === id ? "bg-white/10 text-white" : "text-zinc-400"}`}
-              >
-                {SIZE[id].label} {SIZE[id].width}×{SIZE[id].height}
-              </button>
-            ))}
+        <div className="px-5 pt-5 sm:px-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <TogglePill
+              label="Card size"
+              value={format}
+              options={(Object.keys(SIZE) as ShareFormat[]).map((id) => ({ id, label: SIZE[id].label }))}
+              onChange={setFormat}
+            />
+            <p className="text-xs text-[#94A3B8]">
+              {size.width}×{size.height} · {format === "wide" ? "Best for X, Reddit, link previews" : "Best for Instagram, Discord, phones"}
+            </p>
           </div>
-          <p className="text-xs text-zinc-500">{format === "wide" ? "X, Reddit, and link previews" : "Discord, Instagram, and mobile"}</p>
-        </div>
 
-        <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-black" style={{ height: size.height * scale }}>
-          <div className="mx-auto" style={{ width: size.width * scale, height: size.height * scale }}>
-            <div style={{ width: size.width, height: size.height, transform: `scale(${scale})`, transformOrigin: "top left" }}>
-              <div ref={cardRef}>
-                <ShareCardView format={format} card={card} />
+          <div ref={stageRef} className="mt-4 flex w-full justify-center">
+            <div
+              className="overflow-hidden rounded-xl shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)] ring-1 ring-[#262B36]"
+              style={{ width: previewW, height: previewH, visibility: scale > 0 ? "visible" : "hidden" }}
+            >
+              <div style={{ width: size.width, height: size.height, transform: `scale(${scale})`, transformOrigin: "top left" }}>
+                <div ref={cardRef}>
+                  <ShareCardView format={format} card={card} />
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Action label={busy === "copy" ? "Copying" : "Copy image"} onClick={copyImage} disabled={busy !== ""}>
-            <CopyIcon />
-          </Action>
-          <Action label={busy === "save" ? "Saving" : "Save image"} onClick={saveImage} disabled={busy !== ""}>
-            <DownloadIcon />
-          </Action>
-          <Action label="Copy link" onClick={copyLink}>
-            <LinkIcon />
-          </Action>
-          <span className="mx-1 hidden h-6 w-px bg-white/10 sm:block" />
-          <IconButton label="X" onClick={() => openShare(`https://twitter.com/intent/tweet?text=${encodeURIComponent(post)}`)}>
-            <XIcon />
-          </IconButton>
-          <IconButton label="Reddit" onClick={() => openShare(`https://www.reddit.com/submit?title=${encodeURIComponent(summary)}&url=${encodeURIComponent(url)}`)}>
-            <RedditIcon />
-          </IconButton>
-          <IconButton label="Bluesky" onClick={() => openShare(`https://bsky.app/intent/compose?text=${encodeURIComponent(post)}`)}>
-            <BlueskyIcon />
-          </IconButton>
-          <IconButton label="Facebook" onClick={() => openShare(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`)}>
-            <FacebookIcon />
-          </IconButton>
+        <div className="px-5 pt-5 pb-5 sm:px-6 sm:pb-6">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <button
+              type="button"
+              onClick={saveImage}
+              disabled={busy !== ""}
+              className="col-span-2 inline-flex items-center justify-center gap-2 rounded-xl bg-[#E11D48] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#F43F5E] disabled:opacity-60 sm:col-span-1"
+            >
+              <DownloadIcon />
+              {busy === "save" ? "Saving…" : "Download PNG"}
+            </button>
+            <Action label={busy === "copy" ? "Copying…" : "Copy image"} onClick={copyImage} disabled={busy !== ""}>
+              <CopyIcon />
+            </Action>
+            <Action label="Copy link" onClick={copyLink}>
+              <LinkIcon />
+            </Action>
+          </div>
+
+          <div className="mt-5 flex items-center gap-3">
+            <span className="text-[11px] tracking-[0.18em] text-[#94A3B8] uppercase">Post to</span>
+            <span className="h-px flex-1 bg-[#262B36]" />
+          </div>
+          <div className="mt-3 grid grid-cols-4 gap-2">
+            <SocialButton label="X" onClick={() => openShare(`https://twitter.com/intent/tweet?text=${encodeURIComponent(post)}`)}>
+              <XIcon />
+            </SocialButton>
+            <SocialButton label="Reddit" onClick={() => openShare(`https://www.reddit.com/submit?title=${encodeURIComponent(summary)}&url=${encodeURIComponent(url)}`)}>
+              <RedditIcon />
+            </SocialButton>
+            <SocialButton label="Bluesky" onClick={() => openShare(`https://bsky.app/intent/compose?text=${encodeURIComponent(post)}`)}>
+              <BlueskyIcon />
+            </SocialButton>
+            <SocialButton label="Facebook" onClick={() => openShare(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`)}>
+              <FacebookIcon />
+            </SocialButton>
+          </div>
         </div>
-        {toast ? <p className="mt-3 text-sm text-[#3ddc97]">{toast}</p> : null}
+
+        <div aria-live="polite" className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center">
+          {toast ? (
+            <span className="rounded-full border border-[#10B981]/40 bg-[#0B0D10] px-4 py-2 text-sm text-[#10B981] shadow-lg">{toast}</span>
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -230,7 +281,7 @@ function Action({ label, onClick, disabled, children }: { label: string; onClick
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-2 text-sm text-zinc-100 hover:bg-white/5 disabled:opacity-50"
+      className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#262B36] bg-[#0B0D10] px-4 py-3 text-sm font-medium text-[#F8FAFC] transition-colors hover:border-[#38BDF8]/50 hover:bg-white/[0.03] disabled:opacity-60"
     >
       {children}
       {label}
@@ -238,12 +289,26 @@ function Action({ label, onClick, disabled, children }: { label: string; onClick
   );
 }
 
-function IconButton({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
+function SocialButton({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
   return (
-    <button type="button" aria-label={label} onClick={onClick} className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-2 text-sm text-zinc-100 hover:bg-white/5">
-      {children}
-      {label}
+    <button
+      type="button"
+      aria-label={`Post to ${label}`}
+      title={`Post to ${label}`}
+      onClick={onClick}
+      className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-[#262B36] bg-[#0B0D10] py-3 text-[#94A3B8] transition-colors hover:border-white/20 hover:text-white"
+    >
+      <span className="[&_svg]:h-5 [&_svg]:w-5">{children}</span>
+      <span className="text-xs">{label}</span>
     </button>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
   );
 }
 

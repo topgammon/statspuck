@@ -7,7 +7,7 @@ export function ScoutingPanels({ report }: { report: ScoutingReport }) {
     <section className="mt-10">
       <h2 className="display text-2xl font-bold">Scouting DNA</h2>
       <p className="mt-1 text-sm text-zinc-500">
-        First-round busts are graded once the make-or-break years are over. A late-round hit is a round 4–7 pick who reached 25 quality games and earned B- or better. The gem rate is evaluated picks with a steal, late bloomer, or elite stamp.
+        First-round busts are graded once the make-or-break years are over. A late-round hit is a round 4–7 pick who beat his draft slot (positive score) and played 100+ NHL games; every round 4–7 pick without the prospect badge counts toward the rate. The gem rate is evaluated picks with a steal, late bloomer, or elite stamp.
       </p>
       <div className="mt-4 grid grid-cols-2 items-stretch gap-3 lg:grid-cols-4">
         <RateCard
@@ -20,7 +20,7 @@ export function ScoutingPanels({ report }: { report: ScoutingReport }) {
           label="Late-round hit rate"
           stat={report.late}
           league={report.leagueLate}
-          empty="No graduated picks in rounds 4–7"
+          empty="No evaluated picks in rounds 4–7"
         />
         <div className="flex h-full min-h-36 flex-col justify-between rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-4">
           <p className="text-[11px] leading-4 tracking-[0.16em] text-zinc-500 uppercase">Gem finder</p>

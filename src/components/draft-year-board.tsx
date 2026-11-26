@@ -65,13 +65,23 @@ export function DraftYearBoard({
       </div>
       <TeamChart teams={top} selected={team} onSelect={choose} />
       <section id="picks" className="mt-10 scroll-mt-24">
-        <h2 className="display text-2xl font-bold">Picks</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="display text-2xl font-bold">Picks</h2>
+          {team !== "all" ? (
+            <button
+              type="button"
+              onClick={() => setTeam("all")}
+              className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs text-zinc-200 hover:bg-white/[0.08]"
+            >
+              Showing {teams.find((item) => item.franchise === team)?.franchiseName ?? team}
+              <span aria-hidden className="text-zinc-500">✕</span>
+              <span className="sr-only">Clear team filter</span>
+            </button>
+          ) : null}
+        </div>
         <div className="mt-3">
           <PickBrowser
             picks={picks}
-            teams={[...teams]
-              .sort((a, b) => a.franchiseName.localeCompare(b.franchiseName))
-              .map((item) => ({ id: item.franchise, label: item.franchiseName }))}
             captions={captions}
             idleCaption={idleCaption}
             team={team}

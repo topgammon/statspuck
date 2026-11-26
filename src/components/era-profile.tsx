@@ -6,6 +6,7 @@ import { PickBrowser } from "@/components/pick-browser";
 import { ShareLauncher } from "@/components/share-modal";
 import { ScoutingPanels } from "@/components/scouting-panels";
 import { TeamName } from "@/components/team-logo";
+import { TogglePill } from "@/components/toggle-pill";
 import { gradeOwned } from "@/lib/grade";
 import { signed } from "@/lib/format";
 import type { ScoutingReport } from "@/lib/scouting";
@@ -70,22 +71,14 @@ export function EraProfile({
         </p>
       </div>
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex rounded-full border border-white/10 p-0.5">
-          <button
-            type="button"
-            onClick={() => setScope("team")}
-            className={`rounded-full px-3 py-1.5 text-xs tracking-wide uppercase ${scope === "team" ? "bg-white/10 text-white" : "text-zinc-400"}`}
-          >
-            {era.teamName} only
-          </button>
-          <button
-            type="button"
-            onClick={() => setScope("career")}
-            className={`rounded-full px-3 py-1.5 text-xs tracking-wide uppercase ${scope === "career" ? "bg-white/10 text-white" : "text-zinc-400"}`}
-          >
-            All teams
-          </button>
-        </div>
+        <TogglePill
+          value={scope}
+          options={[
+            { id: "team", label: `${era.teamName} only` },
+            { id: "career", label: "All teams" },
+          ]}
+          onChange={setScope}
+        />
         <ShareLauncher
           fileSlug={fileSlug}
           title={`${era.person} draft grade`}

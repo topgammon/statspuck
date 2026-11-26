@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import type { ShareFormat } from "@/components/share-modal";
 import { teamLogoFile } from "@/components/team-logo";
 import { signed } from "@/lib/format";
@@ -8,15 +8,24 @@ import type { ScoutingReport } from "@/lib/scouting";
 import { publicPath } from "@/lib/site";
 import type { PickRow, YearPoint } from "@/lib/types";
 
-const INK = "#f4f4f5";
-const MUTED = "#a1a1aa";
-const DIM = "#71717a";
-const GREEN = "#3ddc97";
-const RED = "#ff4d4d";
+// Brand kit
 const BG = "#0B0D10";
+const PANEL = "#14171F";
+const LINE = "#262B36";
+const INK = "#F8FAFC";
+const MUTED = "#94A3B8";
+const DIM = "#64748B";
+const RED = "#E11D48";
+const CYAN = "#38BDF8";
+const GOLD = "#F59E0B";
+const EMERALD = "#10B981";
+const LOSS = "#EF4444";
+
+const DISPLAY = "var(--font-oswald), Oswald, 'Arial Narrow', sans-serif";
+const BODY = "var(--font-barlow), Barlow, system-ui, sans-serif";
 
 const SILHOUETTE = `data:image/svg+xml,${encodeURIComponent(
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><rect width="80" height="80" fill="#14161c"/><circle cx="40" cy="28" r="14" fill="#3a3d46"/><path d="M14 78c6-20 16-28 26-28s20 8 26 28" fill="#3a3d46"/></svg>`,
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><rect width="80" height="80" fill="#14171F"/><circle cx="40" cy="30" r="14" fill="#2A303C"/><path d="M12 80c6-20 16-28 28-28s22 8 28 28" fill="#2A303C"/></svg>`,
 )}`;
 
 export function useSameOriginImage(remote: string | null): string | null {
@@ -48,62 +57,202 @@ export function useSameOriginImage(remote: string | null): string | null {
   return src;
 }
 
-function Frame({ format, color, children }: { format: ShareFormat; color: string; children: ReactNode }) {
+/* ------------------------------------------------------------------ */
+/* Shared building blocks                                              */
+/* ------------------------------------------------------------------ */
+
+const ellipsis: CSSProperties = { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 };
+
+function dims(format: ShareFormat) {
   const wide = format === "wide";
+  return {
+    wide,
+    width: wide ? 1200 : 1080,
+    height: wide ? 630 : 1080,
+    pad: wide ? 52 : 72,
+    footer: wide ? 74 : 104,
+    gap: wide ? 22 : 32,
+  };
+}
+
+function Frame({ format, accent, children }: { format: ShareFormat; accent: string; children: ReactNode }) {
+  const d = dims(format);
   return (
     <div
       style={{
         position: "relative",
-        width: wide ? 1200 : 1080,
-        height: wide ? 630 : 1080,
+        width: d.width,
+        height: d.height,
         background: BG,
         color: INK,
         overflow: "hidden",
-        fontFamily: "Barlow, sans-serif",
+        fontFamily: BODY,
+        textAlign: "left",
+        lineHeight: 1.25,
       }}
     >
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 10, background: color }} />
-      <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: 10, background: color }} />
-      <div style={{ position: "absolute", inset: wide ? "28px 36px 86px" : "36px 40px 96px" }}>{children}</div>
+      {/* Soft accent glow so every card carries its team or brand color without shouting. */}
+      <div
+        style={{
+          position: "absolute",
+          top: -d.height * 0.45,
+          right: -d.width * 0.2,
+          width: d.width * 0.8,
+          height: d.height * 1.1,
+          background: `radial-gradient(closest-side, ${hexA(accent, 0.22)}, ${hexA(accent, 0)})`,
+        }}
+      />
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 6, background: `linear-gradient(90deg, ${accent}, ${hexA(accent, 0.35)})` }} />
+      <div
+        style={{
+          position: "absolute",
+          top: d.pad,
+          left: d.pad,
+          right: d.pad,
+          bottom: d.footer + (d.wide ? 26 : 40),
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          gap: d.gap,
+        }}
+      >
+        {children}
+      </div>
       <footer
         style={{
           position: "absolute",
-          left: 0,
-          right: 0,
+          left: d.pad,
+          right: d.pad,
           bottom: 0,
-          height: wide ? 74 : 84,
+          height: d.footer,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "0 36px",
-          borderTop: "1px solid rgba(255,255,255,0.08)",
-          background: "#090a0e",
+          borderTop: `1px solid ${LINE}`,
         }}
       >
-        <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {/* White sticker badge keeps the logo's black linework readable on the dark card. */}
+        <span style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          {/* White badge keeps the logo's black linework readable on the dark card. */}
           <span
             style={{
-              height: wide ? 50 : 58,
-              padding: 3,
-              borderRadius: 8,
+              height: d.wide ? 42 : 54,
+              width: d.wide ? 42 : 54,
+              borderRadius: 10,
               background: "#ffffff",
               display: "inline-flex",
               alignItems: "center",
-              boxShadow: "0 0 0 1px rgba(255,255,255,0.6)",
+              justifyContent: "center",
+              overflow: "hidden",
             }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/statspuck-logo-480.png" alt="StatsPuck" style={{ height: "100%", width: "auto", borderRadius: 6 }} />
+            <img src="/statspuck-logo-480.png" alt="StatsPuck" style={{ height: "100%", width: "100%", objectFit: "contain" }} />
           </span>
-          <span>
-            <span style={{ display: "block", fontFamily: "Oswald, sans-serif", fontWeight: 700, fontSize: 22, letterSpacing: 0.6 }}>STATSPUCK · DRAFT RATER</span>
-            <span style={{ display: "block", color: MUTED, fontSize: 14 }}>statspuck.com/draft-rater</span>
+          <span style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
+            <span style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: d.wide ? 22 : 28, letterSpacing: 1 }}>STATSPUCK</span>
+            <span style={{ color: MUTED, fontSize: d.wide ? 14 : 18, letterSpacing: 2, textTransform: "uppercase" }}>Draft Rater</span>
           </span>
+        </span>
+        <span style={{ color: MUTED, fontSize: d.wide ? 18 : 24, letterSpacing: 0.4 }}>
+          statspuck.com<span style={{ color: DIM }}>/draft-rater</span>
         </span>
       </footer>
     </div>
   );
+}
+
+function Eyebrow({ children, size = 16, color = MUTED }: { children: ReactNode; size?: number; color?: string }) {
+  return (
+    <div style={{ color, fontSize: size, letterSpacing: 2.4, textTransform: "uppercase", fontWeight: 600, ...ellipsis }}>{children}</div>
+  );
+}
+
+function Title({ children, size, wrap }: { children: ReactNode; size: number; wrap?: boolean }) {
+  const lines: CSSProperties = wrap
+    ? { display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", overflowWrap: "anywhere" }
+    : ellipsis;
+  return (
+    <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: size, lineHeight: 1.02, letterSpacing: 0.2, marginTop: 8, ...lines }}>{children}</div>
+  );
+}
+
+function GradeBadge({ letter, rating, size, label = "Grade" }: { letter: string | null; rating: number | null; size: number; label?: string }) {
+  const color = gradeColor(letter);
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        flex: "none",
+        borderRadius: 24,
+        background: PANEL,
+        border: `1px solid ${LINE}`,
+        boxShadow: `inset 0 0 0 1px ${hexA(color, 0.08)}, 0 0 60px ${hexA(color, 0.12)}`,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <div style={{ color: MUTED, fontSize: size * 0.085, letterSpacing: 2.4, textTransform: "uppercase", fontWeight: 600 }}>{label}</div>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: size * 0.5, lineHeight: 1, color, marginTop: size * 0.03 }}>{letter ?? "—"}</div>
+      <div style={{ color: MUTED, fontSize: size * 0.09, marginTop: size * 0.04, height: size * 0.11 }}>{rating == null ? "" : `${rating} / 100`}</div>
+    </div>
+  );
+}
+
+function Tile({
+  label,
+  value,
+  note,
+  valueColor,
+  noteColor,
+  big,
+  text,
+}: {
+  label: string;
+  value: string;
+  note?: string;
+  valueColor?: string;
+  noteColor?: string;
+  big?: boolean;
+  text?: boolean;
+}) {
+  const valueSize = text ? (big ? 34 : 26) : big ? 52 : 40;
+  return (
+    <div
+      style={{
+        background: PANEL,
+        border: `1px solid ${LINE}`,
+        borderRadius: 18,
+        padding: big ? "22px 26px" : "16px 20px",
+        minWidth: 0,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+      }}
+    >
+      <div style={{ color: MUTED, fontSize: big ? 16 : 13, letterSpacing: 1.8, textTransform: "uppercase", fontWeight: 600, ...ellipsis }}>{label}</div>
+      <div
+        style={{
+          fontFamily: DISPLAY,
+          fontWeight: 700,
+          fontSize: valueSize,
+          lineHeight: 1.1,
+          color: valueColor ?? INK,
+          marginTop: big ? 12 : 8,
+          ...ellipsis,
+        }}
+      >
+        {value}
+      </div>
+      <div style={{ color: noteColor ?? MUTED, fontSize: big ? 18 : 15, marginTop: 4, height: big ? 24 : 20, ...ellipsis }}>{note ?? ""}</div>
+    </div>
+  );
+}
+
+function Grid({ columns, gap, children }: { columns: number; gap: number; children: ReactNode }) {
+  return <div style={{ display: "grid", gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`, gap }}>{children}</div>;
 }
 
 function Logo({ abbr, name, size = 72 }: { abbr: string; name?: string; size?: number }) {
@@ -122,56 +271,50 @@ function Logo({ abbr, name, size = 72 }: { abbr: string; name?: string; size?: n
       alive = false;
     };
   }, [abbr, name]);
+  const h = Math.round(size * 0.72);
   return (
     <span
-      style={{ width: size, height: size * 0.68, display: "inline-flex", alignItems: "center" }}
+      style={{ width: size, height: h, flex: "none", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
       dangerouslySetInnerHTML={{
-        __html: markup
-          ? markup.replace("<svg", `<svg width="${size}" height="${Math.round(size * 0.68)}" style="width:${size}px;height:${Math.round(size * 0.68)}px"`)
-          : "",
+        __html: markup ? markup.replace("<svg", `<svg width="${size}" height="${h}" style="width:${size}px;height:${h}px"`) : "",
       }}
     />
   );
 }
 
-function Stamps({ stamps }: { stamps: string[] }) {
+function Stamps({ stamps, size = 15 }: { stamps: string[]; size?: number }) {
   if (stamps.length === 0) return null;
   return (
     <span style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-      {stamps.map((stamp) => (
-        <span
-          key={stamp}
-          style={{
-            border: `3px solid ${stampColor(stamp)}`,
-            color: stampColor(stamp),
-            padding: "4px 8px",
-            fontFamily: "Oswald, sans-serif",
-            fontWeight: 700,
-            letterSpacing: 1.2,
-            fontSize: 16,
-          }}
-        >
-          {stamp === "DEVELOPING" ? "PROSPECT" : stamp}
-        </span>
-      ))}
+      {stamps.slice(0, 3).map((stamp) => {
+        const color = stampColor(stamp);
+        return (
+          <span
+            key={stamp}
+            style={{
+              border: `1.5px solid ${hexA(color, 0.7)}`,
+              background: hexA(color, 0.1),
+              color,
+              borderRadius: 999,
+              padding: "5px 12px",
+              fontFamily: DISPLAY,
+              fontWeight: 700,
+              letterSpacing: 1.4,
+              fontSize: size,
+              lineHeight: 1,
+            }}
+          >
+            {stamp === "DEVELOPING" ? "PROSPECT" : stamp}
+          </span>
+        );
+      })}
     </span>
   );
 }
 
-function stampColor(stamp: string): string {
-  if (stamp === "ELITE") return "#f6e3a1";
-  if (stamp === "STEAL") return "#f6e3a1";
-  if (stamp === "BUST") return "#ff8b8b";
-  if (stamp === "LATE BLOOMER") return "#7ddec8";
-  if (stamp === "STALLED") return "#fdba74";
-  if (stamp === "DEVELOPING") return "#7dd3fc";
-  return "#c5ccd6";
-}
-
-function scoreColor(value: number | null | undefined): string {
-  if (value == null || value === 0) return INK;
-  return value > 0 ? GREEN : RED;
-}
+/* ------------------------------------------------------------------ */
+/* Card models                                                         */
+/* ------------------------------------------------------------------ */
 
 export type ShareCardModel =
   | { kind: "player"; pick: PickRow; color: string }
@@ -242,58 +385,127 @@ export function ShareCardView({ format, card }: { format: ShareFormat; card: Sha
   return <BoardShareCard format={format} subtitle={card.subtitle} mode={card.mode} rows={card.rows} />;
 }
 
+/* ------------------------------------------------------------------ */
+/* Player                                                              */
+/* ------------------------------------------------------------------ */
+
 export function PlayerShareCard({ format, pick, color }: { format: ShareFormat; pick: PickRow; color: string }) {
   const remote = pick.hasHeadshot && pick.playerId ? `https://assets.nhle.com/mugs/nhl/latest/${pick.playerId}.png` : null;
   const photo = useSameOriginImage(remote);
+  const d = dims(format);
   const moved = pick.overall - pick.redraft;
-  const wide = format === "wide";
   const rate = pick.group === "G" ? (pick.savePct == null ? "—" : pick.savePct.toFixed(3)) : pick.ppg == null ? "—" : pick.ppg.toFixed(2);
+  const letter = pick.developing ? "—" : pick.letter;
+  const rating = pick.developing ? null : pick.rating;
+  const nameSize = d.wide ? fitSize(pick.name, 64, 16) : 80;
+
+  const tiles = (
+    <Grid columns={4} gap={d.wide ? 14 : 18}>
+      <Tile
+        label="Redraft"
+        value={`#${pick.redraft}`}
+        note={moved === 0 ? "Same slot" : moved > 0 ? `▲ ${moved} spots` : `▼ ${Math.abs(moved)} spots`}
+        noteColor={moved > 0 ? EMERALD : moved < 0 ? LOSS : MUTED}
+      />
+      <Tile label="Score vs slot" value={signed(pick.score)} valueColor={scoreColor(pick.score)} note="Quality games" />
+      <Tile label="Quality games" value={pick.qg.toFixed(0)} note={`Expected ${pick.expected == null ? "—" : pick.expected.toFixed(0)}`} />
+      <Tile label={pick.group === "G" ? "Games · SV%" : "Games · PPG"} value={`${pick.gpCareer}`} note={`${pick.group === "G" ? "SV%" : "PPG"} ${rate}`} />
+    </Grid>
+  );
+
+  const photoBox = (w: number, h: number) => (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={photo || SILHOUETTE}
+      alt=""
+      width={w}
+      height={h}
+      style={{
+        width: w,
+        height: h,
+        flex: "none",
+        objectFit: "cover",
+        objectPosition: "center top",
+        borderRadius: 22,
+        border: `1px solid ${LINE}`,
+        background: `linear-gradient(180deg, ${hexA(color, 0.35)}, ${PANEL})`,
+      }}
+    />
+  );
+
+  const identity = (
+    <div style={{ minWidth: 0, flex: 1, display: "flex", flexDirection: "column" }}>
+      <Eyebrow size={d.wide ? 15 : 18}>
+        {pick.year} draft · Round {pick.round} · {pick.pos}
+      </Eyebrow>
+      <Title size={nameSize} wrap={!d.wide}>
+        {pick.name}
+      </Title>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: d.wide ? 14 : 18, color: MUTED, fontSize: d.wide ? 20 : 24, minWidth: 0 }}>
+        <span style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: d.wide ? 26 : 32 }}>#{pick.overall}</span>
+        <Logo abbr={pick.team} name={pick.teamName} size={d.wide ? 44 : 54} />
+        <span style={ellipsis}>{pick.teamName}</span>
+      </div>
+      <div style={{ marginTop: d.wide ? 16 : 22 }}>
+        <Stamps stamps={pick.stamps} size={d.wide ? 14 : 17} />
+      </div>
+    </div>
+  );
+
+  if (d.wide) {
+    return (
+      <Frame format={format} accent={color}>
+        <div style={{ display: "flex", gap: 28, alignItems: "stretch" }}>
+          {photoBox(196, 236)}
+          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+            {identity}
+            <div style={{ marginTop: "auto" }}>
+              <Spark seasons={pick.seasons ?? []} expected={pick.expectedPath ?? []} color={color} width={560} height={56} />
+            </div>
+          </div>
+          <GradeBadge letter={letter} rating={rating} size={196} />
+        </div>
+        {tiles}
+      </Frame>
+    );
+  }
+
   return (
-    <Frame format={format} color={color}>
-      <div style={{ display: "flex", gap: wide ? 28 : 22, height: "100%", flexDirection: wide ? "row" : "column" }}>
-        <img
-          src={photo || SILHOUETTE}
-          alt=""
-          width={wide ? 230 : 220}
-          height={wide ? 280 : 220}
-          style={{ width: wide ? 230 : 220, height: wide ? 280 : 220, objectFit: "cover", objectPosition: "center top", borderRadius: 18, border: `4px solid ${color}`, background: "#14161c" }}
-        />
-        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}>
-            <div>
-              <div style={{ color: MUTED, letterSpacing: 1.6, fontSize: 16, textTransform: "uppercase" }}>
-                {pick.year} · Round {pick.round} · {pick.pos}
-              </div>
-              <div style={{ fontFamily: "Oswald, sans-serif", fontWeight: 700, fontSize: wide ? 64 : 72, lineHeight: 0.95, marginTop: 6 }}>{pick.name}</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8, color: MUTED, fontSize: 20 }}>
-                <span style={{ color: INK, fontFamily: "Oswald, sans-serif", fontSize: 28 }}>#{pick.overall}</span>
-                <Logo abbr={pick.team} name={pick.teamName} size={54} />
-                <span>{pick.teamName}</span>
-              </div>
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ color: DIM, letterSpacing: 1.4, fontSize: 14 }}>GRADE</div>
-              <div style={{ fontFamily: "Oswald, sans-serif", fontWeight: 700, fontSize: wide ? 108 : 120, lineHeight: 0.85, color }}>{pick.developing ? "—" : pick.letter}</div>
-              <div style={{ color: MUTED, fontSize: 18 }}>{pick.developing || pick.rating == null ? "" : `${pick.rating}/100`}</div>
-            </div>
+    <Frame format={format} accent={color}>
+      <div style={{ display: "flex", gap: 36, alignItems: "center" }}>
+        {photoBox(260, 300)}
+        {identity}
+      </div>
+      <div style={{ display: "flex", gap: 18, alignItems: "stretch" }}>
+        <GradeBadge letter={letter} rating={rating} size={230} />
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            background: PANEL,
+            border: `1px solid ${LINE}`,
+            borderRadius: 18,
+            padding: "20px 24px",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ color: MUTED, fontSize: 15, letterSpacing: 1.8, textTransform: "uppercase", fontWeight: 600 }}>Career pace</span>
+            <SparkLegend color={color} />
           </div>
-          <div style={{ marginTop: 12 }}>
-            <Stamps stamps={pick.stamps} />
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: wide ? "repeat(4, 1fr)" : "repeat(2, 1fr)", gap: 12, marginTop: 16 }}>
-            <Stat label="Redraft" value={`#${pick.redraft}`} note={moved === 0 ? "Even" : moved > 0 ? `▲ +${moved}` : `▼ ${moved}`} noteColor={moved > 0 ? GREEN : moved < 0 ? RED : MUTED} />
-            <Stat label="Score vs slot" value={signed(pick.score)} valueColor={scoreColor(pick.score)} />
-            <Stat label="Quality / expected" value={`${pick.qg.toFixed(0)} / ${pick.expected == null ? "—" : pick.expected.toFixed(0)}`} />
-            <Stat label={pick.group === "G" ? "GP · SV%" : "GP · PPG"} value={`${pick.gpCareer} · ${rate}`} />
-          </div>
-          <div style={{ marginTop: "auto", paddingTop: 12 }}>
-            <Spark seasons={pick.seasons ?? []} expected={pick.expectedPath ?? []} color={color} />
-          </div>
+          <Spark seasons={pick.seasons ?? []} expected={pick.expectedPath ?? []} color={color} width={620} height={130} />
         </div>
       </div>
+      {tiles}
     </Frame>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/* Team                                                                */
+/* ------------------------------------------------------------------ */
 
 export function TeamShareCard({
   format,
@@ -318,37 +530,41 @@ export function TeamShareCard({
   report: ScoutingReport;
   byYear: YearPoint[];
 }) {
-  const wide = format === "wide";
+  const d = dims(format);
+  const tiles = [
+    <Tile key="bust" label="1st-round busts" value={pct(report.bust.rate)} note={report.bust.n ? `${report.bust.count} of ${report.bust.n} picks` : "No sample yet"} big={!d.wide} />,
+    <Tile key="late" label="Late-round hits" value={pct(report.late.rate)} note={report.late.n ? `${report.late.count} of ${report.late.n} picks` : "No sample yet"} big={!d.wide} />,
+    <Tile key="gem" label="Gem rate" value={pct(report.gemRate)} note={`${report.steals} steals · ${report.bloomers} bloomers`} big={!d.wide} />,
+    <Tile key="best" label="Best group" value={report.best?.label ?? "—"} text note={report.best ? `${signed(report.best.score)} vs slot` : ""} noteColor={scoreColor(report.best?.score)} big={!d.wide} />,
+  ];
   return (
-    <Frame format={format} color={color}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 20 }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <Logo abbr={abbr} name={name} size={84} />
-            <div>
-              <div style={{ color: MUTED, letterSpacing: 1.5, fontSize: 16 }}>#{rank} OF 32</div>
-              <div style={{ fontFamily: "Oswald, sans-serif", fontWeight: 700, fontSize: wide ? 58 : 64, lineHeight: 0.95 }}>{name}</div>
-            </div>
+    <Frame format={format} accent={color}>
+      <div style={{ display: "flex", alignItems: "center", gap: d.wide ? 28 : 36 }}>
+        <Logo abbr={abbr} name={name} size={d.wide ? 120 : 150} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <Eyebrow size={d.wide ? 15 : 18}>Franchise draft grade · #{rank} of 32</Eyebrow>
+          <Title size={d.wide ? fitSize(name, 60, 20) : 76} wrap={!d.wide}>
+            {name}
+          </Title>
+          <div style={{ marginTop: d.wide ? 12 : 16, fontSize: d.wide ? 22 : 26, color: MUTED }}>
+            <span style={{ fontFamily: DISPLAY, fontWeight: 700, color: scoreColor(avg) }}>{signed(avg)}</span> quality games vs the slot
           </div>
-          <div style={{ marginTop: 18, fontFamily: "Oswald, sans-serif", fontWeight: 700, fontSize: 28, color: scoreColor(avg) }}>{signed(avg)} vs the slot</div>
         </div>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontFamily: "Oswald, sans-serif", fontWeight: 700, fontSize: wide ? 120 : 140, lineHeight: 0.8, color }}>{letter}</div>
-          <div style={{ color: MUTED, fontSize: 22 }}>{rating}/100</div>
-        </div>
+        <GradeBadge letter={letter} rating={rating} size={d.wide ? 170 : 230} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: wide ? "repeat(4, 1fr)" : "repeat(2, 1fr)", gap: 12, marginTop: 22 }}>
-        <Stat label="1st-round busts" value={pct(report.bust.rate)} note={report.bust.n ? `${report.bust.count} of ${report.bust.n}` : "No sample"} />
-        <Stat label="Late-round hits" value={pct(report.late.rate)} note={report.late.n ? `${report.late.count} of ${report.late.n}` : "No graduates"} />
-        <Stat label="Gems" value={pct(report.gemRate)} note={`${report.steals} steals · ${report.bloomers} bloomers`} />
-        <Stat label="Best group" value={report.best?.label ?? "—"} note={report.best ? signed(report.best.score) : ""} />
-      </div>
-      <div style={{ marginTop: 18 }}>
-        <Bars points={byYear} />
-      </div>
+      <Grid columns={d.wide ? 4 : 2} gap={d.wide ? 14 : 18}>
+        {tiles}
+      </Grid>
+      <ChartPanel title="Score vs the slot by draft class" compact={d.wide}>
+        <Bars points={byYear} width={d.wide ? 1050 : 880} height={d.wide ? 92 : 190} />
+      </ChartPanel>
     </Frame>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/* GM                                                                  */
+/* ------------------------------------------------------------------ */
 
 export function GmShareCard({
   format,
@@ -383,44 +599,51 @@ export function GmShareCard({
   worst: PickRow | null;
   notable: PickRow[];
 }) {
-  const wide = format === "wide";
+  const d = dims(format);
+  const meta = `${graded} graded${developing ? ` · ${developing} ${developing === 1 ? "prospect" : "prospects"}` : ""}`;
   return (
-    <Frame format={format} color={color}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, color: MUTED, fontSize: 18 }}>
-            <Logo abbr={team} name={teamName} size={64} />
-            {teamName} · {tenure}
+    <Frame format={format} accent={color}>
+      <div style={{ display: "flex", alignItems: "center", gap: d.wide ? 28 : 36 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+            <Logo abbr={team} name={teamName} size={d.wide ? 52 : 64} />
+            <Eyebrow size={d.wide ? 15 : 18}>
+              General manager · {teamName} · {tenure}
+            </Eyebrow>
           </div>
-          <div style={{ fontFamily: "Oswald, sans-serif", fontWeight: 700, fontSize: wide ? 64 : 72, lineHeight: 0.95, marginTop: 8 }}>{person}</div>
-          <div style={{ marginTop: 8, color: scoreColor(avg), fontSize: 26, fontFamily: "Oswald, sans-serif" }}>{signed(avg)} vs the slot</div>
-          <div style={{ color: MUTED, marginTop: 4 }}>{graded} graded{developing ? ` · ${developing} ${developing === 1 ? "prospect" : "prospects"}` : ""}</div>
-        </div>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontFamily: "Oswald, sans-serif", fontWeight: 700, fontSize: wide ? 110 : 128, lineHeight: 0.8, color }}>{letter}</div>
-          <div style={{ color: MUTED }}>{rating == null ? "" : `${rating}/100`}</div>
-        </div>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: wide ? "1.2fr 1fr 1fr" : "1fr", gap: 14, marginTop: 18 }}>
-        <div>
-          <Mini label="Best pick" pick={best} />
-          <Mini label="Worst pick" pick={worst} />
-        </div>
-        <Stat label="1st-round busts" value={pct(report.bust.rate)} note={report.bust.n ? `${report.bust.count} of ${report.bust.n}` : "No sample"} />
-        <Stat label="Late-round hits" value={pct(report.late.rate)} note={report.late.n ? `${report.late.count} of ${report.late.n}` : "No graduates"} />
-      </div>
-      <div style={{ marginTop: 16 }}>
-        <div style={{ color: DIM, letterSpacing: 1.4, fontSize: 13 }}>TOP PICKS</div>
-        {notable.map((pick) => (
-          <div key={pick.id} style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 18 }}>
-            <span>{pick.name}</span>
-            <span style={{ color: scoreColor(pick.score) }}>{signed(pick.score)} · {pick.letter ?? "—"}</span>
+          <Title size={d.wide ? fitSize(person, 66, 18) : 80} wrap={!d.wide}>
+            {person}
+          </Title>
+          <div style={{ marginTop: d.wide ? 12 : 16, fontSize: d.wide ? 22 : 26, color: MUTED, ...ellipsis }}>
+            <span style={{ fontFamily: DISPLAY, fontWeight: 700, color: scoreColor(avg) }}>{signed(avg)}</span> vs the slot · {meta}
           </div>
-        ))}
+        </div>
+        <GradeBadge letter={letter} rating={rating} size={d.wide ? 170 : 230} />
       </div>
+      <Grid columns={d.wide ? 4 : 2} gap={d.wide ? 14 : 18}>
+        <Tile label="Best pick" value={best?.name ?? "—"} text note={best ? `${best.year} #${best.overall} · ${signed(best.score)}` : ""} noteColor={scoreColor(best?.score)} big={!d.wide} />
+        <Tile label="Worst pick" value={worst?.name ?? "—"} text note={worst ? `${worst.year} #${worst.overall} · ${signed(worst.score)}` : ""} noteColor={scoreColor(worst?.score)} big={!d.wide} />
+        <Tile label="1st-round busts" value={pct(report.bust.rate)} note={report.bust.n ? `${report.bust.count} of ${report.bust.n} picks` : "No sample yet"} big={!d.wide} />
+        <Tile label="Late-round hits" value={pct(report.late.rate)} note={report.late.n ? `${report.late.count} of ${report.late.n} picks` : "No sample yet"} big={!d.wide} />
+      </Grid>
+      {notable.length > 0 ? (
+        <ChartPanel title="Top picks" compact={d.wide}>
+          <div style={{ display: "grid", gridTemplateColumns: d.wide ? `repeat(${Math.min(3, notable.length)}, minmax(0, 1fr))` : "1fr", gap: d.wide ? 24 : 6 }}>
+            {notable.slice(0, 3).map((pick, index) => (
+              <PickLine key={pick.id} index={index + 1} pick={pick} large={!d.wide} />
+            ))}
+          </div>
+        </ChartPanel>
+      ) : (
+        <div />
+      )}
     </Frame>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/* Draft class                                                         */
+/* ------------------------------------------------------------------ */
 
 export function ClassShareCard({
   format,
@@ -449,34 +672,60 @@ export function ClassShareCard({
   bestTeam: string;
   top: PickRow[];
 }) {
-  const wide = format === "wide";
+  const d = dims(format);
+  const shown = top.slice(0, 5);
   return (
-    <Frame format={format} color="#E11D48">
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <div>
-          <div style={{ color: MUTED, letterSpacing: 1.6 }}>{early ? "EARLY SAMPLE" : "DRAFT CLASS"}</div>
-          <div style={{ fontFamily: "Oswald, sans-serif", fontWeight: 700, fontSize: wide ? 72 : 84, lineHeight: 0.9 }}>{year} draft</div>
-          <div style={{ marginTop: 8, fontSize: 24, color: scoreColor(avg) }}>{signed(avg)} vs the slot · {regulars} NHL regulars</div>
-        </div>
-        <div style={{ textAlign: "right", fontFamily: "Oswald, sans-serif", fontWeight: 700, fontSize: wide ? 120 : 140, lineHeight: 0.8 }}>{letter ?? "—"}</div>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: wide ? "repeat(4, 1fr)" : "repeat(2, 1fr)", gap: 12, marginTop: 16 }}>
-        <Stat label="#1 in redraft" value={leader?.name ?? "—"} note={leader ? `#${leader.overall} pick` : ""} />
-        <Stat label="Steal" value={steal?.name ?? "—"} note={steal ? signed(steal.score) : ""} />
-        <Stat label="Biggest bust" value={bust?.name ?? "—"} note={bust ? signed(bust.score) : ""} />
-        <Stat label="Best team" value={bestTeam} note={rating == null ? "" : `${rating}/100 class`} />
-      </div>
-      <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: wide ? "1fr 1fr" : "1fr", gap: 4 }}>
-        {top.map((pick, index) => (
-          <div key={pick.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 18 }}>
-            <span>{index + 1}. {pick.name}</span>
-            <span style={{ color: MUTED }}>#{pick.overall}</span>
+    <Frame format={format} accent={RED}>
+      <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <Eyebrow size={d.wide ? 15 : 18} color={early ? CYAN : MUTED}>
+            {early ? "Draft class · early sample" : "NHL draft class grade"}
+          </Eyebrow>
+          <Title size={d.wide ? 84 : 104}>{year} Draft</Title>
+          <div style={{ marginTop: d.wide ? 12 : 16, fontSize: d.wide ? 22 : 26, color: MUTED, ...ellipsis }}>
+            <span style={{ fontFamily: DISPLAY, fontWeight: 700, color: scoreColor(avg) }}>{signed(avg)}</span> vs the slot · {regulars} NHL regulars
           </div>
-        ))}
+        </div>
+        <GradeBadge letter={letter} rating={rating} size={d.wide ? 170 : 230} />
       </div>
+      <Grid columns={d.wide ? 4 : 2} gap={d.wide ? 14 : 18}>
+        <Tile label="#1 in redraft" value={leader?.name ?? "—"} text note={leader ? `Picked #${leader.overall}` : ""} big={!d.wide} />
+        <Tile label="Steal" value={steal?.name ?? "—"} text note={steal ? `#${steal.overall} · ${signed(steal.score)}` : "None yet"} noteColor={steal ? EMERALD : MUTED} big={!d.wide} />
+        <Tile label="Biggest bust" value={bust?.name ?? "—"} text note={bust ? `#${bust.overall} · ${signed(bust.score)}` : "None yet"} noteColor={bust ? LOSS : MUTED} big={!d.wide} />
+        <Tile label="Best team" value={bestTeam} text note={rating == null ? "" : `Class rated ${rating}/100`} big={!d.wide} />
+      </Grid>
+      {shown.length > 0 ? (
+        <ChartPanel title="Redraft top 5" compact={d.wide}>
+          <div style={{ display: "grid", gridTemplateColumns: d.wide ? `repeat(${shown.length}, minmax(0, 1fr))` : "1fr", gap: d.wide ? 16 : 4 }}>
+            {shown.map((pick, index) => (
+              <div
+                key={pick.id}
+                style={{
+                  display: "flex",
+                  alignItems: "baseline",
+                  gap: 10,
+                  minWidth: 0,
+                  padding: d.wide ? (index === 0 ? 0 : "0 0 0 16px") : "6px 0",
+                  borderLeft: d.wide && index > 0 ? `1px solid ${LINE}` : undefined,
+                }}
+              >
+                <span style={{ fontFamily: DISPLAY, fontWeight: 700, color: index === 0 ? GOLD : DIM, fontSize: d.wide ? 20 : 26, width: d.wide ? 18 : 28, flex: "none" }}>{index + 1}</span>
+                <span style={{ fontSize: d.wide ? 18 : 26, fontWeight: 600, flex: 1, ...ellipsis }}>{pick.name}</span>
+                <span style={{ color: MUTED, fontSize: d.wide ? 15 : 22, flex: "none" }}>#{pick.overall}</span>
+              </div>
+            ))}
+          </div>
+        </ChartPanel>
+      ) : (
+        <div />
+      )}
     </Frame>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/* Leaderboard                                                         */
+/* ------------------------------------------------------------------ */
 
 export function BoardShareCard({
   format,
@@ -489,21 +738,50 @@ export function BoardShareCard({
   mode: "Teams" | "GMs";
   rows: { rank: number; name: string; abbr?: string; letter: string; score: number; color: string }[];
 }) {
-  const wide = format === "wide";
+  const d = dims(format);
   const shown = rows.slice(0, 10);
+  const rowH = d.wide ? 50 : 62;
   return (
-    <Frame format={format} color="#E11D48">
-      <div style={{ color: MUTED, letterSpacing: 1.6, fontSize: 16 }}>{subtitle}</div>
-      <div style={{ fontFamily: "Oswald, sans-serif", fontWeight: 700, fontSize: wide ? 54 : 64, lineHeight: 0.95, marginTop: 4 }}>Who actually wins the NHL draft?</div>
-      <div style={{ marginTop: 8, color: DIM }}>{mode === "Teams" ? "Top franchises" : "Top general managers"}</div>
-      <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: wide ? "1fr 1fr" : "1fr", columnGap: 28 }}>
+    <Frame format={format} accent={RED}>
+      <div>
+        <Eyebrow size={d.wide ? 15 : 18}>{subtitle}</Eyebrow>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 20, marginTop: 8 }}>
+          <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: d.wide ? 50 : 68, lineHeight: 1.02 }}>Who actually wins the NHL draft?</div>
+        </div>
+        <div style={{ marginTop: 10, color: MUTED, fontSize: d.wide ? 19 : 24 }}>
+          {mode === "Teams" ? "Top 10 franchises" : "Top 10 general managers"} by draft grade · score is quality games vs the slot
+        </div>
+      </div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: d.wide ? "repeat(2, minmax(0, 1fr))" : "1fr",
+          gridAutoFlow: d.wide ? "column" : "row",
+          gridTemplateRows: d.wide ? `repeat(${Math.ceil(shown.length / 2)}, ${rowH}px)` : undefined,
+          columnGap: 20,
+          rowGap: d.wide ? 8 : 8,
+        }}
+      >
         {shown.map((row) => (
-          <div key={`${row.rank}-${row.name}`} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-            <span style={{ width: 28, color: DIM }}>{row.rank}</span>
-            {row.abbr ? <Logo abbr={row.abbr} size={36} /> : null}
-            <span style={{ flex: 1, fontSize: 18 }}>{row.name}</span>
-            <span style={{ fontFamily: "Oswald, sans-serif", fontWeight: 700, color: row.color, fontSize: 22 }}>{row.letter}</span>
-            <span style={{ width: 72, textAlign: "right", color: scoreColor(row.score) }}>{signed(row.score)}</span>
+          <div
+            key={`${row.rank}-${row.name}`}
+            style={{
+              height: rowH,
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+              padding: "0 18px",
+              background: PANEL,
+              border: `1px solid ${LINE}`,
+              borderRadius: 14,
+              minWidth: 0,
+            }}
+          >
+            <span style={{ width: 26, flex: "none", fontFamily: DISPLAY, fontWeight: 700, fontSize: d.wide ? 20 : 24, color: row.rank === 1 ? GOLD : DIM }}>{row.rank}</span>
+            {row.abbr ? <Logo abbr={row.abbr} size={d.wide ? 40 : 50} /> : null}
+            <span style={{ flex: 1, fontSize: d.wide ? 19 : 24, fontWeight: 600, ...ellipsis }}>{row.name}</span>
+            <span style={{ fontFamily: DISPLAY, fontWeight: 700, color: gradeColor(row.letter), fontSize: d.wide ? 24 : 30, width: 44, textAlign: "center", flex: "none" }}>{row.letter}</span>
+            <span style={{ width: d.wide ? 70 : 90, textAlign: "right", flex: "none", fontSize: d.wide ? 17 : 22, color: scoreColor(row.score) }}>{signed(row.score)}</span>
           </div>
         ))}
       </div>
@@ -511,34 +789,46 @@ export function BoardShareCard({
   );
 }
 
-function Stat({ label, value, note, valueColor, noteColor }: { label: string; value: string; note?: string; valueColor?: string; noteColor?: string }) {
+/* ------------------------------------------------------------------ */
+/* Small pieces                                                        */
+/* ------------------------------------------------------------------ */
+
+function ChartPanel({ title, compact, children }: { title: string; compact?: boolean; children: ReactNode }) {
   return (
-    <div>
-      <div style={{ color: DIM, letterSpacing: 1.2, fontSize: 12, textTransform: "uppercase" }}>{label}</div>
-      <div style={{ fontFamily: "Oswald, sans-serif", fontWeight: 700, fontSize: 28, lineHeight: 1.05, color: valueColor ?? INK, marginTop: 2 }}>{value}</div>
-      {note ? <div style={{ color: noteColor ?? MUTED, fontSize: 14, marginTop: 2 }}>{note}</div> : null}
+    <div style={{ background: PANEL, border: `1px solid ${LINE}`, borderRadius: 18, padding: compact ? "14px 20px" : "22px 26px" }}>
+      <div style={{ color: MUTED, fontSize: compact ? 13 : 16, letterSpacing: 1.8, textTransform: "uppercase", fontWeight: 600, marginBottom: compact ? 8 : 14 }}>{title}</div>
+      {children}
     </div>
   );
 }
 
-function Mini({ label, pick }: { label: string; pick: PickRow | null }) {
+function PickLine({ index, pick, large }: { index: number; pick: PickRow; large?: boolean }) {
   return (
-    <div style={{ marginBottom: 10 }}>
-      <div style={{ color: DIM, letterSpacing: 1.2, fontSize: 12 }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 20 }}>{pick?.name ?? "—"}</div>
-      <div style={{ color: scoreColor(pick?.score), fontSize: 16 }}>{pick ? `${signed(pick.score)} · ${pick.year} #${pick.overall}` : ""}</div>
+    <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0, padding: large ? "6px 0" : 0 }}>
+      <span style={{ fontFamily: DISPLAY, fontWeight: 700, color: index === 1 ? GOLD : DIM, fontSize: large ? 26 : 20, width: large ? 28 : 16, flex: "none" }}>{index}</span>
+      <span style={{ flex: 1, fontSize: large ? 26 : 18, fontWeight: 600, ...ellipsis }}>{pick.name}</span>
+      <span style={{ flex: "none", fontSize: large ? 22 : 16, color: scoreColor(pick.score) }}>{signed(pick.score)}</span>
+      <span style={{ flex: "none", fontFamily: DISPLAY, fontWeight: 700, fontSize: large ? 24 : 18, color: gradeColor(pick.letter), width: large ? 40 : 30, textAlign: "right" }}>{pick.letter ?? "—"}</span>
     </div>
   );
 }
 
-function pct(rate: number | null): string {
-  if (rate == null) return "—";
-  return `${Math.round(rate * 100)}%`;
+function SparkLegend({ color }: { color: string }) {
+  return (
+    <span style={{ display: "flex", gap: 18, color: MUTED, fontSize: 15 }}>
+      <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ width: 18, height: 3, background: sparkColor(color), borderRadius: 2 }} /> Actual
+      </span>
+      <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ width: 18, height: 0, borderTop: `2px dashed ${DIM}` }} /> Expected
+      </span>
+    </span>
+  );
 }
 
-function Spark({ seasons, expected, color }: { seasons: number[]; expected: number[]; color: string }) {
+function Spark({ seasons, expected, color, width, height }: { seasons: number[]; expected: number[]; color: string; width: number; height: number }) {
   const count = Math.min(seasons.length, expected.length);
-  if (count < 2) return null;
+  if (count < 2) return <div style={{ height }} />;
   let run = 0;
   const actual: number[] = [];
   for (let index = 0; index < count; index += 1) {
@@ -547,30 +837,114 @@ function Spark({ seasons, expected, color }: { seasons: number[]; expected: numb
   }
   const line = expected.slice(0, count);
   const max = Math.max(1, ...actual, ...line);
-  const width = 520;
-  const height = 78;
-  const x = (index: number) => (index / (count - 1)) * width;
-  const y = (value: number) => height - 6 - (value / max) * (height - 12);
+  const x = (index: number) => 4 + (index / (count - 1)) * (width - 8);
+  const y = (value: number) => height - 4 - (value / max) * (height - 10);
   const path = (values: number[]) => values.map((value, index) => `${index === 0 ? "M" : "L"}${x(index).toFixed(1)},${y(value).toFixed(1)}`).join(" ");
+  const stroke = sparkColor(color);
   return (
-    <svg width="100%" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Pace versus expectation">
-      <path d={path(line)} fill="none" stroke="#52525b" strokeWidth="3" />
-      <path d={path(actual)} fill="none" stroke={color} strokeWidth="3.5" />
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Career pace versus expectation" style={{ display: "block", maxWidth: "100%" }}>
+      <path d={`${path(actual)} L${x(count - 1)},${height} L${x(0)},${height} Z`} fill={hexA(stroke, 0.12)} />
+      <path d={path(line)} fill="none" stroke={DIM} strokeWidth="2" strokeDasharray="6 6" />
+      <path d={path(actual)} fill="none" stroke={stroke} strokeWidth="3.5" strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   );
 }
 
-function Bars({ points }: { points: YearPoint[] }) {
-  const rows = points.filter((point) => point.n >= 1).slice(-16);
-  if (rows.length === 0) return null;
+function Bars({ points, width, height }: { points: YearPoint[]; width: number; height: number }) {
+  const rows = points.filter((point) => point.n >= 1).slice(-18);
+  if (rows.length === 0) return <div style={{ height }} />;
   const peak = Math.max(8, ...rows.map((point) => Math.abs(point.avg)));
+  const labelH = 18;
+  const plotH = height - labelH;
+  const mid = plotH / 2;
+  const slot = width / rows.length;
+  const bar = Math.min(34, slot * 0.62);
   return (
-    <svg width="100%" viewBox={`0 0 ${rows.length * 36} 70`} role="img" aria-label="Score by draft class">
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Score by draft class" style={{ display: "block", maxWidth: "100%" }}>
+      <line x1={0} x2={width} y1={mid} y2={mid} stroke={LINE} strokeWidth="1" />
       {rows.map((point, index) => {
-        const height = (Math.abs(point.avg) / peak) * 28;
-        const y = point.avg >= 0 ? 32 - height : 32;
-        return <rect key={point.year} x={index * 36 + 6} y={y} width="22" height={Math.max(2, height)} fill={point.avg >= 0 ? GREEN : RED} rx="2" />;
+        const h = Math.max(2, (Math.abs(point.avg) / peak) * (mid - 2));
+        const x = index * slot + (slot - bar) / 2;
+        const showLabel = rows.length <= 10 || index % 2 === 0 || index === rows.length - 1;
+        return (
+          <g key={point.year}>
+            <rect x={x} y={point.avg >= 0 ? mid - h : mid} width={bar} height={h} rx="3" fill={point.avg >= 0 ? EMERALD : LOSS} />
+            {showLabel ? (
+              <text x={x + bar / 2} y={height - 3} textAnchor="middle" fill={DIM} fontSize="13" fontFamily={BODY}>
+                {`'${String(point.year).slice(2)}`}
+              </text>
+            ) : null}
+          </g>
+        );
       })}
     </svg>
   );
+}
+
+/* ------------------------------------------------------------------ */
+/* Helpers                                                             */
+/* ------------------------------------------------------------------ */
+
+function gradeColor(letter: string | null | undefined): string {
+  const first = (letter ?? "").charAt(0);
+  if (first === "A") return GOLD;
+  if (first === "B") return EMERALD;
+  if (first === "C") return INK;
+  if (first === "D" || first === "F") return LOSS;
+  return MUTED;
+}
+
+function stampColor(stamp: string): string {
+  if (stamp === "ELITE") return GOLD;
+  if (stamp === "STEAL") return EMERALD;
+  if (stamp === "BUST") return LOSS;
+  if (stamp === "LATE BLOOMER") return "#8B5CF6";
+  if (stamp === "STALLED") return "#F97316";
+  if (stamp === "DEVELOPING") return "#3B82F6";
+  return DIM;
+}
+
+function scoreColor(value: number | null | undefined): string {
+  if (value == null || value === 0) return INK;
+  return value > 0 ? EMERALD : LOSS;
+}
+
+/** Team colors can be very dark; lift them so lines stay visible on the obsidian background. */
+function sparkColor(color: string): string {
+  return luminance(color) < 0.12 ? CYAN : color;
+}
+
+function pct(rate: number | null): string {
+  if (rate == null) return "—";
+  return `${Math.round(rate * 100)}%`;
+}
+
+/** Shrinks long names so they fit on one line. */
+function fitSize(text: string, base: number, maxChars: number): number {
+  if (text.length <= maxChars) return base;
+  return Math.max(Math.round(base * 0.6), Math.round((base * maxChars) / text.length));
+}
+
+function parseHex(color: string): [number, number, number] | null {
+  const match = /^#?([0-9a-f]{6}|[0-9a-f]{3})$/i.exec(color.trim());
+  if (!match) return null;
+  let hex = match[1];
+  if (hex.length === 3) hex = hex.split("").map((c) => c + c).join("");
+  return [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)];
+}
+
+function hexA(color: string, alpha: number): string {
+  const rgb = parseHex(color);
+  if (!rgb) return color;
+  return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${alpha})`;
+}
+
+function luminance(color: string): number {
+  const rgb = parseHex(color);
+  if (!rgb) return 1;
+  const [r, g, b] = rgb.map((v) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }

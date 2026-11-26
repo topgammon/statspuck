@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ShareLauncher } from "@/components/share-modal";
 import { TeamLogo, TeamName } from "@/components/team-logo";
+import { TogglePill } from "@/components/toggle-pill";
 import { letterRank, scoreClass, signed } from "@/lib/format";
 import { gradeEras, gradeTeams, heroSet, type GmGrade, type RoundFilter } from "@/lib/grade";
 import type { Era, PickRow, TeamGrade, TeamInfo } from "@/lib/types";
@@ -507,20 +508,7 @@ function PickCard({ title, pick, empty }: { title: string; pick: PickRow | null;
 }
 
 function Segment({ value, options, onChange }: { value: string; options: { id: string; label: string }[]; onChange: (value: string) => void }) {
-  return (
-    <div className="inline-flex rounded-full border border-white/10 p-0.5">
-      {options.map((option) => (
-        <button
-          key={option.id}
-          type="button"
-          onClick={() => onChange(option.id)}
-          className={`rounded-full px-3 py-1.5 text-xs tracking-wide uppercase ${value === option.id ? "bg-white/10 text-white" : "text-zinc-400 hover:text-white"}`}
-        >
-          {option.label}
-        </button>
-      ))}
-    </div>
-  );
+  return <TogglePill value={value} options={options} onChange={onChange} />;
 }
 
 function SortHeader({ label, sortKey, active, desc, onClick }: { label: string; sortKey: SortKey; active: SortKey; desc: boolean; onClick: (key: SortKey) => void }) {
