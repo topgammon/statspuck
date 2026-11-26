@@ -123,19 +123,11 @@ export function MenuDrawer() {
           </ul>
         </nav>
 
-        <div className="flex items-center justify-between gap-3 border-t border-[#262B36] px-5 py-4 text-sm">
+        <div className="border-t border-[#262B36] px-5 py-4 text-sm">
           <Link href="/" className="flex items-center gap-2 text-[#94A3B8] transition hover:text-white">
             <StatsPuckBadge height={26} />
-            Home
+            StatsPuck Home
           </Link>
-          <a
-            href="https://stuffthatslaps.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[#94A3B8] transition hover:text-white"
-          >
-            Stuff That Slaps ↗
-          </a>
         </div>
       </aside>
     </div>
