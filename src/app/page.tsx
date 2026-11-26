@@ -3,6 +3,7 @@ import { TeamLogo } from "@/components/team-logo";
 import { leaderboard, meta, officialFilter, picks, teams } from "@/lib/data";
 import { heroSet } from "@/lib/grade";
 import { modules, type ModuleInfo } from "@/lib/modules";
+import { teamHref } from "@/lib/routes";
 import { letterTone } from "@/lib/search";
 
 export default function HubPage() {
@@ -76,7 +77,7 @@ function SnapshotCard({
       </div>
 
       <Link
-        href={`/draft-rater/teams/${top.abbr.toLowerCase()}`}
+        href={teamHref(top.abbr)}
         className="relative mt-5 flex items-center gap-3 rounded-xl border border-[#262B36] bg-[#0B0D10]/70 p-3 sm:gap-4 sm:p-4 transition hover:border-[#38BDF8]/60"
       >
         <TeamLogo abbr={top.abbr} className="h-10 w-10 sm:h-14 sm:w-14" />
@@ -94,7 +95,7 @@ function SnapshotCard({
 
       {gems ? (
         <Link
-          href={`/draft-rater/teams/${gems.franchise.toLowerCase()}`}
+          href={teamHref(gems.franchise)}
           className="relative mt-3 flex items-center gap-3 rounded-xl border border-[#262B36] bg-[#0B0D10]/70 p-3 sm:gap-4 sm:p-4 transition hover:border-[#38BDF8]/60"
         >
           <TeamLogo abbr={gems.franchise} className="h-10 w-10 sm:h-14 sm:w-14" />

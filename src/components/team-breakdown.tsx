@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { PickBrowser } from "@/components/pick-browser";
 import { Trend } from "@/components/pick-table";
 import type { Era, PickRow, YearPoint } from "@/lib/types";
+import { gmHref } from "@/lib/routes";
 
 export function TeamBreakdown({
   eras,
@@ -52,7 +53,7 @@ export function TeamBreakdown({
             {eras.map((item) => (
               <Link
                 key={item.slug}
-                href={`/draft-rater/eras/${item.slug}`}
+                href={gmHref(item.slug, "draft")}
                 className="flex items-center justify-between gap-3 rounded-xl border border-white/10 px-4 py-3 hover:bg-white/[0.03]"
               >
                 <span>

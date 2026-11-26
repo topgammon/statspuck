@@ -9,6 +9,8 @@ import { InfoTip } from "@/components/info-tip";
 import { DRAFT_SCORE_TIP, letterRank, scoreClass, signed } from "@/lib/format";
 import { gradeEras, gradeTeams, heroSet, type GmGrade, type RoundFilter } from "@/lib/grade";
 import type { Era, PickRow, TeamGrade, TeamInfo } from "@/lib/types";
+import { gmHref, playerHref, teamHref } from "@/lib/routes";
+import { draftRaterBase } from "@/lib/site";
 
 type SortKey = "rank" | "name" | "letter" | "avg" | "n" | "developing" | "years";
 type GroupId = "ALL" | "F" | "D" | "G";
@@ -145,7 +147,7 @@ export function Board({
           fileSlug={tab === "gms" ? "gm-board" : "draft-board"}
           title="Draft board"
           summary={`Who actually wins the NHL draft? ${minYear}–${maxYear}.`}
-          path="/"
+          path={draftRaterBase}
           search={boardSearch({ minYear, maxYear, group, round, tab, view, gmScope })}
           card={{
             kind: "board",
@@ -180,7 +182,7 @@ export function Board({
               <ul className="absolute z-30 mt-1 max-h-80 w-full overflow-auto rounded-xl border border-white/10 bg-[#0B0D10] py-1 shadow-lg">
                 {matches.map((pick) => (
                   <li key={pick.id}>
-                    <Link href={`/draft-rater/picks/${pick.id}`} className="block px-3 py-2 hover:bg-white/[0.06]" onMouseDown={(event) => event.preventDefault()}>
+                    <Link href={playerHref(pick.id, "draft")} className="block px-3 py-2 hover:bg-white/[0.06]" onMouseDown={(event) => event.preventDefault()}>
                       <span className="font-medium text-zinc-100">{pick.name}</span>
                       <span className="ml-2 text-xs text-zinc-500">
                         {pick.year} · {pick.franchise} · #{pick.overall}
@@ -281,7 +283,7 @@ export function Board({
         view === "cards" ? (
           <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {sortedTeams.map(({ team, rank }) => (
-              <Link key={team.abbr} href={`/draft-rater/teams/${team.abbr.toLowerCase()}`} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4" style={{ borderLeftColor: team.color, borderLeftWidth: 4 }}>
+              <Link key={team.abbr} href={teamHref(team.abbr, "draft")} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4" style={{ borderLeftColor: team.color, borderLeftWidth: 4 }}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs text-zinc-500">#{rank}</p>
@@ -325,7 +327,7 @@ export function Board({
                   <tr key={team.abbr}>
                     <td className="border-t border-white/10 px-3 py-3 text-zinc-500">{rank}</td>
                     <td className="border-t border-white/10 px-3 py-3">
-                      <Link href={`/draft-rater/teams/${team.abbr.toLowerCase()}`} className="flex items-center gap-3 font-medium hover:text-white">
+                      <Link href={teamHref(team.abbr, "draft")} className="flex items-center gap-3 font-medium hover:text-white">
                         <TeamLogo abbr={team.abbr} name={team.name} />
                         {team.name}
                       </Link>
@@ -350,7 +352,7 @@ export function Board({
       ) : view === "cards" ? (
         <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {sortedGms.map(({ gm, rank }) => (
-            <Link key={gm.slug} href={`/draft-rater/eras/${gm.slug}`} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4" style={{ borderLeftColor: gm.color, borderLeftWidth: 4 }}>
+            <Link key={gm.slug} href={gmHref(gm.slug, "draft")} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4" style={{ borderLeftColor: gm.color, borderLeftWidth: 4 }}>
               <p className="text-xs text-zinc-500">#{rank}</p>
               <h3 className="mt-1 text-lg font-semibold">{gm.person}</h3>
               <p className="mt-1 text-sm text-zinc-400">
@@ -386,7 +388,7 @@ export function Board({
                 <tr key={gm.slug}>
                   <td className="border-t border-white/10 px-3 py-3 text-zinc-500">{rank}</td>
                   <td className="border-t border-white/10 px-3 py-3">
-                    <Link href={`/draft-rater/eras/${gm.slug}`} className="font-medium hover:text-white">
+                    <Link href={gmHref(gm.slug, "draft")} className="font-medium hover:text-white">
                       {gm.person}
                     </Link>
                   </td>
@@ -443,7 +445,7 @@ function GemCard({ row }: { row: ReturnType<typeof heroSet>["gems"] }) {
     );
   }
   return (
-    <Link href={`/draft-rater/teams/${row.franchise.toLowerCase()}`} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+    <Link href={teamHref(row.franchise, "draft")} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
       <p className="text-xs tracking-wide text-zinc-500 uppercase">Most gems drafted</p>
       <p className="mt-2 text-lg font-semibold">
         <TeamName abbr={row.franchise} name={row.franchiseName} />
@@ -466,7 +468,7 @@ function BustRateCard({ row }: { row: ReturnType<typeof heroSet>["bustRate"] }) 
     );
   }
   return (
-    <Link href={`/draft-rater/teams/${row.franchise.toLowerCase()}`} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+    <Link href={teamHref(row.franchise, "draft")} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
       <p className="text-xs tracking-wide text-zinc-500 uppercase">Highest bust rate</p>
       <p className="mt-2 text-lg font-semibold">
         <TeamName abbr={row.franchise} name={row.franchiseName} />
@@ -501,7 +503,7 @@ function PickCard({ title, pick, empty }: { title: string; pick: PickRow | null;
     );
   }
   return (
-    <Link href={`/draft-rater/picks/${pick.id}`} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+    <Link href={playerHref(pick.id, "draft")} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
       <p className="text-xs tracking-wide text-zinc-500 uppercase">{title}</p>
       <p className="mt-2 text-lg font-semibold">{pick.name}</p>
       <p className={`display mt-1 text-3xl font-bold ${scoreClass(pick.score)}`}>{signed(pick.score)}</p>

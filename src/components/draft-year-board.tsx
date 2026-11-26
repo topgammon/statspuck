@@ -6,6 +6,7 @@ import { PickBrowser, type GradeCaption } from "@/components/pick-browser";
 import { TeamName } from "@/components/team-logo";
 import { scoreClass, signed } from "@/lib/format";
 import type { ClassTeam, PickRow } from "@/lib/types";
+import { playerHref } from "@/lib/routes";
 
 export function DraftYearBoard({
   picks,
@@ -119,7 +120,7 @@ function PlayerCard({ title, pick, detail, empty, onOpen }: { title: string; pic
     );
   }
   return (
-    <Link href={`/draft-rater/picks/${pick.id}`} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+    <Link href={playerHref(pick.id, "draft")} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
       {body}
     </Link>
   );

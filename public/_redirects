@@ -1,17 +1,21 @@
 # Cloudflare Pages redirects.
+# Player, team, and GM pages live at /players, /teams, /gms.
+# Old Draft Rater links land on the Draft tab of the new page.
+
+# Legacy Draft Rater entity pages
+/draft-rater/picks/:id       /players/:id?tab=draft          301
+/draft-rater/players/:id     /players/:id?tab=draft          301
+/draft-rater/teams/:abbr     /teams/:abbr?tab=draft          301
+/draft-rater/eras/:slug      /gms/:slug?tab=draft            301
+/draft-rater/gms/:slug       /gms/:slug?tab=draft            301
 
 # Short names inside the Draft Rater
 /draft-rater/method          /draft-rater/methodology        301
 /draft-rater/gms             /draft-rater?tab=gms            302
-/draft-rater/gms/:slug       /draft-rater/eras/:slug         301
-/draft-rater/players/:id     /draft-rater/picks/:id          301
 
 # Legacy links from when the Draft Rater lived at the site root
-/teams/:abbr                 /draft-rater/teams/:abbr        301
-/picks/:id                   /draft-rater/picks/:id          301
-/players/:id                 /draft-rater/picks/:id          301
-/eras/:slug                  /draft-rater/eras/:slug         301
-/gms/:slug                   /draft-rater/eras/:slug         301
+/picks/:id                   /players/:id?tab=draft          301
+/eras/:slug                  /gms/:slug?tab=draft            301
 /drafts                      /draft-rater/drafts             301
 /drafts/:year                /draft-rater/drafts/:year       301
 /methodology                 /draft-rater/methodology        301

@@ -13,11 +13,11 @@ export const site = {
   url: siteUrl,
 };
 
-/** Full share link for a Draft Rater page. `path` is relative to the module, e.g. "/picks/123". */
+/** Full share link for any page. `path` is the site path, e.g. "/players/123" or "/draft-rater/drafts/2015". */
 export function canonicalUrl(path: string, search = ""): string {
   const clean = path === "/" || path === "" ? "" : path.startsWith("/") ? path : `/${path}`;
   const query = search ? (search.startsWith("?") ? search : `?${search}`) : "";
-  return `${siteUrl}${draftRaterBase}${clean}${query}`;
+  return `${siteUrl}${clean}${query}`;
 }
 
 /** Files in public/ are served from the site root. Kept as a helper so asset paths stay in one place. */

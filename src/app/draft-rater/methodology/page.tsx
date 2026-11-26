@@ -5,6 +5,7 @@ import { StampMark } from "@/components/stamps";
 import { curves, meta, og } from "@/lib/data";
 import { signed, yearLabel } from "@/lib/format";
 import { publicPath } from "@/lib/site";
+import { playerHref } from "@/lib/routes";
 
 export const metadata: Metadata = {
   title: "Methodology",
@@ -121,7 +122,7 @@ export default function MethodologyPage() {
             {meta.examples.map((pick) => (
               <tr key={pick.id}>
                 <td className="border-t border-white/10 py-2 pr-3">
-                  <Link href={`/draft-rater/picks/${pick.id}`} className="hover:text-white">
+                  <Link href={playerHref(pick.id, "draft")} className="hover:text-white">
                     {pick.name}
                   </Link>
                 </td>

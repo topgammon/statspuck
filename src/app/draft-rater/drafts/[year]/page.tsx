@@ -73,7 +73,7 @@ export default async function DraftYearPage({ params }: { params: Promise<Params
               fileSlug={`${row.year}-draft`}
               title={`${row.year} draft class`}
               summary={`The ${row.year} NHL draft grades ${row.letter ?? "incomplete"}, ${signed(row.avg)} versus the slot.`}
-              path={`/drafts/${row.year}`}
+              path={`/draft-rater/drafts/${row.year}`}
               card={{
                 kind: "class",
                 year: row.year,

@@ -1,4 +1,6 @@
 // Shared shape and matching logic for the header's universal search.
+// Results open each entity's Overview tab.
+import { gmHref, playerHref, teamHref } from "./routes";
 
 /** [id, name, year, overall, franchise, headshotPlayerId (0 = none), letter, stamp] */
 export type PlayerEntry = [number, string, number, number, string, number, string, string];
@@ -72,7 +74,7 @@ export function searchIndex(index: SearchIndex, raw: string): SearchGroup[] {
     .filter((row) => row.exactAbbr || row.score >= 0)
     .sort((a, b) => a.score - b.score || a.entry[4] - b.entry[4])
     .slice(0, LIMITS.team)
-    .map(({ entry }): SearchHit => ({ kind: "team", href: `/draft-rater/teams/${entry[0].toLowerCase()}`, entry }));
+    .map(({ entry }): SearchHit => ({ kind: "team", href: teamHref(entry[0]), entry }));
   if (teams.length) groups.push({ label: "Teams", hits: teams });
 
   if (words.length && words.join("").length >= 2) {
@@ -81,7 +83,7 @@ export function searchIndex(index: SearchIndex, raw: string): SearchGroup[] {
       .filter((row) => row.score >= 0)
       .sort((a, b) => a.score - b.score || b.entry[4] - a.entry[4])
       .slice(0, LIMITS.gm)
-      .map(({ entry }): SearchHit => ({ kind: "gm", href: `/draft-rater/eras/${entry[0]}`, entry }));
+      .map(({ entry }): SearchHit => ({ kind: "gm", href: gmHref(entry[0]), entry }));
     const players: { entry: PlayerEntry; score: number }[] = [];
     for (const entry of index.p) {
       if (yearToken && entry[2] !== Number(yearToken)) continue;
@@ -91,7 +93,7 @@ export function searchIndex(index: SearchIndex, raw: string): SearchGroup[] {
     players.sort((a, b) => a.score - b.score || a.entry[3] - b.entry[3]);
     const hits = players
       .slice(0, LIMITS.player)
-      .map(({ entry }): SearchHit => ({ kind: "player", href: `/draft-rater/picks/${entry[0]}`, entry }));
+      .map(({ entry }): SearchHit => ({ kind: "player", href: playerHref(entry[0]), entry }));
     if (hits.length) groups.push({ label: "Players", hits });
     if (gms.length) groups.push({ label: "GMs", hits: gms });
   } else if (yearToken) {
@@ -100,7 +102,7 @@ export function searchIndex(index: SearchIndex, raw: string): SearchGroup[] {
       .filter((entry) => entry[2] === Number(yearToken))
       .sort((a, b) => a[3] - b[3])
       .slice(0, LIMITS.player)
-      .map((entry): SearchHit => ({ kind: "player", href: `/draft-rater/picks/${entry[0]}`, entry }));
+      .map((entry): SearchHit => ({ kind: "player", href: playerHref(entry[0]), entry }));
     if (hits.length) groups.push({ label: `Top ${yearToken} picks`, hits });
   }
 

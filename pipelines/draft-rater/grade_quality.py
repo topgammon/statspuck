@@ -31,6 +31,8 @@ ROOT = Path(__file__).resolve().parent
 DATA = ROOT.parents[1] / "data" / "draft-rater"
 HEADSHOTS = DATA / "headshots.json"
 ACTIVE = DATA / "active.json"
+ROSTERS = DATA / "rosters.json"
+GM_PHOTOS = DATA / "gm_photos.json"
 CHART = ROOT.parents[1] / "public" / "draft-rater" / "charts" / "expected-gp.svg"
 ERAS_PATH = ROOT / "gm_eras.json"
 
@@ -733,6 +735,13 @@ def headshot_map() -> dict[int, bool]:
     return {int(key): bool(value) for key, value in raw.items()}
 
 
+def optional_json(path: Path) -> dict:
+    """A side data file that may not exist yet. Missing means empty."""
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def active_map() -> dict[int, bool | None]:
     if not ACTIVE.exists():
         return {}
@@ -956,6 +965,8 @@ def build() -> None:
 
     photos = headshot_map()
     actives = active_map()
+    rosters = optional_json(ROSTERS)
+    gm_photos = optional_json(GM_PHOTOS)
     duplicates: dict[int, list[int]] = {}
     for pick in picks:
         if pick["player_id"]:
@@ -1049,6 +1060,7 @@ def build() -> None:
                 "redraft": None,
                 "stamps": [],
                 "alsoDrafted": also,
+                "currentTeam": rosters.get(str(pick["player_id"])) if pick["player_id"] else None,
                 "_windowScore": window_score,
                 "_bloomScore": bloom_score,
             }
@@ -1210,6 +1222,8 @@ def build() -> None:
             "total": None,
             "rating": None,
             "letter": None,
+            "photoUrl": (gm_photos.get(era["person"]) or {}).get("photoUrl"),
+            "photoPage": (gm_photos.get(era["person"]) or {}).get("pageUrl"),
         }
         if official:
             avg = round1(shrink_gm(scouting_average(official) - league_avg, len(official)))

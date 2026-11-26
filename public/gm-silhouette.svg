@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="General manager">
+  <rect width="160" height="160" fill="#14171F"/>
+  <circle cx="80" cy="60" r="27" fill="#3A4150"/>
+  <path d="M22 160c2-34 22-52 58-52s56 18 58 52z" fill="#2A303C"/>
+  <path d="M64 108l16 22 16-22c-5-2-10-3-16-3s-11 1-16 3z" fill="#E2E8F0"/>
+  <path d="M64 108l16 22-9 30H52l-6-44c5-4 11-6 18-8zM96 108l-16 22 9 30h19l6-44c-5-4-11-6-18-8z" fill="#1E232D"/>
+  <path d="M76 113h8l2 6-3 3 4 26-7 10-7-10 4-26-3-3z" fill="#E11D48"/>
+</svg>

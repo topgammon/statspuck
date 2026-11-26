@@ -11,7 +11,9 @@ from __future__ import annotations
 import argparse
 
 from cards import render
+from fetch_gm_photos import main as fetch_gm_photos
 from fetch_nhl import fetch_all, sample
+from fetch_rosters import main as fetch_rosters
 from model import build
 
 
@@ -27,6 +29,9 @@ def main() -> None:
         return
     if not args.skip_fetch:
         fetch_all(rebuild=args.rebuild)
+        # Side data. Each step keeps its last saved file if the source is down.
+        fetch_rosters()
+        fetch_gm_photos()
     build()
     if not args.skip_cards:
         render()

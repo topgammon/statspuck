@@ -1,22 +1,24 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { EraProfile } from "@/components/era-profile";
+import { teamCapHit } from "@/lib/cap";
 import { eras, erasBySlug, meta, og, picks } from "@/lib/data";
+import { gmHref } from "@/lib/routes";
 import { scoutingReport } from "@/lib/scouting";
 
-type Params = { slug: string };
+type Params = { gm: string };
 
 export function generateStaticParams() {
-  return eras.map((era) => ({ slug: era.slug }));
+  return eras.map((era) => ({ gm: era.slug }));
 }
 
 export const dynamicParams = false;
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
-  const { slug } = await params;
-  const era = erasBySlug.get(slug);
+  const { gm } = await params;
+  const era = erasBySlug.get(gm);
   if (!era) return {};
-  const title = `${era.person} draft grade`;
+  const title = era.person;
   const description = era.letter
     ? `${era.person}, ${era.role} of the ${era.teamName}, grades ${era.letter} on drafts from ${era.startYear}.`
     : `${era.person}, ${era.role} of the ${era.teamName}. Not enough graded drafts for a letter yet.`;
@@ -24,20 +26,24 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   return {
     title,
     description,
+    alternates: { canonical: gmHref(era.slug) },
     openGraph: { title, description, images: image ? [{ url: image, width: 1200, height: 630 }] : undefined },
     twitter: { card: "summary_large_image", images: image ? [image] : undefined },
   };
 }
 
-export default async function EraPage({ params }: { params: Promise<Params> }) {
-  const { slug } = await params;
-  const era = erasBySlug.get(slug);
+export default async function GmPage({ params }: { params: Promise<Params> }) {
+  const { gm } = await params;
+  const era = erasBySlug.get(gm);
   if (!era) notFound();
   const latest = meta.latestDraftYear;
   const samePerson = eras.filter((item) => item.person === era.person);
   const teamPicks = picksFor(era, latest);
   const careerPicks = dedupe(samePerson.flatMap((item) => picksFor(item, latest)));
   const pool = eras.filter((item) => item.avg != null && item.n >= 5).map((item) => item.avg as number);
+  const otherStops = samePerson
+    .filter((item) => item.slug !== era.slug)
+    .map((item) => ({ slug: item.slug, team: item.team, teamName: item.teamName, startYear: item.startYear, endYear: item.endYear }));
   return (
     <EraProfile
       era={era}
@@ -46,6 +52,8 @@ export default async function EraPage({ params }: { params: Promise<Params> }) {
       pool={pool}
       league={meta.leagueAvg}
       multiTeam={samePerson.length > 1}
+      otherStops={otherStops}
+      capHit={era.endYear == null ? teamCapHit(era.team) : null}
       teamReport={scoutingReport(teamPicks, picks)}
       careerReport={scoutingReport(careerPicks, picks)}
     />

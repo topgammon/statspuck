@@ -7,6 +7,7 @@ import { StampRow } from "@/components/stamps";
 import { TeamLogo } from "@/components/team-logo";
 import { letterRank, scoreClass, signed } from "@/lib/format";
 import type { PickRow, YearPoint } from "@/lib/types";
+import { playerHref, teamHref } from "@/lib/routes";
 
 type SortKey = "year" | "overall" | "redraft" | "franchise" | "name" | "pos" | "gp" | "qg" | "expected" | "score" | "letter";
 
@@ -106,7 +107,7 @@ export function PickTable({
         {rows.map((pick) => (
           <Link
             key={pick.id}
-            href={`/draft-rater/picks/${pick.id}`}
+            href={playerHref(pick.id, "draft")}
             className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3"
           >
             <div className="flex items-start justify-between gap-3">
@@ -183,7 +184,7 @@ function Cell({ pick, column }: { pick: PickRow; column: SortKey }) {
   if (column === "redraft") return <RedraftCell pick={pick} />;
   if (column === "franchise") {
     return (
-      <Link href={`/draft-rater/teams/${pick.franchise.toLowerCase()}`} className="inline-flex items-center gap-2 text-zinc-200 hover:text-white">
+      <Link href={teamHref(pick.franchise, "draft")} className="inline-flex items-center gap-2 text-zinc-200 hover:text-white">
         <TeamLogo abbr={pick.franchise} name={pick.franchiseName} className="h-6 w-9" />
         <span>{pick.franchise}</span>
       </Link>
@@ -191,7 +192,7 @@ function Cell({ pick, column }: { pick: PickRow; column: SortKey }) {
   }
   if (column === "name") {
     return (
-      <Link href={`/draft-rater/picks/${pick.id}`} className="font-medium hover:text-white">
+      <Link href={playerHref(pick.id, "draft")} className="font-medium hover:text-white">
         {pick.name}
       </Link>
     );

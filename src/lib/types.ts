@@ -41,6 +41,8 @@ export type PickRow = {
   redraft: number;
   stamps: Stamp[];
   alsoDrafted: number[];
+  /** Current NHL team from today's rosters, or null if not on an NHL roster. */
+  currentTeam?: string | null;
 };
 
 export type BriefPick = {
@@ -115,6 +117,10 @@ export type Era = {
   total: number | null;
   rating: number | null;
   letter: string | null;
+  /** Wikimedia Commons photo, or null for the silhouette. */
+  photoUrl?: string | null;
+  /** Wikipedia page the photo came from, for credit. */
+  photoPage?: string | null;
 };
 
 export type Headlines = {
