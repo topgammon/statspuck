@@ -1,12 +1,12 @@
-import classesJson from "../../data/classes.json";
-import curvesJson from "../../data/curves.json";
-import erasJson from "../../data/eras.json";
-import headlinesJson from "../../data/headlines.json";
-import leaderboardJson from "../../data/leaderboard.json";
-import metaJson from "../../data/meta.json";
-import ogJson from "../../data/og.json";
-import picksJson from "../../data/picks.json";
-import teamsJson from "../../data/teams.json";
+import classesJson from "../../data/draft-rater/classes.json";
+import curvesJson from "../../data/draft-rater/curves.json";
+import erasJson from "../../data/draft-rater/eras.json";
+import headlinesJson from "../../data/draft-rater/headlines.json";
+import leaderboardJson from "../../data/draft-rater/leaderboard.json";
+import metaJson from "../../data/draft-rater/meta.json";
+import ogJson from "../../data/draft-rater/og.json";
+import picksJson from "../../data/draft-rater/picks.json";
+import teamsJson from "../../data/draft-rater/teams.json";
 import { gradeTeams, type GradeFilter } from "./grade";
 import type { CurveSet, DraftClass, Era, Headlines, Meta, OgIndex, PickRow, TeamGrade, TeamInfo } from "./types";
 
