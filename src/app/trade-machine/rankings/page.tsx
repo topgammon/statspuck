@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TradeNav } from "@/components/trade/trade-nav";
 import { FranchiseRankings } from "@/components/trade/franchise-rankings";
 import { contracts } from "@/lib/cap";
 import { franchiseAssets } from "@/lib/franchise-assets";
@@ -13,6 +14,7 @@ export const metadata: Metadata = {
 export default function RankingsPage() {
   return (
     <div>
+      <TradeNav active="rankings" />
       <section className="max-w-3xl">
         <p className="text-sm font-semibold tracking-[0.2em] text-[#E11D48] uppercase">
           <Link href="/trade-machine" className="hover:underline">

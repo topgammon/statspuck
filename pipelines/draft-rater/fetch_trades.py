@@ -227,31 +227,34 @@ def build() -> None:
                 season0, first_weight = when.year, 1.0
             else:
                 season0, first_weight = when.year - 1, 0.5
-            got: dict[str, list[tuple[str, float]]] = defaultdict(list)
-            gave: dict[str, list[tuple[str, float]]] = defaultdict(list)
+            # Every piece is kept: (label, value, kind) with kind "p" for a player and "k" for a pick.
+            got: dict[str, list[tuple[str, float, str]]] = defaultdict(list)
+            gave: dict[str, list[tuple[str, float, str]]] = defaultdict(list)
             for item in trade["items"]:
                 kind = item.get("type")
                 if kind == "player":
                     value = player_value(item["name"], season0, first_weight)
-                    # Salary a team keeps paying is not value it gets.
                     label_text = re.sub(r"^(.*), (.*)$", r"\2 \1", item["name"])
+                    piece = "p"
                 elif kind == "draft_pick":
                     value = pick_value(item)
                     label_text = f"{item.get('year')} R{item.get('round')}"
+                    piece = "k"
                 else:
                     continue
                 src = SLUG_TO_ABBR.get(item.get("from", ""))
                 dst = SLUG_TO_ABBR.get(item.get("to", ""))
                 if dst:
-                    got[dst].append((label_text, value))
+                    got[dst].append((label_text, value, piece))
                 if src:
-                    gave[src].append((label_text, value))
+                    gave[src].append((label_text, value, piece))
             for abbr in {t for t in teams if t}:
                 incoming = got.get(abbr, [])
                 outgoing = gave.get(abbr, [])
-                net = sum(v for _, v in incoming) - sum(v for _, v in outgoing)
-                top = lambda rows: [[n, round(v)] for n, v in sorted(rows, key=lambda r: -r[1])[:4]]  # noqa: E731
-                sides.append({"id": trade["id"], "d": date, "t": abbr, "net": round(net, 1), "in": top(incoming), "out": top(outgoing)})
+                net = sum(v for _, v, _ in incoming) - sum(v for _, v, _ in outgoing)
+                # Players first (biggest first), then picks (biggest first). Nothing is cut off.
+                ordered = lambda rows: [[n, round(v), k] for n, v, k in sorted(rows, key=lambda r: (r[2] != "p", -r[1]))]  # noqa: E731
+                sides.append({"id": trade["id"], "d": date, "t": abbr, "net": round(net, 1), "in": ordered(incoming), "out": ordered(outgoing)})
 
     if unknown_slugs:
         print(f"trades: unmapped teams {sorted(unknown_slugs)}", flush=True)

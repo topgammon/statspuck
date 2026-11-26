@@ -26,6 +26,27 @@ export function ratingFill(rating: number): string {
   return "#64748B";
 }
 
+/** Trade grade from a team's net value as a share of everything that moved. B is even, A and up is a clear win. */
+export function gradeForMargin(margin: number): string {
+  if (margin >= 0.3) return "A+";
+  if (margin >= 0.2) return "A";
+  if (margin >= 0.12) return "A-";
+  if (margin >= 0.06) return "B+";
+  if (margin >= -0.06) return "B";
+  if (margin >= -0.12) return "B-";
+  if (margin >= -0.2) return "C";
+  if (margin >= -0.3) return "D";
+  return "F";
+}
+
+export function gradeTone(grade: string): string {
+  const first = grade.charAt(0);
+  if (first === "A") return "text-[#F59E0B]";
+  if (first === "B") return "text-[#10B981]";
+  if (first === "C") return "text-[#F8FAFC]";
+  return "text-[#EF4444]";
+}
+
 export function formatRating(rating: number): string {
   const rounded = Math.round(rating);
   return rounded > 0 ? String(rounded) : rounded < 0 ? `−${Math.abs(rounded)}` : "0";

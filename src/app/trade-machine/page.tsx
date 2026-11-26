@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { TradeMachine } from "@/components/trade/trade-machine";
+import { TradeNav } from "@/components/trade/trade-nav";
 import { SectionLabel } from "@/components/entity/bio";
 import { buildTradeData } from "@/lib/trade-data";
 import { formatRating } from "@/lib/rating";
@@ -20,6 +21,7 @@ export default function TradeMachinePage() {
   const defense = primeWindow("D");
   return (
     <div>
+      <TradeNav active="mock" />
       <TradeMachine data={data} />
 
       <Link

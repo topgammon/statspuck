@@ -3,7 +3,7 @@ import { SectionLabel } from "@/components/entity/bio";
 import { TeamLogo } from "@/components/team-logo";
 import { ROUNDS, capitalAsOf, capitalYears, draftCapitalFor } from "@/lib/draft-capital";
 import { franchiseAssetsFor, franchiseAssets } from "@/lib/franchise-assets";
-import type { AssetGrade, GmReport, TeamTradeReport, TradeSide } from "@/lib/gm-grades";
+import type { AssetGrade, GmReport, TeamTradeReport, TradePiece, TradeSide } from "@/lib/gm-grades";
 import { letterTone } from "@/lib/search";
 import { formatRating, ratingTone } from "@/lib/rating";
 
@@ -253,8 +253,23 @@ function Fact({ label, value, tone = "text-[#F8FAFC]", title }: { label: string;
   );
 }
 
+/** Every piece of a trade, players first, each with the Impact it was worth. */
+function Pieces({ rows }: { rows: TradePiece[] }) {
+  if (!rows.length) return <span className="font-semibold">nothing</span>;
+  return (
+    <>
+      {rows.map(([label, value, kind], index) => (
+        <span key={label + index} className="whitespace-nowrap">
+          <span className={kind === "p" ? "font-semibold" : ""}>{label}</span>
+          <span className="text-[11px] text-[#94A3B8]"> {fmt(value)}</span>
+          {index < rows.length - 1 ? ", " : ""}{" "}
+        </span>
+      ))}
+    </>
+  );
+}
+
 function SideLine({ side, showTeam }: { side: TradeSide; showTeam?: boolean }) {
-  const names = (rows: [string, number][]) => rows.map(([label]) => label).join(", ") || "nothing";
   return (
     <li className="rounded-xl border border-[#262B36] bg-[#0B0D10]/50 px-3 py-2.5 text-sm">
       <div className="flex items-center justify-between gap-3">
@@ -269,11 +284,11 @@ function SideLine({ side, showTeam }: { side: TradeSide; showTeam?: boolean }) {
       </div>
       <p className="mt-0.5 text-[#F8FAFC]">
         <span className="text-[#94A3B8]">Got </span>
-        {names(side.in)}
+        <Pieces rows={side.in} />
       </p>
       <p className="text-[#F8FAFC]">
         <span className="text-[#94A3B8]">Sent </span>
-        {names(side.out)}
+        <Pieces rows={side.out} />
       </p>
     </li>
   );

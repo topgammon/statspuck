@@ -378,7 +378,7 @@ export type ShareCardModel =
       mode: "Teams" | "GMs";
       rows: { rank: number; name: string; abbr?: string; letter: string; score: number; color: string }[];
     }
-  | { kind: "trade"; headline: string; sub: string; sides: TradeSide[]; capNotes: string[] }
+  | { kind: "trade"; headline: string; sub: string; sides: TradeSide[]; capNotes: string[]; note?: string; eyebrow?: string }
   | { kind: "assets"; subtitle: string; rows: { rank: number; name: string; abbr: string; total: number; roster: number; prospects: number; picks: number }[] };
 
 export type TradeSide = {
@@ -388,14 +388,14 @@ export type TradeSide = {
   grade: string;
   /** Total Asset Value coming in. */
   total: number;
-  /** Net cap change in dollars. */
-  capDelta: number;
+  /** Net cap change in dollars. Left out for past trades. */
+  capDelta: number | null;
   receives: { label: string; sub: string; rating: number; color: string }[];
 };
 
 export function ShareCardView({ format, card }: { format: ShareFormat; card: ShareCardModel }) {
   if (card.kind === "assets") return <AssetsShareCard format={format} subtitle={card.subtitle} rows={card.rows} />;
-  if (card.kind === "trade") return <TradeShareCard format={format} headline={card.headline} sub={card.sub} sides={card.sides} capNotes={card.capNotes} />;
+  if (card.kind === "trade") return <TradeShareCard format={format} headline={card.headline} sub={card.sub} sides={card.sides} capNotes={card.capNotes} note={card.note} eyebrow={card.eyebrow} />;
   if (card.kind === "player") return <PlayerShareCard format={format} pick={card.pick} color={card.color} />;
   if (card.kind === "undrafted") return <UndraftedShareCard format={format} player={card.player} color={card.color} />;
   if (card.kind === "team") {
@@ -974,7 +974,23 @@ export function AssetsShareCard({
   );
 }
 
-export function TradeShareCard({ format, headline, sub, sides, capNotes }: { format: ShareFormat; headline: string; sub: string; sides: TradeSide[]; capNotes: string[] }) {
+export function TradeShareCard({
+  format,
+  headline,
+  sub,
+  sides,
+  capNotes,
+  note,
+  eyebrow = "Trade Machine · Verdict",
+}: {
+  format: ShareFormat;
+  headline: string;
+  sub: string;
+  sides: TradeSide[];
+  capNotes: string[];
+  note?: string;
+  eyebrow?: string;
+}) {
   const d = dims(format);
   const three = sides.length >= 3;
   const maxRows = d.wide ? (three ? 3 : 4) : three ? 5 : 6;
@@ -982,7 +998,7 @@ export function TradeShareCard({ format, headline, sub, sides, capNotes }: { for
   return (
     <Frame format={format} accent={RED} product={{ name: "Trade Machine", path: "/trade-machine" }}>
       <div>
-        <Eyebrow size={d.wide ? 15 : 18}>Trade Machine · Verdict</Eyebrow>
+        <Eyebrow size={d.wide ? 15 : 18}>{eyebrow}</Eyebrow>
         <Title size={fitSize(headline, d.wide ? 54 : 72, d.wide ? 30 : 24)}>{headline}</Title>
         <div style={{ marginTop: 8, color: MUTED, fontSize: d.wide ? 19 : 24, ...ellipsis }}>{sub}</div>
       </div>
@@ -1016,15 +1032,17 @@ export function TradeShareCard({ format, headline, sub, sides, capNotes }: { for
                 <span>
                   Asset Value <b style={{ color: INK }}>{side.total}</b>
                 </span>
-                <span>
-                  Cap <b style={{ color: side.capDelta > 0 ? LOSS : EMERALD }}>{capText(side.capDelta)}</b>
-                </span>
+                {side.capDelta != null ? (
+                  <span>
+                    Cap <b style={{ color: side.capDelta > 0 ? LOSS : EMERALD }}>{capText(side.capDelta)}</b>
+                  </span>
+                ) : null}
               </div>
             </div>
           );
         })}
       </div>
-      <div style={{ color: capNotes.length ? GOLD : MUTED, fontSize: d.wide ? 16 : 21, ...ellipsis }}>{capNotes.length ? capNotes.join(" · ") : "Cap check passed for every team."}</div>
+      <div style={{ color: capNotes.length ? GOLD : MUTED, fontSize: d.wide ? 16 : 21, ...ellipsis }}>{note ?? (capNotes.length ? capNotes.join(" · ") : "Cap check passed for every team.")}</div>
     </Frame>
   );
 }

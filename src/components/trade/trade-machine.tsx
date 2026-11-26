@@ -8,7 +8,7 @@ import { ShareLauncher } from "@/components/share-modal";
 import type { TradeSide } from "@/components/share-cards";
 import { TeamLogo } from "@/components/team-logo";
 import { TogglePill } from "@/components/toggle-pill";
-import { formatRating, ratingFill, ratingTone, toRating } from "@/lib/rating";
+import { formatRating, gradeForMargin, gradeTone, ratingFill, ratingTone, toRating } from "@/lib/rating";
 import type { PickTierId } from "@/lib/valuation";
 import type { TradeData, TradePick, TradePlayer, TradeTeam } from "@/lib/trade-data";
 import { playerHref } from "@/lib/routes";
@@ -29,26 +29,6 @@ type Item = {
 
 const money = (value: number) => `$${(Math.abs(value) / 1_000_000).toFixed(2)}M`;
 const signedMoney = (value: number) => `${value >= 0 ? "+" : "−"}${money(value)}`;
-
-function gradeFor(margin: number): string {
-  if (margin >= 0.3) return "A+";
-  if (margin >= 0.2) return "A";
-  if (margin >= 0.12) return "A-";
-  if (margin >= 0.06) return "B+";
-  if (margin >= -0.06) return "B";
-  if (margin >= -0.12) return "B-";
-  if (margin >= -0.2) return "C";
-  if (margin >= -0.3) return "D";
-  return "F";
-}
-
-function gradeTone(grade: string): string {
-  const first = grade.charAt(0);
-  if (first === "A") return "text-[#F59E0B]";
-  if (first === "B") return "text-[#10B981]";
-  if (first === "C") return "text-[#F8FAFC]";
-  return "text-[#EF4444]";
-}
 
 type Row = { label: string; sub: string; rating: number; color: string };
 
@@ -170,7 +150,7 @@ export function TradeMachine({ data }: { data: TradeData }) {
         if (capAfter < data.floor) issues.push(`${team.short} would be ${money(data.floor - capAfter)} under the cap floor`);
       }
       const margin = net / size;
-      return { team, incoming, outgoing, net, capAfter, capDelta, grade: gradeFor(margin), margin, rowsIn, issues };
+      return { team, incoming, outgoing, net, capAfter, capDelta, grade: gradeForMargin(margin), margin, rowsIn, issues };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, slots, data]);

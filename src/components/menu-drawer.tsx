@@ -13,6 +13,11 @@ const draftRaterLinks = [
   { href: "/draft-rater/methodology", label: "Method" },
 ];
 
+const tradeMachineLinks = [
+  { href: "/trade-machine", label: "Mock Trade" },
+  { href: "/trade-machine/rater", label: "Trade Rater" },
+];
+
 export function MenuDrawer() {
   const [open, setOpen] = useState(false);
   const mounted = useSyncExternalStore(
@@ -43,6 +48,8 @@ export function MenuDrawer() {
 
   const isActive = (href: string) =>
     href === "/draft-rater" ? pathname === "/draft-rater" || pathname === "/draft-rater/" : pathname.startsWith(href);
+
+  const isTradeActive = (href: string) => (href === "/trade-machine" ? pathname === "/trade-machine" || pathname === "/trade-machine/" : pathname.startsWith(href));
 
   const drawer = (
     <div className={`fixed inset-0 z-50 ${open ? "" : "pointer-events-none"}`} aria-hidden={!open}>
@@ -114,24 +121,31 @@ export function MenuDrawer() {
             <span className="rounded-full bg-[#E11D48]/15 px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#E11D48] uppercase">Live</span>
           </Link>
 
-          <Link
-            href="/trade-machine"
-            className={`mt-2 flex items-center justify-between gap-2 rounded-xl border p-3 transition ${
-              pathname.startsWith("/trade-machine") ? "border-[#38BDF8] bg-[#38BDF8]/10" : "border-[#E11D48]/40 bg-[#0B0D10]/60 hover:border-[#38BDF8]/60"
-            }`}
-          >
-            <span className="display text-xl font-bold text-[#F8FAFC]">Trade Machine</span>
-            <span className="rounded-full bg-[#E11D48]/15 px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#E11D48] uppercase">Live</span>
-          </Link>
-          <Link
-            href="/trade-machine/rankings"
-            className={`mt-2 ml-4 flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-sm transition ${
-              pathname.startsWith("/trade-machine/rankings") ? "border-[#38BDF8] bg-[#38BDF8]/10 text-[#38BDF8]" : "border-[#262B36] text-[#94A3B8] hover:border-[#38BDF8]/60 hover:text-white"
-            }`}
-          >
-            Franchise Asset Rankings
-            <span aria-hidden>→</span>
-          </Link>
+          <div className="mt-2 rounded-xl border border-[#E11D48]/40 bg-[#0B0D10]/60 p-3">
+            <Link href="/trade-machine" className="flex items-center justify-between gap-2">
+              <span className="display text-xl font-bold text-[#F8FAFC]">Trade Machine</span>
+              <span className="rounded-full bg-[#E11D48]/15 px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#E11D48] uppercase">Live</span>
+            </Link>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {tradeMachineLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`rounded-lg border px-1 py-1.5 text-center text-sm leading-tight transition ${
+                    isTradeActive(link.href)
+                      ? "border-[#38BDF8] bg-[#38BDF8]/10 text-[#38BDF8]"
+                      : "border-[#262B36] text-[#94A3B8] hover:border-[#38BDF8]/60 hover:text-white"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <span className="rounded-lg border border-dashed border-[#262B36] px-1 py-1.5 text-center text-sm leading-tight text-[#94A3B8]/70" title="Coming soon">
+                Trade Trees
+                <span className="block text-[9px] tracking-wider uppercase">Soon</span>
+              </span>
+            </div>
+          </div>
 
           <p className="mt-7 text-[11px] font-semibold tracking-[0.16em] text-[#94A3B8] uppercase">Roadmap · Coming soon</p>
           <ul className="mt-2 divide-y divide-[#262B36]">

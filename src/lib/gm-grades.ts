@@ -16,7 +16,10 @@ import { assets } from "./valuation";
 // Both are turned into scores around 0.0 (league average), shrunk for short tenures, then ranked
 // against every other GM to get a percentile rating and a letter, the same way Draft and Development are.
 
-export type TradeSide = { id: string; d: string; t: string; net: number; in: [string, number][]; out: [string, number][] };
+/** One piece of a trade: label, Impact value over five seasons, and "p" for a player or "k" for a pick. Players come first. */
+export type TradePiece = [string, number, "p" | "k"];
+
+export type TradeSide = { id: string; d: string; t: string; net: number; in: TradePiece[]; out: TradePiece[] };
 
 type TradesFile = { asOf: string; from: string; horizon: number; sides: TradeSide[] };
 
