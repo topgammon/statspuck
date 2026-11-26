@@ -46,7 +46,7 @@ export function TeamBreakdown({
         <section className="mt-10">
           <h2 className="display text-2xl font-bold">GM eras</h2>
           <p className="mt-1 text-sm text-zinc-500">
-            The general manager who held the job on draft day, back to 2005. The average weighs scouting decisions, not the lottery slot.
+            The general manager who held the job on draft day, back to 2005. Every graduated pick counts equally, with a #1 overall hit capped at +250.
           </p>
           <div className="mt-3 grid gap-2">
             {eras.map((item) => (
@@ -74,7 +74,7 @@ export function TeamBreakdown({
       <section className="mt-10">
         <h2 className="display text-2xl font-bold">By draft class</h2>
         <p className="mt-1 text-sm text-zinc-500">
-          Each bar is the weighted average of graded picks. The line is a 3-year rolling average. Click a year to filter the picks below. Click it again, or choose All years, to reset.
+          Each bar is the average of graded picks. The line is a 3-year rolling average. Click a year to filter the picks below. Click it again, or choose All years, to reset.
         </p>
         <Trend points={byYear} selected={year} onSelect={chooseYear} />
       </section>

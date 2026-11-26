@@ -236,7 +236,7 @@ export function Board({
       </div>
       {!isDefault ? (
         <p className="mt-3 text-sm text-zinc-400">
-          The cards and the board follow this filter. Prospects under 25 quality games stay out of the average. A team’s grade weighs scouting skill, not the lottery slot.
+          The cards and the board follow this filter. Prospects under 25 Impact stay out of the average. A team’s grade is the plain average of its graduated picks, with a #1 overall hit capped at +250.
         </p>
       ) : null}
 

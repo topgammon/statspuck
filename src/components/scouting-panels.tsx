@@ -6,7 +6,7 @@ const TIPS = {
   bust: "Share of first-round picks that ended up graded D+ or worse. A pick only counts once his make-or-break years are over (6 seasons for skaters, 8 for goalies). Prospects are left out.",
   late: "Share of round 4–7 picks that became real hits: a positive score versus the draft slot and 100+ NHL games. Every late-round pick counts except those still wearing the prospect badge.",
   gems: "Steals are picks from #20 on that earned an A grade or beat the slot by 200+. Late bloomers were below the slot through year four and climbed above it later. Gem rate is the share of evaluated picks with either stamp.",
-  best: "The position group (forwards, defense, or goalies) with the best skill-weighted score versus the draft slot.",
+  best: "The position group (forwards, defense, or goalies) with the best average score versus the draft slot.",
 };
 
 export function ScoutingPanels({ report }: { report: ScoutingReport }) {

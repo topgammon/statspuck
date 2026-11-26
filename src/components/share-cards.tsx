@@ -407,8 +407,8 @@ export function PlayerShareCard({ format, pick, color }: { format: ShareFormat; 
         note={moved === 0 ? "Same slot" : moved > 0 ? `▲ ${moved} spots` : `▼ ${Math.abs(moved)} spots`}
         noteColor={moved > 0 ? EMERALD : moved < 0 ? LOSS : MUTED}
       />
-      <Tile label="Score vs slot" value={signed(pick.score)} valueColor={scoreColor(pick.score)} note="Quality games" />
-      <Tile label="Quality games" value={pick.qg.toFixed(0)} note={`Expected ${pick.expected == null ? "—" : pick.expected.toFixed(0)}`} />
+      <Tile label="Score vs slot" value={signed(pick.score)} valueColor={scoreColor(pick.score)} note="Impact" />
+      <Tile label="Impact" value={pick.qg.toFixed(0)} note={`Expected ${pick.expected == null ? "—" : pick.expected.toFixed(0)}`} />
       <Tile label={pick.group === "G" ? "Games · SV%" : "Games · PPG"} value={`${pick.gpCareer}`} note={`${pick.group === "G" ? "SV%" : "PPG"} ${rate}`} />
     </Grid>
   );
@@ -547,7 +547,7 @@ export function TeamShareCard({
             {name}
           </Title>
           <div style={{ marginTop: d.wide ? 12 : 16, fontSize: d.wide ? 22 : 26, color: MUTED }}>
-            <span style={{ fontFamily: DISPLAY, fontWeight: 700, color: scoreColor(avg) }}>{signed(avg)}</span> quality games vs the slot
+            <span style={{ fontFamily: DISPLAY, fontWeight: 700, color: scoreColor(avg) }}>{signed(avg)}</span> Impact vs the slot
           </div>
         </div>
         <GradeBadge letter={letter} rating={rating} size={d.wide ? 170 : 230} />
@@ -749,7 +749,7 @@ export function BoardShareCard({
           <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: d.wide ? 50 : 68, lineHeight: 1.02 }}>Who actually wins the NHL draft?</div>
         </div>
         <div style={{ marginTop: 10, color: MUTED, fontSize: d.wide ? 19 : 24 }}>
-          {mode === "Teams" ? "Top 10 franchises" : "Top 10 general managers"} by draft grade · score is quality games vs the slot
+          {mode === "Teams" ? "Top 10 franchises" : "Top 10 general managers"} by draft grade · score is Impact vs the slot
         </div>
       </div>
       <div

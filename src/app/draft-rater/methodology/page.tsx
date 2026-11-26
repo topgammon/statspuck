@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ExpectedChart, LetterScale, QualityScale, WindowTimeline } from "@/components/method-charts";
+import { ExpectedChart, LetterScale, ImpactScale, WindowTimeline } from "@/components/method-charts";
 import { StampMark } from "@/components/stamps";
 import { curves, meta, og } from "@/lib/data";
 import { signed, yearLabel } from "@/lib/format";
@@ -8,7 +8,7 @@ import { publicPath } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Methodology",
-  description: "How Draft Rater turns NHL seasons into a quality-games grade.",
+  description: "How Draft Rater turns NHL seasons into an Impact grade.",
   openGraph: {
     title: "How Draft Rater works",
     images: [{ url: og.method, width: 1200, height: 630 }],
@@ -27,21 +27,27 @@ export default function MethodologyPage() {
         A pick is judged on the NHL hockey it has produced, minus what players taken at that same slot usually produce by the same point in their career.
       </p>
 
-      <h2 className="display mt-10 text-2xl font-bold">Quality games</h2>
+      <h2 className="display mt-10 text-2xl font-bold">Impact</h2>
       <p className="mt-3 leading-7 text-zinc-300">
-        A game is not a game. A fourth-line shift and a first-line night should not count the same. Quality games start from games played, then move up or down for ice time and for what the player did with it. Forwards are compared with forwards, defensemen with defensemen. Points, and plus-minus when the league recorded it, nudge the total. The nudge stays inside a fixed range so one hot week cannot invent a career.
+        Impact is our one number for how much NHL hockey a player has given his team. It used to be called Impact. The scale is simple: 1.0 Impact is about one game from an average NHL regular. A regular who plays a full season lands around 75 to 82. An MVP-level season lands around 110 to 140.
       </p>
       <p className="mt-3 leading-7 text-zinc-300">
-        Goalies are scored on starts, adjusted for save percentage against that season’s league average. An ordinary start is about one quality game, so a goalie and a skater can sit on the same scale.
+        <strong className="text-white">Skaters.</strong> Every game played is worth a 0.50 base for being in the lineup. Then the box score adds or takes away: goals and assists count most, shorthanded points get a small bonus, and shots, blocked shots, faceoff wins, and plus-minus add a little. Penalty minutes and faceoff losses take a little away. That rewards both ends of the ice, not just scoring.
       </p>
-      <QualityScale />
+      <p className="mt-3 leading-7 text-zinc-300">
+        Then we look at how much the coach trusts him. Ice time is compared with the average for his position, 15.5 minutes for forwards and 19.5 for defensemen. Penalty-kill minutes count 1.35 times, because coaches only send out players they trust when down a man. Heavy minutes add up to 0.35 per game. Light minutes take away up to 0.25. That way a shutdown defenseman gets real credit even when his point total is quiet.
+      </p>
+      <p className="mt-3 leading-7 text-zinc-300">
+        <strong className="text-white">Goalies.</strong> Each start is worth 1.35, because about 55 starts is a full starter’s workload, the same as a skater’s 75 games. On top of that, every goal saved above a league-average goalie, facing the same shots that season, adds 0.65. A goalie who lets in more than average loses that much. So a goalie and a skater sit on the same scale, and their curves, grades, and stamps can be read the same way.
+      </p>
+      <ImpactScale />
 
       <h2 className="display mt-10 text-2xl font-bold">What a slot usually produces</h2>
       <p className="mt-3 leading-7 text-zinc-300">
         Year 1 is the season that starts after the draft. Every NHL season after that counts, for as long as the player plays. There is no year-8 or year-10 cutoff. The expected line keeps rising, then flattens, so a long career still has to beat what that slot usually produces. The line for each year cannot rise as the pick gets later: a later pick is never expected to outproduce an earlier one.
       </p>
       <p className="mt-3 leading-7 text-zinc-300">
-        The line on the chart is what the whole historical slot produced, including the picks who never played. A player who has already reached 25 quality games is held to a higher bar: other players who had also reached 25 by that same year. An early arrival is compared with early arrivals, not with prospects who had not played, so a recent class is not credited for beating a curve full of zeros. Later years, where only the oldest classes have a full season, extend the last completed step and then shrink it, so the expectation flattens instead of running away. An active player is graded through the current season, and that season is prorated by how many games the league has played. An inactive player is graded through every season since his draft, capped at year 21, even if he left the NHL early. His actual line stays flat and the expected line keeps going, so the final point matches the Expected and Score cards. The typical miss around year 8, where the sample is deepest, is {meta.skater.mae} quality games for skaters and {meta.goalie.mae} for goalies. {progress}
+        The line on the chart is what the whole historical slot produced, including the picks who never played. A player who has already reached 25 Impact is held to a higher bar: other players who had also reached 25 by that same year. An early arrival is compared with early arrivals, not with prospects who had not played, so a recent class is not credited for beating a curve full of zeros. Later years, where only the oldest classes have a full season, extend the last completed step and then shrink it, so the expectation flattens instead of running away. An active player is graded through the current season, and that season is prorated by how many games the league has played. An inactive player is graded through every season since his draft, capped at year 21, even if he left the NHL early. His actual line stays flat and the expected line keeps going, so the final point matches the Expected and Score cards. The typical miss around year 8, where the sample is deepest, is {meta.skater.mae} Impact for skaters and {meta.goalie.mae} for goalies. {progress}
       </p>
       <div className="mt-6">
         <ExpectedChart curves={curves} />
@@ -56,10 +62,10 @@ export default function MethodologyPage() {
 
       <h2 className="display mt-10 text-2xl font-bold">The development window</h2>
       <p className="mt-3 leading-7 text-zinc-300">
-        Skaters are protected through year {meta.skaterWindow}. Goalies are protected through year {meta.goalieWindow}. Inside that window, a player with fewer than {meta.graduateQg} quality games is a prospect. There is no letter yet. The score is still shown, so you can see whether they are ahead or behind, and they are left out of team, GM, and draft-class averages.
+        Skaters are protected through year {meta.skaterWindow}. Goalies are protected through year {meta.goalieWindow}. Inside that window, a player with less than {meta.graduateQg} Impact is a prospect. There is no letter yet. The score is still shown, so you can see whether they are ahead or behind, and they are left out of team, GM, and draft-class averages.
       </p>
       <p className="mt-3 leading-7 text-zinc-300">
-        The window ends early the moment a prospect reaches {meta.graduateQg} quality games, even if a top pick is still below what that slot usually produces. Once the window closes, every pick gets a letter.
+        The window ends early the moment a prospect reaches {meta.graduateQg} Impact, even if a top pick is still below what that slot usually produces. Once the window closes, every pick gets a letter.
       </p>
       <WindowTimeline />
       <p className="mt-3 text-sm text-zinc-500">
@@ -68,12 +74,12 @@ export default function MethodologyPage() {
 
       <h2 className="display mt-10 text-2xl font-bold">The stamps</h2>
       <div className="mt-4 grid gap-3">
-        <Rule stamp="DEVELOPING" text="Still inside the window, and under 25 quality games. No letter. Not in the averages." />
+        <Rule stamp="DEVELOPING" text="Still inside the window, and under 25 Impact. No letter. Not in the averages." />
         <Rule stamp="STALLED" text="A graduated first-round pick, number 1 through 32, still at D+, D, or D- in the make-or-break years. Skaters in years 4 and 5. Goalies in years 6 and 7. The letter shows, and it counts in the averages. Later rounds never get this stamp." />
         <Rule stamp="BUST" text="A first-round pick who is still D+, D, or D- after those years. Skaters from year 6. Goalies from year 8. Later rounds never get this stamp." />
-        <Rule stamp="STEAL" text="A graduated pick at number 20 or later who earns an A or A+, or finishes at least 200 quality games above the slot." />
+        <Rule stamp="STEAL" text="A graduated pick at number 20 or later who earns an A or A+, or finishes at least 200 Impact above the slot." />
         <Rule stamp="LATE BLOOMER" text="Behind the slot through all of the first four post-draft seasons. The score then turns positive for the first time in year 5 or later, and it is still positive today. A steal can wear this stamp too." />
-        <Rule stamp="ELITE" text="A franchise peak, not just a long career. Forwards need three seasons of 105 quality games, a career points-per-game of at least 0.80, and either 850 career quality games or 1.15 quality games per game across 300 games. Defensemen use the same peak and volume, without the scoring-rate bar. Goalies need three seasons of 60 quality games, and either 450 career quality games or 1.05 quality games per start across 200 starts." />
+        <Rule stamp="ELITE" text="A franchise peak, not just a long career. Forwards need three seasons of 105 Impact, a career points-per-game of at least 0.80, and either 850 career Impact or 1.15 Impact per game across 300 games. Defensemen use the same peak and volume, without the scoring-rate bar. Goalies need three seasons of 90 Impact, and either 650 career Impact or 1.45 Impact per start across 200 starts." />
         <Rule stamp="RETIRED" text="The NHL lists the player as inactive, they played at least 25 NHL games, and the draft was at least seven years ago. During the 2026–27 season that is the 2019 draft and earlier. A cup of coffee, or a prospect still in the NCAA or Europe, does not get this stamp." />
       </div>
 
@@ -84,13 +90,13 @@ export default function MethodologyPage() {
       <LetterScale />
       <h2 className="display mt-10 text-2xl font-bold">Team and GM grades</h2>
       <p className="mt-3 leading-7 text-zinc-300">
-        A player’s score stays quality minus expected. Team grades, GM grades, and a team’s grade for one draft do not average those scores evenly, and they do not multiply a lottery pick by four or eight. The weight is about the scouting decision.
+        A player’s score is his Impact minus what his slot is expected to produce. A team’s grade, a GM’s grade, and a team’s grade for one draft are the plain average of those scores across every graduated pick. Every pick counts the same. Prospects who are still developing are left out until they graduate.
       </p>
       <p className="mt-3 leading-7 text-zinc-300">
-        A top-15 pick who hits counts once. Hitting on a consensus star is the job, not a bonus. A top-20 pick who misses counts more: 2.5 times at number 1, about 2.1 times at number 6, and 1.75 times at number 11, easing back to a normal weight by number 21. A mid or late first-rounder counts 1.15 times. A hit from round 2 through 7 counts 1.35 times, because finding a regular there is a scouting win. A miss in those rounds counts 0.85 times, because most of those picks were never expected to play.
+        There is one lottery-luck rule. Landing the number 1 overall pick is mostly luck, so in team and GM averages a number 1 pick who hits counts at most +250. A number 1 pick who busts counts in full, because missing on the top pick is still a scouting mistake. That cap only applies inside the averages. The player’s own page and table row always show his full score, and every other pick, from number 2 to a seventh-round steal, keeps 100 percent of its upside.
       </p>
       <p className="mt-3 leading-7 text-zinc-300">
-        One generational score does not carry the franchise. Above +600, extra points count less: the average uses 600 plus 15 times the square root of whatever is left. A +1,583 season-eater still adds about +1,070, and then it stops climbing. A GM with a short sample is pulled toward zero. Six graded picks keep about 43 percent of the raw average. Sixty graded picks keep about 88 percent. A GM needs five graded picks for a letter on the era page, and 15 to appear on the board. Team letters are compared with the other franchises. GM letters are compared with the other general managers in the view.
+        A GM with a short sample is pulled gently toward zero. Six graded picks keep half of the raw average. Sixty graded picks keep about 91 percent. A GM needs five graded picks for a letter on the era page, and 15 to appear on the board. Team letters are compared with the other franchises. GM letters are compared with the other general managers in the view.
       </p>
       <p className="mt-3 leading-7 text-zinc-300">
         A whole draft year’s letter is a different question. It still weighs earlier picks more, one divided by the square root of the pick number, because it asks how much value the class produced. That letter is compared with the other years.
@@ -130,7 +136,7 @@ export default function MethodologyPage() {
 
       <h2 className="display mt-10 text-2xl font-bold">What this misses</h2>
       <ul className="mt-3 list-disc space-y-2 pl-5 leading-7 text-zinc-300">
-        <li>Ice time and points are not the whole of defense. A shutdown defender can look quieter than he is.</li>
+        <li>The box score is not the whole of defense. Blocks, plus-minus, and penalty-kill trust help, but a shutdown defender can still look quieter than he is.</li>
         <li>Shortened seasons stay as the games that were played. The curve is built from those same seasons.</li>
         <li>The team that made the pick gets the credit, including picks it acquired in a trade.</li>
         <li>Atlanta’s picks belong to Winnipeg. Phoenix and Arizona belong to Utah.</li>

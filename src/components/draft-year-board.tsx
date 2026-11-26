@@ -40,7 +40,7 @@ export function DraftYearBoard({
         <PlayerCard
           title="#1 in redraft"
           pick={redraft}
-          detail="Most quality games in this class. Click to sort the table."
+          detail="Most Impact in this class. Click to sort the table."
           onOpen={() => {
             setSortNonce((value) => value + 1);
             document.getElementById("picks")?.scrollIntoView({ behavior: "smooth", block: "start" });

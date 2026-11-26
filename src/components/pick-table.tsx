@@ -11,12 +11,12 @@ import type { PickRow, YearPoint } from "@/lib/types";
 type SortKey = "year" | "overall" | "redraft" | "franchise" | "name" | "pos" | "gp" | "qg" | "expected" | "score" | "letter";
 
 const tips: Partial<Record<SortKey, string>> = {
-  redraft: "Where this player ranks in their draft class based on total Quality Games produced.",
+  redraft: "Where this player ranks in their draft class based on total Impact produced.",
   franchise: "The franchise that made the pick.",
-  gp: "Total career NHL regular-season games played. Quality counts every season since the draft.",
-  qg: "Total Quality Games across every post-draft season, weighted by ice time and on-ice impact. The current season is prorated.",
-  expected: "Historical average Quality Games produced by this exact draft slot at the same career stage. The current season is prorated.",
-  score: "Quality games above or below expected for draft position.",
+  gp: "Total career NHL regular-season games played. Impact counts every season since the draft.",
+  qg: "Total Impact across every post-draft season. 1.0 is about one average NHL game: skaters earn a base per game plus two-way box-score events and minutes trust; goalies earn 1.35 per start plus goals saved above average. The current season is prorated.",
+  expected: "Historical average Impact produced by this exact draft slot at the same career stage. The current season is prorated.",
+  score: "Impact above or below expected for draft position.",
   letter: "Letter grade (A+ to D-) based on how this pick's Score ranks by percentile against all graded picks since 2005.",
 };
 
@@ -28,7 +28,7 @@ const columns: { key: SortKey; label: string }[] = [
   { key: "name", label: "Player" },
   { key: "pos", label: "Position" },
   { key: "gp", label: "GP" },
-  { key: "qg", label: "Quality" },
+  { key: "qg", label: "Impact" },
   { key: "expected", label: "Expected" },
   { key: "score", label: "Score" },
   { key: "letter", label: "Grade" },
@@ -122,7 +122,7 @@ export function PickTable({
               {pick.overall === pick.redraft ? "—" : pick.overall > pick.redraft ? `▲ +${pick.overall - pick.redraft}` : `▼ ${pick.overall - pick.redraft}`} · {pick.pos} · {pick.gpCareer} GP
             </p>
             <p className="mt-1 text-sm text-zinc-400">
-              {pick.qg.toFixed(1)} quality · {pick.expected == null ? "—" : pick.expected.toFixed(1)} expected ·{" "}
+              {pick.qg.toFixed(1)} Impact · {pick.expected == null ? "—" : pick.expected.toFixed(1)} expected ·{" "}
               <span className={gapClass(pick)}>{signed(pick.score)}</span>
             </p>
           </Link>

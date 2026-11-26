@@ -220,9 +220,9 @@ def _pick_card(pick: dict, kicker: str, size: tuple[int, int]) -> Image.Image:
     score = _signed(pick["score"])
     score_color = GREEN if (pick["score"] or 0) > 0 else RED if (pick["score"] or 0) < 0 else INK
     y = _paint(draw, 48, y, score, _font("Oswald-Bold.ttf", 104 if not square else 132), score_color, 10)
-    caption = "Prospect" if pick.get("developing") else f"{pick.get('letter') or ''}  ·  quality games vs the slot"
+    caption = "Prospect" if pick.get("developing") else f"{pick.get('letter') or ''}  ·  Impact vs the slot"
     y = _paint(draw, 48, y, caption, _font("Barlow-Medium.ttf", 24), MUTED, 8)
-    line = f"{_stage(pick)}   ·   {pick.get('qg', pick['gp'])} quality   ·   {pick['expected']} expected"
+    line = f"{_stage(pick)}   ·   {pick.get('qg', pick['gp'])} Impact   ·   {pick['expected']} expected"
     _paint(draw, 48, y, line, _font("Barlow-Regular.ttf", 22), INK, 0)
     _footer(draw, size[0], size[1])
     return image
@@ -281,7 +281,7 @@ def _home_card(leader: dict, headlines: dict, size: tuple[int, int]) -> Image.Im
 def _method_card(size: tuple[int, int]) -> Image.Image:
     image, draw = _canvas(size, "#E11D48")
     draw.text((48, 70), "HOW IT WORKS", font=_font("Barlow-SemiBold.ttf", 22), fill=MUTED)
-    draw.text((48, 120), "QUALITY VS\nTHE SLOT", font=_font("Oswald-Bold.ttf", 92), fill=INK)
+    draw.text((48, 120), "IMPACT VS\nTHE SLOT", font=_font("Oswald-Bold.ttf", 92), fill=INK)
     copy = "Each pick is scored on NHL play since the draft,\nminus what that slot has usually produced by the same year."
     draw.text((48, 360), copy, font=_font("Barlow-Regular.ttf", 28), fill=MUTED)
     _footer(draw, size[0], size[1])

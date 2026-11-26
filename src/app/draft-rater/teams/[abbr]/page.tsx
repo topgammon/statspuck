@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const team = leaderboard.find((row) => row.abbr === abbr.toUpperCase());
   if (!team) return {};
   const title = `${team.name} draft grade`;
-  const description = `${team.name} grade ${team.letter} (${team.rating}/100), ${signed(team.avg)} quality games per pick versus the slot.`;
+  const description = `${team.name} grade ${team.letter} (${team.rating}/100), ${signed(team.avg)} Impact per pick versus the slot.`;
   const image = og.teams[team.abbr];
   return {
     title,
@@ -59,7 +59,7 @@ export default async function TeamPage({ params }: { params: Promise<Params> }) 
               {team.developing > 0 ? ` · ${team.developing} ${team.developing === 1 ? "prospect" : "prospects"}` : ""}
             </p>
             <p className="mt-1 text-sm text-zinc-500">
-              The letter compares this franchise with the other 31. The average weighs scouting decisions, not the lottery slot. Prospects under 25 quality games are not in the average.
+              The letter compares this franchise with the other 31. Every graduated pick counts equally, with a #1 overall hit capped at +250. Prospects under 25 Impact are not in the average.
             </p>
           </div>
         </div>

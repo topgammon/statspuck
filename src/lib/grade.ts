@@ -96,38 +96,35 @@ export function weightedMean(rows: { overall: number; score: number }[]): number
   return weightSum === 0 ? 0 : total / weightSum;
 }
 
-/** Soften one generational score so it cannot carry a whole franchise by itself. */
-export function effectiveScore(score: number): number {
-  return score > 600 ? 600 + 15 * Math.sqrt(score - 600) : score;
+/** The one lottery-luck rule for team and GM averages: a #1 overall hit counts at most +250. A #1 bust counts in full. */
+export const FIRST_OVERALL_CAP = 250;
+
+export function effectiveScore(score: number, overall: number): number {
+  return overall === 1 && score > 0 ? Math.min(score, FIRST_OVERALL_CAP) : score;
 }
 
-/** Scouting weight. Hitting on a consensus top pick is worth one. Busting one is worth more. */
-export function skillWeight(overall: number, score: number): number {
-  if (overall <= 15 && score >= 0) return 1;
-  if (overall <= 20 && score < 0) return 1 + 1.5 * ((21 - overall) / 20);
-  if (overall <= 32) return 1.15;
-  if (score > 0) return 1.35;
-  return 0.85;
+/** Plain, unweighted average of effective scores across graduated picks. */
+/** Sum of effective scores in whole tenths, so the pipeline's math matches exactly. */
+function scoutingTenths(rows: { overall: number; score: number }[]): number {
+  return rows.reduce((sum, row) => sum + Math.round(effectiveScore(row.score, row.overall) * 10), 0);
 }
 
-export function skillWeightedMean(rows: { overall: number; score: number }[]): number {
-  let total = 0;
-  let weightSum = 0;
-  for (const row of rows) {
-    const weight = skillWeight(row.overall, row.score);
-    total += effectiveScore(row.score) * weight;
-    weightSum += weight;
-  }
-  return weightSum === 0 ? 0 : total / weightSum;
+export function scoutingAverage(rows: { overall: number; score: number }[]): number {
+  if (rows.length === 0) return 0;
+  return scoutingTenths(rows) / (10 * rows.length);
 }
 
-/** A short GM sample moves toward zero. Sixty graded picks keep about 88 percent. */
+export function scoutingTotal(rows: { overall: number; score: number }[]): number {
+  return scoutingTenths(rows) / 10;
+}
+
+/** A short GM sample moves toward zero. Six graded picks keep half. Sixty keep about 91 percent. */
 export function shrinkGm(avg: number, graded: number): number {
   if (graded <= 0) return 0;
-  return avg * (graded / (graded + 8));
+  return avg * (graded / (graded + 6));
 }
 
-/** Team averages for a filter. Developing picks are left out. Weights follow scouting skill, not lottery slot. */
+/** Team averages for a filter. Developing picks are left out. A plain average, with only the #1 overall upside capped. */
 export function gradeTeams(
   picks: PickRow[],
   teams: { abbr: string; name: string; short: string; color: string }[],
@@ -141,8 +138,8 @@ export function gradeTeams(
     const weighted = graded.map((pick) => ({ overall: pick.overall, score: pick.score as number }));
     rows.push({
       ...team,
-      avg: round1(skillWeightedMean(weighted)),
-      total: round1(weighted.reduce((sum, pick) => sum + effectiveScore(pick.score) * skillWeight(pick.overall, pick.score), 0)),
+      avg: round1(scoutingAverage(weighted)),
+      total: round1(scoutingTotal(weighted)),
       n: graded.length,
       developing: owned.filter((pick) => pick.developing).length,
       rating: 0,
@@ -194,7 +191,7 @@ export function gradeEras(picks: PickRow[], eras: Era[], filter: GradeFilter, mi
       endYear: era.endYear,
       avg: round1(
         shrinkGm(
-          skillWeightedMean(graded.map((pick) => ({ overall: pick.overall, score: pick.score as number }))),
+          scoutingAverage(graded.map((pick) => ({ overall: pick.overall, score: pick.score as number }))),
           graded.length,
         ),
       ),
@@ -281,7 +278,7 @@ export function heroSet(picks: PickRow[], teams: TeamInfo[], filter: GradeFilter
       franchiseName: team?.name ?? row.picks[0]?.franchiseName ?? row.franchise,
       color: team?.color ?? "#f4f4f5",
       year: row.year,
-      avg: round1(skillWeightedMean(graded.map((pick) => ({ overall: pick.overall, score: pick.score as number })))),
+      avg: round1(scoutingAverage(graded.map((pick) => ({ overall: pick.overall, score: pick.score as number })))),
       n: graded.length,
       letter: "D-",
       rating: 0,
@@ -340,7 +337,7 @@ export function gradeOwned(rows: PickRow[], pool: number[]): { avg: number | nul
   if (graded.length === 0) return { avg: null, n: 0, developing, rating: null, letter: null };
   const avg = round1(
     shrinkGm(
-      skillWeightedMean(graded.map((pick) => ({ overall: pick.overall, score: pick.score as number }))),
+      scoutingAverage(graded.map((pick) => ({ overall: pick.overall, score: pick.score as number }))),
       graded.length,
     ),
   );

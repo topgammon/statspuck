@@ -149,6 +149,51 @@ SEASON_DETAIL_COLUMNS = (
     ("assists", "INTEGER"),
     ("goals_against", "INTEGER"),
     ("time_on_ice", "INTEGER"),
+    # Impact inputs (skaters): box-score events and situational ice time in seconds.
+    ("shots", "INTEGER"),
+    ("pim", "INTEGER"),
+    ("sh_points", "INTEGER"),
+    ("blocks", "INTEGER"),
+    ("fo_wins", "INTEGER"),
+    ("fo_losses", "INTEGER"),
+    ("ev_toi", "INTEGER"),
+    ("pp_toi", "INTEGER"),
+    ("sh_toi", "INTEGER"),
+    # Impact inputs (goalies).
+    ("saves", "INTEGER"),
+)
+
+# Extra skater reports merged into each season row, keyed by playerId.
+# Each maps a stored column to the API field that fills it.
+SKATER_EXTRA_REPORTS = (
+    ("skater/realtime", {"blocks": "blockedShots"}),
+    ("skater/faceoffwins", {"fo_wins": "totalFaceoffWins", "fo_losses": "totalFaceoffLosses"}),
+    ("skater/timeonice", {"ev_toi": "evTimeOnIce", "pp_toi": "ppTimeOnIce", "sh_toi": "shTimeOnIce"}),
+)
+
+SEASON_COLUMNS = (
+    "gp",
+    "toi_per_game",
+    "points",
+    "plus_minus",
+    "games_started",
+    "save_pct",
+    "shots_against",
+    "position_code",
+    "goals",
+    "assists",
+    "goals_against",
+    "time_on_ice",
+    "shots",
+    "pim",
+    "sh_points",
+    "blocks",
+    "fo_wins",
+    "fo_losses",
+    "ev_toi",
+    "pp_toi",
+    "sh_toi",
+    "saves",
 )
 
 
@@ -333,16 +378,11 @@ def _should_fetch_season(
     return row["complete"] == 0
 
 
-def load_season(
-    conn: sqlite3.Connection,
-    season_start: int,
-    role: str,
-    refresh: bool,
-) -> int:
-    report = "skater/summary" if role == "skater" else "goalie/summary"
+def fetch_report(report: str, season_start: int, refresh: bool, label: str) -> dict[int, dict]:
+    """Every row of one stats report for one season, keyed by playerId."""
     start = 0
     pages = 0
-    found: dict[int, tuple] = {}
+    found: dict[int, dict] = {}
     total = None
     while pages < 40:
         payload = get_json(stats_url(report, season_start, start), refresh=refresh)
@@ -356,49 +396,67 @@ def load_season(
             player_id = row.get("playerId")
             if not player_id or player_id in found:
                 continue
-            if role == "skater":
-                found[player_id] = (
-                    int(row.get("gamesPlayed") or 0),
-                    row.get("timeOnIcePerGame"),
-                    row.get("points"),
-                    row.get("plusMinus"),
-                    None,
-                    None,
-                    None,
-                    row.get("positionCode"),
-                    row.get("goals"),
-                    row.get("assists"),
-                    None,
-                    None,
-                )
-            else:
-                found[player_id] = (
-                    int(row.get("gamesPlayed") or 0),
-                    None,
-                    row.get("points"),
-                    None,
-                    row.get("gamesStarted"),
-                    row.get("savePct"),
-                    row.get("shotsAgainst"),
-                    None,
-                    row.get("goals"),
-                    row.get("assists"),
-                    row.get("goalsAgainst"),
-                    row.get("timeOnIce"),
-                )
+            found[player_id] = row
             new += 1
         print(
-            f"  {role} {season_start}-{str(season_start + 1)[-2:]} "
+            f"  {label} {season_start}-{str(season_start + 1)[-2:]} "
             f"page {pages} ({len(found)}/{total})",
             flush=True,
         )
         if new == 0:
-            raise RuntimeError(f"Pagination stuck for {role} {season_start} at start={start}.")
+            raise RuntimeError(f"Pagination stuck for {report} {season_start} at start={start}.")
         start += len(batch)
         if start >= total:
             break
     if total is not None and len(found) != total:
-        print(f"  warning: {role} {season_start} stored {len(found)} of {total}", flush=True)
+        print(f"  warning: {report} {season_start} stored {len(found)} of {total}", flush=True)
+    return found
+
+
+def load_season(
+    conn: sqlite3.Connection,
+    season_start: int,
+    role: str,
+    refresh: bool,
+) -> int:
+    found: dict[int, dict] = {}
+    if role == "skater":
+        for player_id, row in fetch_report("skater/summary", season_start, refresh, "skater").items():
+            found[player_id] = {
+                "gp": int(row.get("gamesPlayed") or 0),
+                "toi_per_game": row.get("timeOnIcePerGame"),
+                "points": row.get("points"),
+                "plus_minus": row.get("plusMinus"),
+                "position_code": row.get("positionCode"),
+                "goals": row.get("goals"),
+                "assists": row.get("assists"),
+                "shots": row.get("shots"),
+                "pim": row.get("penaltyMinutes"),
+                "sh_points": row.get("shPoints"),
+            }
+        for report, fields in SKATER_EXTRA_REPORTS:
+            extra = fetch_report(report, season_start, refresh, report.split("/")[1])
+            for player_id, row in extra.items():
+                target = found.get(player_id)
+                if target is None:
+                    continue
+                for column, field in fields.items():
+                    target[column] = row.get(field)
+    else:
+        for player_id, row in fetch_report("goalie/summary", season_start, refresh, "goalie").items():
+            found[player_id] = {
+                "gp": int(row.get("gamesPlayed") or 0),
+                "points": row.get("points"),
+                "games_started": row.get("gamesStarted"),
+                "save_pct": row.get("savePct"),
+                "shots_against": row.get("shotsAgainst"),
+                "goals": row.get("goals"),
+                "assists": row.get("assists"),
+                "goals_against": row.get("goalsAgainst"),
+                "time_on_ice": row.get("timeOnIce"),
+                "saves": row.get("saves"),
+                "pim": row.get("penaltyMinutes"),
+            }
     if not found:
         raise RuntimeError(f"No {role} rows for {season_start}. The stats endpoint may have changed.")
 
@@ -406,46 +464,13 @@ def load_season(
         "DELETE FROM player_seasons WHERE season_start = ? AND role = ?",
         (season_start, role),
     )
+    columns = ", ".join(SEASON_COLUMNS)
+    marks = ", ".join("?" for _ in SEASON_COLUMNS)
     conn.executemany(
-        """
-        INSERT INTO player_seasons (
-          player_id, season_start, gp, role, toi_per_game, points, plus_minus,
-          games_started, save_pct, shots_against, position_code,
-          goals, assists, goals_against, time_on_ice
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
+        f"INSERT INTO player_seasons (player_id, season_start, role, {columns}) VALUES (?, ?, ?, {marks})",
         [
-            (
-                player_id,
-                season_start,
-                gp,
-                role,
-                toi,
-                points,
-                plus_minus,
-                started,
-                save_pct,
-                shots,
-                position,
-                goals,
-                assists,
-                goals_against,
-                time_on_ice,
-            )
-            for player_id, (
-                gp,
-                toi,
-                points,
-                plus_minus,
-                started,
-                save_pct,
-                shots,
-                position,
-                goals,
-                assists,
-                goals_against,
-                time_on_ice,
-            ) in found.items()
+            (player_id, season_start, role, *(values.get(column) for column in SEASON_COLUMNS))
+            for player_id, values in found.items()
         ],
     )
     return len(found)

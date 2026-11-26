@@ -4,7 +4,7 @@ import { draftClasses, picks } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Draft classes",
-  description: "Every NHL draft class since 2005, graded on quality games versus the slot.",
+  description: "Every NHL draft class since 2005, graded on Impact versus the slot.",
 };
 
 export default function DraftsPage() {

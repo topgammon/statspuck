@@ -1,4 +1,4 @@
-import { skillWeightedMean } from "@/lib/grade";
+import { scoutingAverage } from "@/lib/grade";
 import type { PickRow } from "@/lib/types";
 
 const BUST_LETTERS = new Set(["D+", "D", "D-"]);
@@ -134,7 +134,7 @@ function roundStat(
 function weightedMean(rows: PickRow[]): number | null {
   const graded = rows.filter((row) => row.score != null);
   if (graded.length === 0) return null;
-  return skillWeightedMean(graded.map((row) => ({ overall: row.overall, score: row.score as number })));
+  return scoutingAverage(graded.map((row) => ({ overall: row.overall, score: row.score as number })));
 }
 
 function percentile(value: number, pool: number[]): number {

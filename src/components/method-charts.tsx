@@ -38,7 +38,7 @@ export function ExpectedChart({ curves }: { curves: CurveSet }) {
 
   return (
     <figure>
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full" role="img" aria-label="Expected quality games by draft slot at year 1, year 4, year 8, and year 16">
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full" role="img" aria-label="Expected Impact by draft slot at year 1, year 4, year 8, and year 16">
         <rect x={padL} y={padT} width={innerW} height={innerH} fill="#0c0d12" stroke="#27272a" />
         {[0, 0.25, 0.5, 0.75, 1].map((step) => {
           const value = yMax * step;
@@ -79,23 +79,26 @@ export function ExpectedChart({ curves }: { curves: CurveSet }) {
   );
 }
 
-export function QualityScale() {
+export function ImpactScale() {
   const rows = [
-    { label: "Fourth-liner", per: 0.6, note: "Limited ice, quiet night" },
-    { label: "Everyday NHLer", per: 1.0, note: "A regular shift" },
-    { label: "First-line star", per: 1.4, note: "Heavy minutes, real production" },
+    { label: "Fourth-liner", per: 0.7, note: "Limited ice, quiet night" },
+    { label: "Average NHL regular", per: 1.0, note: "A regular shift, either way of the puck" },
+    { label: "MVP-level star", per: 1.5, note: "Heavy minutes, real production" },
   ];
+  const top = 1.7;
   return (
     <div className="mt-4 grid gap-3 sm:grid-cols-3">
       {rows.map((row) => (
         <div key={row.label} className="rounded-2xl border border-white/10 p-4">
           <p className="text-sm text-zinc-400">{row.label}</p>
           <p className="display mt-2 text-4xl font-bold">{row.per.toFixed(1)}</p>
-          <p className="text-sm text-zinc-500">quality games per game played</p>
+          <p className="text-sm text-zinc-500">Impact per game played</p>
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
-            <div className="h-full rounded-full bg-[#E11D48]" style={{ width: `${(row.per / 1.4) * 100}%` }} />
+            <div className="h-full rounded-full bg-[#E11D48]" style={{ width: `${(row.per / top) * 100}%` }} />
           </div>
-          <p className="mt-3 text-sm text-zinc-400">{row.note}. Ten games is about {(row.per * 10).toFixed(0)} quality games.</p>
+          <p className="mt-3 text-sm text-zinc-400">
+            {row.note}. A full 82-game season is about {Math.round(row.per * 82)} Impact.
+          </p>
         </div>
       ))}
     </div>
@@ -124,7 +127,7 @@ export function WindowTimeline() {
         ))}
       </div>
       <p className="text-sm text-zinc-400">
-        The blue stretch is the skater window, through year 3. Goalies stay in it through year 5. Hit 25 quality games and the window ends early.
+        The blue stretch is the skater window, through year 3. Goalies stay in it through year 5. Hit 25 Impact and the window ends early.
       </p>
     </div>
   );

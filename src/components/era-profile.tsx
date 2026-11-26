@@ -105,10 +105,10 @@ export function EraProfile({
       </div>
       {letter ? (
         <p className="mt-3 text-sm text-zinc-500">
-          {rating}/100 among general managers. {scope === "team" ? `${era.teamName} drafts only.` : "Every franchise he has run."} The average weighs scouting decisions, not the lottery slot, and a short run is pulled toward zero.
+          {rating}/100 among general managers. {scope === "team" ? `${era.teamName} drafts only.` : "Every franchise he has run."} Every graduated pick counts equally, a #1 overall hit is capped at +250, and a short run is pulled toward zero.
         </p>
       ) : (
-        <p className="mt-3 text-sm text-zinc-500">A letter needs at least five graded picks. Prospects under 25 quality games stay in the list below and out of the average.</p>
+        <p className="mt-3 text-sm text-zinc-500">A letter needs at least five graded picks. Prospects under 25 Impact stay in the list below and out of the average.</p>
       )}
       {era.note && scope === "team" ? <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-500">{era.note}</p> : null}
       {!multiTeam && scope === "career" ? <p className="mt-3 text-sm text-zinc-500">This run is his only NHL stop in the book, so the career view matches {era.teamName}.</p> : null}

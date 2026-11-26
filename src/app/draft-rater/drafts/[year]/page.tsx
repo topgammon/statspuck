@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const row = draftClasses.find((item) => item.year === Number(year));
   if (!row) return {};
   const title = `${row.year} draft class`;
-  const description = `The ${row.year} NHL draft grades ${row.letter}, ${signed(row.avg)} quality games versus the slot.`;
+  const description = `The ${row.year} NHL draft grades ${row.letter}, ${signed(row.avg)} Impact versus the slot.`;
   const image = `/og/classes/${row.year}.png`;
   return {
     title,
@@ -62,7 +62,7 @@ export default async function DraftYearPage({ params }: { params: Promise<Params
             {row.developing > 0 ? ` · ${row.developing} ${row.developing === 1 ? "prospect" : "prospects"}` : ""}
           </p>
           <p className="mt-1 max-w-2xl text-sm text-zinc-500">
-            Redraft order follows total quality games, not the score versus the slot. The class grade weighs earlier picks more heavily.
+            Redraft order follows total Impact, not the score versus the slot. The class grade weighs earlier picks more heavily.
           </p>
         </div>
         <div className="text-right">

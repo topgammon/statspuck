@@ -21,9 +21,9 @@ type SortKey = "year" | "letter" | "avg" | "graded" | "developing" | "regulars";
 const tips: Partial<Record<SortKey, string>> = {
   letter: "Where this draft class’s weighted score sits among the other years since 2005.",
   avg: "Weighted average of Score vs Slot. Earlier picks count more: the weight is 1 divided by the square root of the pick number.",
-  graded: "Picks that have a letter. A player stays a prospect until 25 quality games.",
-  developing: "Picks still inside the prospect window and under 25 quality games. They are left out of the class average.",
-  regulars: "Picks with at least 100 quality games, a full NHL regular’s body of work.",
+  graded: "Picks that have a letter. A player stays a prospect until 25 Impact.",
+  developing: "Picks still inside the prospect window and under 25 Impact. They are left out of the class average.",
+  regulars: "Picks with at least 100 Impact, a full NHL regular’s body of work.",
 };
 
 export function ClassBoard({ rows }: { rows: ClassSummary[] }) {
@@ -73,7 +73,7 @@ export function ClassBoard({ rows }: { rows: ClassSummary[] }) {
       <div className="mt-8 grid gap-3 md:grid-cols-3">
         <Callout title="Deepest draft class" row={deepest} detail="Highest score vs the slot among classes at least half graded." />
         <Callout title="Weakest draft class" row={weakest} detail="Lowest score vs the slot among classes at least half graded." />
-        <Callout title="Most NHL regulars" row={mostRegulars} detail={`${mostRegulars?.regulars ?? 0} picks with 100 or more quality games.`} count />
+        <Callout title="Most NHL regulars" row={mostRegulars} detail={`${mostRegulars?.regulars ?? 0} picks with 100 or more Impact.`} count />
       </div>
       <ClassChart rows={rows} />
       <div className="mt-8 hidden md:block">

@@ -1,10 +1,14 @@
-"""Quality games above the slot, by years since the draft.
+"""Impact above the slot, by years since the draft.
 
-A season's quality games scale raw games by how much the player was used and
-how well they produced. Skaters are capped at D+8 and goalies at D+10.
-Anyone still inside the development window with fewer than 25 quality games
-stays Developing, even if they are ahead of the slot. Reaching 25 quality
-games graduates them immediately, even if the score is still negative.
+Impact (formerly quality games) puts skaters and goalies on one scale where
+1.0 is about one average NHL regular-season game. Skaters earn a 0.50 base
+per game plus two-way box-score events and a minutes-trust adjustment that
+counts penalty-kill time 1.35x. Goalies earn 1.35 per start plus 0.65 per goal
+saved above the league-average save percentage.
+
+Anyone still inside the development window with less than 25 Impact stays
+Developing, even if they are ahead of the slot. Reaching 25 graduates them
+immediately, even if the score is still negative.
 """
 
 from __future__ import annotations
@@ -36,8 +40,19 @@ SKATER_WINDOW = 3
 GOALIE_WINDOW = 5
 GRADUATE_QG = 25.0
 MIN_GRADED = 5
-FORWARD_TOI = 15 * 60
-DEFENSE_TOI = 19 * 60
+# Skater Impact: minutes trust.
+PK_TRUST = 1.35
+FORWARD_ATOI = 15.5
+DEFENSE_ATOI = 19.5
+MINUTES_SCALE = 0.35
+MINUTES_FLOOR = -0.25
+MINUTES_CEILING = 0.35
+# Goalie Impact: 75 games / 55 starts, plus credit per goal saved above average.
+GOALIE_START_VALUE = 1.35
+GOALIE_GSAA_VALUE = 0.65
+# Team and GM grades: a #1 overall hit is capped here. A #1 bust counts in full.
+FIRST_OVERALL_CAP = 250.0
+GM_SHRINK = 6
 BUST_LETTERS = {"D+", "D", "D-"}
 BEHIND_LETTERS = {"C", "C-", "D+", "D", "D-"}
 STEAL_LETTERS = {"A", "A+"}
@@ -66,27 +81,73 @@ def ice_group(code: str | None, draft_group: str) -> str:
     return "D" if draft_group == "D" else "F"
 
 
-def skater_quality(gp: int, toi: float | None, points: int | None, plus_minus: int | None, avg_toi: float) -> float:
+def _num(value) -> float:
+    return float(value) if value is not None else 0.0
+
+
+def skater_impact(row: dict, group: str) -> float:
+    """Season Impact for a skater. An average NHL regular earns about 1.0 per game.
+
+    Box value: 0.50 per game played plus weighted two-way events.
+    Minutes trust: penalty-kill minutes count 1.35x, compared with the
+    positional average (15.5 minutes forwards, 19.5 defense).
+    """
+    gp = row.get("gp") or 0
     if gp <= 0:
         return 0.0
-    usage = 1.0 if not toi or not avg_toi else clamp(toi / avg_toi, 0.4, 1.6)
-    per_game = (points or 0) / gp
-    if plus_minus is None:
-        impact = clamp(1 + 0.30 * per_game, 0.85, 1.5)
+    goals = _num(row.get("goals"))
+    assists = _num(row.get("assists"))
+    if row.get("goals") is None and row.get("assists") is None and row.get("points") is not None:
+        assists = _num(row.get("points"))
+    box = (
+        0.50 * gp
+        + 0.75 * goals
+        + 0.62 * assists
+        + 0.20 * _num(row.get("sh_points"))
+        + 0.075 * _num(row.get("shots"))
+        + 0.05 * _num(row.get("blocks"))
+        + 0.01 * _num(row.get("fo_wins"))
+        - 0.01 * _num(row.get("fo_losses"))
+        - 0.075 * _num(row.get("pim"))
+        + 0.15 * _num(row.get("plus_minus"))
+    )
+    ev, pp, pk = row.get("ev_toi"), row.get("pp_toi"), row.get("sh_toi")
+    if ev is not None and pp is not None and pk is not None and (ev + pp + pk) > 0:
+        weighted_minutes = (ev + pp + PK_TRUST * pk) / 60.0
+    elif row.get("toi"):
+        weighted_minutes = row["toi"] * gp / 60.0
     else:
-        impact = clamp(1 + 0.25 * per_game + 0.015 * (plus_minus / gp), 0.85, 1.5)
-    return gp * usage * impact
+        weighted_minutes = None
+    minutes_adj = 0.0
+    if weighted_minutes is not None:
+        average = DEFENSE_ATOI if group == "D" else FORWARD_ATOI
+        per_game = ((weighted_minutes / gp) - average) / average * MINUTES_SCALE
+        minutes_adj = gp * clamp(per_game, MINUTES_FLOOR, MINUTES_CEILING)
+    return max(0.0, box + minutes_adj)
 
 
-def goalie_quality(gp: int, starts: int | None, save_pct: float | None, league_save: float | None) -> float:
+def goalie_impact(row: dict, league_save: float | None) -> float:
+    """Season Impact for a goalie, on the same scale as skaters.
+
+    1.35 per start (about 55 starts is a full 75-game workload) plus 0.65 per
+    goal saved above the league-average save percentage.
+    """
+    gp = row.get("gp") or 0
+    starts = row.get("starts")
     if gp <= 0 and not starts:
         return 0.0
     games = float(starts) if starts is not None else gp * 0.85
+    shots = row.get("shots")
+    saves = row.get("saves")
+    if shots and saves is not None and league_save is not None:
+        gsaa = saves - shots * league_save
+        return max(0.0, GOALIE_START_VALUE * games + GOALIE_GSAA_VALUE * gsaa)
+    save_pct = row.get("save_pct")
     if save_pct is None or league_save is None:
         multiplier = 1.0
     else:
         multiplier = clamp(1 + (save_pct - league_save) * 15, 0.6, 1.4)
-    return games * multiplier
+    return max(0.0, GOALIE_START_VALUE * games * multiplier)
 
 
 def letter_for(rating: int) -> str:
@@ -156,42 +217,38 @@ def weighted_mean(rows: list[dict]) -> float:
     return total / weight_sum
 
 
-def effective_score(score: float) -> float:
-    """Diminishing returns above +600, used only when averaging a team or a GM."""
-    if score > 600:
-        return 600 + 15 * math.sqrt(score - 600)
+def effective_score(score: float, overall: int) -> float:
+    """The one lottery-luck rule, used only when averaging a team or a GM.
+
+    A #1 overall hit counts at most +250. A #1 overall bust counts in full.
+    Every other pick counts exactly as scored.
+    """
+    if overall == 1 and score > 0:
+        return min(score, FIRST_OVERALL_CAP)
     return score
 
 
-def skill_weight(overall: int, score: float) -> float:
-    """Scouting weight. A hit on a consensus top pick is not a lottery multiplier."""
-    if overall <= 15 and score >= 0:
-        return 1.0
-    if overall <= 20 and score < 0:
-        return 1.0 + 1.5 * ((21 - overall) / 20.0)
-    if overall <= 32:
-        return 1.15
-    if score > 0:
-        return 1.35
-    return 0.85
+def _tenths(rows: list[dict]) -> int:
+    """Sum of effective scores in whole tenths, so the site's math matches exactly."""
+    return sum(int(round(effective_score(row["score"], row["overall"]) * 10)) for row in rows)
 
 
-def skill_weighted_mean(rows: list[dict]) -> float:
-    total = 0.0
-    weight_sum = 0.0
-    for row in rows:
-        score = row["score"]
-        weight = skill_weight(row["overall"], score)
-        total += effective_score(score) * weight
-        weight_sum += weight
-    return 0.0 if weight_sum == 0 else total / weight_sum
+def scouting_average(rows: list[dict]) -> float:
+    """Plain average of effective scores across graduated picks."""
+    if not rows:
+        return 0.0
+    return _tenths(rows) / (10 * len(rows))
+
+
+def scouting_total(rows: list[dict]) -> float:
+    return _tenths(rows) / 10
 
 
 def shrink_gm(avg: float, graded: int) -> float:
-    """Pull a short GM sample toward zero. Sixty picks keep about 88 percent."""
+    """Pull a short GM sample toward zero. Six picks keep half, sixty keep about 91 percent."""
     if graded <= 0:
         return 0.0
-    return avg * (graded / (graded + 8))
+    return avg * (graded / (graded + GM_SHRINK))
 
 
 def current_milestone(
@@ -301,12 +358,12 @@ def is_elite(pick: dict) -> bool:
     seasons = pick.get("seasons") or []
     quality = pick.get("qg") or 0
     if group == "G":
-        if sum(1 for value in seasons if value >= 60) < 3:
+        if sum(1 for value in seasons if value >= 90) < 3:
             return False
-        if quality >= 450:
+        if quality >= 650:
             return True
         starts = pick.get("starts") or 0
-        return starts >= 200 and quality / starts >= 1.05
+        return starts >= 200 and quality / starts >= 1.45
     if sum(1 for value in seasons if value >= 105) < 3:
         return False
     if group == "F":
@@ -352,11 +409,25 @@ def enforce_growth(curves: dict[int, list[float]], max_pick: int, cap: int) -> N
 
 
 def _self_check() -> None:
-    assert abs(skater_quality(10, 900, 0, 0, 900) - 10) < 1e-9
-    assert skater_quality(10, 900 * 3, 0, 0, 900) == 16
-    assert abs(skater_quality(10, 900, 10, None, 900) - 13) < 1e-9
-    assert abs(goalie_quality(10, 10, 0.920, 0.905) - 12.25) < 1e-9
-    assert goalie_quality(10, None, None, None) == 8.5
+    # A quiet forward at exactly the average weighted minutes: only the 0.50 base.
+    assert abs(skater_impact({"gp": 10, "ev_toi": 9300, "pp_toi": 0, "sh_toi": 0}, "F") - 5.0) < 1e-9
+    # Box events: 0.5*10 + 0.75*2 + 0.62*3 + 0.075*20 - 0.075*4 + 0.15*2.
+    box = {"gp": 10, "goals": 2, "assists": 3, "shots": 20, "pim": 4, "plus_minus": 2, "toi": 930}
+    assert abs(skater_impact(box, "F") - (5 + 1.5 + 1.86 + 1.5 - 0.3 + 0.3)) < 1e-9
+    # Penalty-kill minutes count 1.35x: 15.5 min = 10 EV + 4 PK (+1.5 bonus).
+    pk = {"gp": 10, "ev_toi": 10 * 600 + 10 * 30, "pp_toi": 0, "sh_toi": 10 * 4 * 60}
+    weighted = (10 * 630 + 1.35 * 2400) / 60 / 10
+    assert abs(skater_impact(pk, "F") - (5 + 10 * (weighted - 15.5) / 15.5 * 0.35)) < 1e-9
+    # Minutes trust is clamped per game: +0.35 ceiling, -0.25 floor.
+    assert abs(skater_impact({"gp": 10, "toi": 40 * 60}, "D") - 10 * (0.5 + 0.35)) < 1e-9
+    assert abs(skater_impact({"gp": 10, "toi": 3 * 60}, "F") - 10 * (0.5 - 0.25)) < 1e-9
+    assert skater_impact({"gp": 1, "pim": 40, "toi": 600}, "F") == 0.0
+    # Goalies: 1.35 per start plus 0.65 per goal saved above average.
+    goalie = {"gp": 10, "starts": 10, "shots": 300, "saves": 276, "save_pct": 0.92}
+    assert abs(goalie_impact(goalie, 0.90) - (13.5 + 0.65 * 6)) < 1e-9
+    assert abs(goalie_impact({"gp": 10, "starts": None, "save_pct": None, "shots": None, "saves": None}, None) - 1.35 * 8.5) < 1e-9
+    fallback = {"gp": 10, "starts": 10, "save_pct": 0.92, "shots": None, "saves": None}
+    assert abs(goalie_impact(fallback, 0.905) - 13.5 * 1.225) < 1e-9
     assert current_milestone(2025, 2025, 2026, "F") == (2, True)
     assert current_milestone(2010, 2025, 2026, "F") == (17, True)
     assert current_milestone(2010, 2025, 2026, "G") == (17, True)
@@ -365,18 +436,15 @@ def _self_check() -> None:
     assert not is_elite({"developing": False, "group": "F", "qg": 900, "gpCareer": 800, "ppg": 0.7, "seasons": [110, 108, 106, 40]})
     assert not is_elite({"developing": False, "group": "F", "qg": 900, "gpCareer": 800, "ppg": 1.0, "seasons": [100, 100, 100, 40]})
     assert is_elite({"developing": False, "group": "D", "qg": 900, "gpCareer": 800, "ppg": 0.4, "seasons": [110, 108, 106, 40]})
-    assert is_elite({"developing": False, "group": "G", "qg": 470, "gpCareer": 500, "starts": 400, "seasons": [62, 61, 60]})
-    assert not is_elite({"developing": False, "group": "G", "qg": 400, "gpCareer": 500, "starts": 180, "seasons": [62, 61, 60]})
-    assert abs(skill_weight(1, 10) - 1.0) < 1e-9
-    assert abs(skill_weight(1, -1) - 2.5) < 1e-9
-    assert abs(skill_weight(6, -1) - 2.125) < 1e-9
-    assert abs(skill_weight(11, -1) - 1.75) < 1e-9
-    assert skill_weight(18, 4) == 1.15
-    assert skill_weight(24, -3) == 1.15
-    assert skill_weight(40, 8) == 1.35
-    assert skill_weight(40, 0) == 0.85
-    assert abs(effective_score(1583.4) - (600 + 15 * math.sqrt(983.4))) < 1e-6
-    assert abs(shrink_gm(10, 6) - 10 * 6 / 14) < 1e-9
+    assert is_elite({"developing": False, "group": "G", "qg": 660, "gpCareer": 500, "starts": 400, "seasons": [95, 92, 90]})
+    assert is_elite({"developing": False, "group": "G", "qg": 400, "gpCareer": 260, "starts": 250, "seasons": [95, 92, 90]})
+    assert not is_elite({"developing": False, "group": "G", "qg": 400, "gpCareer": 500, "starts": 180, "seasons": [95, 92, 90]})
+    assert not is_elite({"developing": False, "group": "G", "qg": 700, "gpCareer": 500, "starts": 400, "seasons": [95, 92, 89]})
+    assert effective_score(1583.4, 1) == 250.0
+    assert effective_score(-300.0, 1) == -300.0
+    assert effective_score(1583.4, 2) == 1583.4
+    assert abs(scouting_average([{"overall": 1, "score": 900}, {"overall": 40, "score": -50}]) - 100.0) < 1e-9
+    assert abs(shrink_gm(10, 6) - 5.0) < 1e-9
     assert current_milestone(2026, 2025, 2026, "D") == (1, True)
     assert draft_plus(2010, 2025, 2026) == 17
     assert draft_plus(2024, 2025, 2026) == 3
@@ -480,10 +548,13 @@ def load_inputs(conn: sqlite3.Connection) -> tuple[list[dict], dict[int, dict[in
     query = """
       SELECT player_id, season_start, role, gp, toi_per_game, points, plus_minus,
              games_started, save_pct, shots_against, position_code,
-             goals, assists, goals_against, time_on_ice
+             goals, assists, goals_against, time_on_ice,
+             shots, pim, sh_points, blocks, fo_wins, fo_losses,
+             ev_toi, pp_toi, sh_toi, saves
       FROM player_seasons
     """
     for row in conn.execute(query):
+        goalie = row["role"] == "goalie"
         seasons.setdefault(row["player_id"], {}).setdefault(row["season_start"], {})[row["role"]] = {
             "gp": row["gp"] or 0,
             "toi": row["toi_per_game"],
@@ -491,12 +562,22 @@ def load_inputs(conn: sqlite3.Connection) -> tuple[list[dict], dict[int, dict[in
             "plus_minus": row["plus_minus"],
             "starts": row["games_started"],
             "save_pct": row["save_pct"],
-            "shots": row["shots_against"],
+            # For goalies "shots" is shots against. For skaters it is shots on goal.
+            "shots": row["shots_against"] if goalie else row["shots"],
+            "saves": row["saves"],
             "position": row["position_code"],
             "goals": row["goals"],
             "assists": row["assists"],
             "goals_against": row["goals_against"],
             "time_on_ice": row["time_on_ice"],
+            "pim": row["pim"],
+            "sh_points": row["sh_points"],
+            "blocks": row["blocks"],
+            "fo_wins": row["fo_wins"],
+            "fo_losses": row["fo_losses"],
+            "ev_toi": row["ev_toi"],
+            "pp_toi": row["pp_toi"],
+            "sh_toi": row["sh_toi"],
         }
     return picks, seasons
 
@@ -520,29 +601,25 @@ def season_progress(seasons: dict[int, dict[int, dict[str, dict]]], in_progress:
     return max(0.05, min(1.0, average_team_gp / 82))
 
 
-def league_context(seasons: dict[int, dict[int, dict[str, dict]]]) -> tuple[dict[tuple[int, str], float], dict[int, float]]:
-    toi_weight: dict[tuple[int, str], list[float]] = {}
+def league_context(seasons: dict[int, dict[int, dict[str, dict]]]) -> tuple[dict, dict[int, float]]:
+    """League-average save percentage each season: all saves over all shots against."""
     save_weight: dict[int, list[float]] = {}
     for by_season in seasons.values():
         for season, roles in by_season.items():
-            skater = roles.get("skater")
-            if skater and skater["gp"] > 0 and skater["toi"]:
-                group = "D" if (skater["position"] or "").upper() == "D" else "F"
-                bucket = toi_weight.setdefault((season, group), [0.0, 0.0])
-                bucket[0] += skater["toi"] * skater["gp"]
-                bucket[1] += skater["gp"]
             goalie = roles.get("goalie")
-            if goalie and goalie["save_pct"] is not None and (goalie["shots"] or goalie["gp"]):
-                weight = goalie["shots"] or goalie["gp"]
-                bucket = save_weight.setdefault(season, [0.0, 0.0])
-                bucket[0] += goalie["save_pct"] * weight
-                bucket[1] += weight
-    toi = {
-        key: (total / weight if weight else (DEFENSE_TOI if key[1] == "D" else FORWARD_TOI))
-        for key, (total, weight) in toi_weight.items()
-    }
-    saves = {season: total / weight for season, (total, weight) in save_weight.items() if weight}
-    return toi, saves
+            if not goalie or not goalie["shots"]:
+                continue
+            if goalie["saves"] is not None:
+                saved = float(goalie["saves"])
+            elif goalie["save_pct"] is not None:
+                saved = goalie["save_pct"] * goalie["shots"]
+            else:
+                continue
+            bucket = save_weight.setdefault(season, [0.0, 0.0])
+            bucket[0] += saved
+            bucket[1] += goalie["shots"]
+    saves = {season: total / shots for season, (total, shots) in save_weight.items() if shots}
+    return {}, saves
 
 
 def season_quality(
@@ -550,14 +627,15 @@ def season_quality(
     role: str,
     draft_group: str,
     season: int,
-    toi_avg: dict[tuple[int, str], float],
+    toi_avg: dict,
     save_avg: dict[int, float],
 ) -> tuple[float, int]:
+    """Season Impact and games played. toi_avg is unused: minutes are compared with fixed positional averages."""
+    del toi_avg
     if role == "goalie":
-        return goalie_quality(row["gp"], row["starts"], row["save_pct"], save_avg.get(season)), row["gp"]
+        return goalie_impact(row, save_avg.get(season)), row["gp"]
     group = ice_group(row["position"], draft_group)
-    average = toi_avg.get((season, group), DEFENSE_TOI if group == "D" else FORWARD_TOI)
-    return skater_quality(row["gp"], row["toi"], row["points"], row["plus_minus"], average), row["gp"]
+    return skater_impact(row, group), row["gp"]
 
 
 def cumulative(
@@ -754,7 +832,7 @@ def write_chart(
     body = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
         '<rect width="100%" height="100%" fill="#0B0D10"/>',
-        '<text x="78" y="40" fill="#ffffff" font-family="Oswald, Impact, sans-serif" font-size="32">Expected quality games by draft slot</text>',
+        '<text x="78" y="40" fill="#ffffff" font-family="Oswald, Impact, sans-serif" font-size="32">Expected Impact by draft slot</text>',
         '<text x="78" y="66" fill="#d4d4d8" font-family="Barlow, sans-serif" font-size="16">Cumulative through that year after the draft. The curve cannot rise as the pick gets later.</text>',
     ]
     body.extend(panel("Skaters", skater_dots, skater_curves, skater_mae, 80, SKATER_CAP))
@@ -778,6 +856,11 @@ def build() -> None:
     ).fetchone()["n"]
     if detail < 1000:
         raise RuntimeError("Season rows are missing ice time. The stats cache did not reload.")
+    impact_detail = conn.execute(
+        "SELECT COUNT(*) AS n FROM player_seasons WHERE role = 'skater' AND ev_toi IS NOT NULL AND shots IS NOT NULL"
+    ).fetchone()["n"]
+    if impact_detail < 1000:
+        raise RuntimeError("Season rows are missing Impact inputs (shots, blocks, ice-time splits). Refetch the seasons.")
     progress = season_progress(seasons, in_progress)
     max_pick = max(pick["overall"] for pick in picks)
     toi_avg, save_avg = league_context(seasons)
@@ -1064,7 +1147,7 @@ def build() -> None:
             by_year_rows.append(
                 {
                     "year": year,
-                    "avg": round1(skill_weighted_mean(graded_rows)),
+                    "avg": round1(scouting_average(graded_rows)),
                     "n": len(graded_rows),
                     "developing": sum(1 for pick in class_rows if pick["developing"]),
                     "rating": None,
@@ -1077,8 +1160,8 @@ def build() -> None:
                 "name": info["name"],
                 "short": info["short"],
                 "color": info["color"],
-                "avg": round1(skill_weighted_mean(official)),
-                "total": round1(sum(effective_score(pick["score"]) * skill_weight(pick["overall"], pick["score"]) for pick in official)),
+                "avg": round1(scouting_average(official)),
+                "total": round1(scouting_total(official)),
                 "n": len(official),
                 "developing": developing,
                 "best": brief(best),
@@ -1166,11 +1249,9 @@ def build() -> None:
             "letter": None,
         }
         if official:
-            avg = round1(shrink_gm(skill_weighted_mean(official), len(official)))
+            avg = round1(shrink_gm(scouting_average(official), len(official)))
             entry["avg"] = avg
-            entry["total"] = round1(
-                sum(effective_score(pick["score"]) * skill_weight(pick["overall"], pick["score"]) for pick in official)
-            )
+            entry["total"] = round1(scouting_total(official))
         eras.append(entry)
 
     gm_pool = [era["avg"] for era in eras if era["avg"] is not None and era["n"] >= MIN_GRADED]

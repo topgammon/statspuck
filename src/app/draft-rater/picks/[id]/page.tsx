@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const title = `${pick.name} draft score`;
   const description = pick.developing
     ? `${pick.name}, ${pick.year} pick ${pick.overall}, still a prospect at ${signed(pick.score)} versus the slot.`
-    : `${pick.name}, ${pick.year} pick ${pick.overall}, ${pick.letter} and ${signed(pick.score)} quality games versus the slot. Redraft ${pick.redraft}.`;
+    : `${pick.name}, ${pick.year} pick ${pick.overall}, ${pick.letter} and ${signed(pick.score)} Impact versus the slot. Redraft ${pick.redraft}.`;
   const image = pickImage(pick.id, pick.franchise);
   return {
     title,
@@ -130,16 +130,16 @@ export default async function PickPage({ params }: { params: Promise<Params> }) 
         <Stat label="Redraft" hero={`#${pick.redraft}`} sub={<Move moved={moved} />} />
         <Stat label="Career GP" hero={String(pick.gpCareer)} sub="NHL regular season" />
         {pick.group === "G" ? <GoalieStat pick={pick} /> : <PointsStat pick={pick} />}
-        <Stat label="Expected quality games" hero={pick.expected == null ? "—" : pick.expected.toFixed(1)} />
+        <Stat label="Expected Impact" hero={pick.expected == null ? "—" : pick.expected.toFixed(1)} />
         <Stat
-          label="Quality games"
-          tip="Quality games start from regular-season games, then scale for ice time and production. Every NHL season since the draft counts. The current season is only the share the league has played."
+          label="Impact"
+          tip="Impact puts skaters and goalies on one scale where 1.0 is about one average NHL game. Skaters earn a base per game plus two-way box-score events and minutes trust; goalies earn 1.35 per start plus goals saved above average. Every NHL season since the draft counts. The current season is only the share the league has played."
           tipAlign="center"
           hero={pick.qg.toFixed(1)}
         />
         <Stat
           label="Score"
-          tip={`The score is quality games versus what pick ${pick.overall} usually has by year ${pick.milestone}. Redraft #${pick.redraft} is where he ranks in the ${pick.year} class by quality games alone.`}
+          tip={`The score is Impact versus what pick ${pick.overall} usually has by year ${pick.milestone}. Redraft #${pick.redraft} is where he ranks in the ${pick.year} class by Impact alone.`}
           tipAlign="end"
           hero={signed(pick.score)}
           heroClass={pick.developing ? "text-zinc-200" : scoreClass(pick.score)}
@@ -179,8 +179,8 @@ export default async function PickPage({ params }: { params: Promise<Params> }) 
       {pick.developing ? (
         <p className="mt-6 rounded-xl border border-sky-300/20 bg-sky-300/[0.04] px-4 py-3 text-sm text-zinc-300">
           {pick.group === "G"
-            ? `Goalies stay a prospect through year ${meta.goalieWindow} until they reach ${meta.graduateQg} quality games.`
-            : `Skaters stay a prospect through year ${meta.skaterWindow} until they reach ${meta.graduateQg} quality games.`}{" "}
+            ? `Goalies stay a prospect through year ${meta.goalieWindow} until they reach ${meta.graduateQg} Impact.`
+            : `Skaters stay a prospect through year ${meta.skaterWindow} until they reach ${meta.graduateQg} Impact.`}{" "}
           The score stays visible. There is no letter yet, and this pick is left out of the team average.
         </p>
       ) : null}

@@ -103,7 +103,7 @@ function PaceChart({ name, overall, milestone, partial, games, expected: seasonE
         <span className="text-xs text-zinc-500">
           {rookie
             ? `This season, game by game, against a prorated expected slope for pick ${overall}`
-            : `Cumulative quality games from the draft, ${group === "G" ? "goalie" : "skater"} curve for pick ${overall}`}
+            : `Cumulative Impact from the draft, ${group === "G" ? "goalie" : "skater"} curve for pick ${overall}`}
         </span>
       </figcaption>
       <div className="relative mt-3">
@@ -200,9 +200,9 @@ function SeasonChart({ name, seasons, partial, progress }: Props) {
 
   return (
     <figure className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
-      <figcaption className="text-sm font-semibold text-zinc-200">Season-by-season quality</figcaption>
+      <figcaption className="text-sm font-semibold text-zinc-200">Season-by-season Impact</figcaption>
       <div className="relative mt-3">
-        <svg viewBox={`0 0 ${width} ${height}`} className="w-full" role="img" aria-label={`Season quality games for ${name}`}>
+        <svg viewBox={`0 0 ${width} ${height}`} className="w-full" role="img" aria-label={`Season Impact for ${name}`}>
           <rect x={padL} y={padT} width={innerW} height={innerH} fill={PLOT} stroke={GRID} />
           <rect
             x={padL}
@@ -261,17 +261,17 @@ function SeasonChart({ name, seasons, partial, progress }: Props) {
                     ? ""
                     : `${index + 1}${partial && index === seasons.length - 1 ? "*" : ""}`}
                 </text>
-                <title>{`D+${index + 1}: ${value.toFixed(1)} quality games`}</title>
+                <title>{`D+${index + 1}: ${value.toFixed(1)} Impact`}</title>
               </g>
             );
           })}
         </svg>
         {hover != null ? (
-          <Tooltip left={((padL + slot * hover + slot / 2) / width) * 100} text={`D+${hover + 1}  ${seasons[hover].toFixed(1)} quality games`} />
+          <Tooltip left={((padL + slot * hover + slot / 2) / width) * 100} text={`D+${hover + 1}  ${seasons[hover].toFixed(1)} Impact`} />
         ) : null}
       </div>
       <p className="mt-2 text-sm text-zinc-400">
-        Each year on its own. The gray band is a full NHL season, about 65 to 75 quality games.
+        Each year on its own. The gray band is a full NHL season, about 75 to 82 Impact for an average regular.
         {partial ? " The gold line is that pace scaled to how far this season has gone." : ""}
       </p>
     </figure>
@@ -311,7 +311,7 @@ function ClassCurve({ id, name, year, peers, color }: Props) {
         </span>
       </figcaption>
       <div className="relative mt-3">
-        <svg viewBox={`0 0 ${width} ${height}`} className="w-full" role="img" aria-label={`${name} on the ${year} draft class quality curve`}>
+        <svg viewBox={`0 0 ${width} ${height}`} className="w-full" role="img" aria-label={`${name} on the ${year} draft class Impact curve`}>
           <rect x={padL} y={padT} width={innerW} height={innerH} fill={PLOT} stroke={GRID} />
           {ticks(max).map((value) => (
             <text key={value} x={padL - 8} y={yFor(value) + 4} textAnchor="end" fill={INK} fontSize="11">
@@ -331,7 +331,7 @@ function ClassCurve({ id, name, year, peers, color }: Props) {
               onMouseEnter={() => setHover(index)}
               onMouseLeave={() => setHover(null)}
             >
-              <title>{`${peer.name}: ${peer.qg.toFixed(1)} quality games, redraft #${peer.redraft}`}</title>
+              <title>{`${peer.name}: ${peer.qg.toFixed(1)} Impact, redraft #${peer.redraft}`}</title>
             </rect>
           ))}
           {mine ? (
@@ -365,7 +365,7 @@ function ClassCurve({ id, name, year, peers, color }: Props) {
         ) : null}
       </div>
       <p className="mt-2 text-sm text-zinc-400">
-        {year} class from the lowest quality-game total to redraft #1. {callout || `${name} is in this class.`}
+        {year} class from the lowest Impact total to redraft #1. {callout || `${name} is in this class.`}
       </p>
     </figure>
   );
