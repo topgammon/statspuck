@@ -81,12 +81,12 @@ export function FranchiseRankings({ rows, season }: { rows: Row[]; season: strin
         />
       </div>
 
-      <div className="mt-4 overflow-x-auto rounded-2xl border border-[#262B36] bg-[#14171F]">
-        <table className="w-full min-w-[46rem] border-separate border-spacing-0 text-left text-sm">
+      <div className="mt-4">
+        <table className="sheet w-full border-separate border-spacing-0 text-left text-sm">
           <thead>
             <tr className="text-[11px] tracking-wide text-[#94A3B8] uppercase">
               {COLUMNS.map((column) => (
-                <th key={column.key} className="sticky top-[4.5rem] z-10 border-b border-[#262B36] bg-[#14171F] px-3 py-3 font-semibold">
+                <th key={column.key} className="border-b border-[#262B36] px-3 py-3 font-semibold">
                   <span className="inline-flex items-center gap-1.5">
                     <button type="button" className="hover:text-white" onClick={() => toggle(column.key)}>
                       {column.label}
@@ -96,7 +96,7 @@ export function FranchiseRankings({ rows, season }: { rows: Row[]; season: strin
                   </span>
                 </th>
               ))}
-              <th className="sticky top-[4.5rem] z-10 border-b border-[#262B36] bg-[#14171F] px-3 py-3 font-semibold">Mix</th>
+              <th className="border-b border-[#262B36] px-3 py-3 font-semibold">Mix</th>
             </tr>
           </thead>
           <tbody>
