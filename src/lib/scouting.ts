@@ -72,7 +72,7 @@ function inBustWindow(pick: PickRow): boolean {
 
 /** Every round 4–7 pick counts unless it still carries the prospect (DEVELOPING) badge. */
 function lateRoundPool(pick: PickRow): boolean {
-  return pick.round >= 4 && pick.round <= 7 && !pick.developing && !pick.stamps.includes("DEVELOPING");
+  return pick.round >= 4 && pick.round <= 7 && !pick.forfeited && !pick.developing && !pick.stamps.includes("DEVELOPING");
 }
 
 /** A late-round hit beat its slot (positive score) and played 100+ NHL games. */

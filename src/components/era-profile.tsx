@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
-import { BioCard, CapBar, ComingSoonPanel, DnaPills, HeroGrade, ModulePreviews, ORG_TABS, SectionLabel } from "@/components/entity/bio";
+import { BioCard, CapBar, ComingSoonPanel, DnaPills, ModulePreviews, ORG_TABS, PillarGrades, SectionLabel } from "@/components/entity/bio";
+import type { DevLeaderRow } from "@/components/entity/dev-leaderboard";
+import { OrgDevelopment, type DevGem } from "@/components/entity/org-development";
 import { EntityTabs, TabLink } from "@/components/entity/entity-tabs";
 import { GmPhoto } from "@/components/entity/gm-photo";
 import { PickBrowser } from "@/components/pick-browser";
@@ -10,7 +12,7 @@ import { ShareLauncher } from "@/components/share-modal";
 import { ScoutingPanels } from "@/components/scouting-panels";
 import { TeamName } from "@/components/team-logo";
 import { TogglePill } from "@/components/toggle-pill";
-import { DRAFT_SCORE_TIP, scoreClass, signed } from "@/lib/format";
+import { DEV_SCORE_TIP, DRAFT_SCORE_TIP, scoreClass, signed } from "@/lib/format";
 import { gradeOwned } from "@/lib/grade";
 import { gmHref, playerHref, teamHref } from "@/lib/routes";
 import type { ScoutingReport } from "@/lib/scouting";
@@ -27,6 +29,9 @@ export function EraProfile({
   multiTeam,
   otherStops,
   capHit,
+  devGems,
+  devBoard,
+  matureThrough,
   teamReport,
   careerReport,
 }: {
@@ -38,6 +43,9 @@ export function EraProfile({
   multiTeam: boolean;
   otherStops: Stop[];
   capHit: number | null;
+  devGems: DevGem[];
+  devBoard: DevLeaderRow[];
+  matureThrough: number;
   teamReport: ScoutingReport;
   careerReport: ScoutingReport;
 }) {
@@ -128,13 +136,15 @@ export function EraProfile({
     </div>
   );
 
+  const dev = era.dev;
   const right = (
-    <HeroGrade
-      letter={letter}
-      stats={[
-        { label: "Draft Score", value: signed(avg), tone: scoreClass(avg), title: DRAFT_SCORE_TIP },
-        { label: "Rating", value: rating == null ? "—" : `${rating}/100` },
+    <PillarGrades
+      pillars={[
+        { label: "Draft", letter, score: signed(avg), tone: scoreClass(avg), title: DRAFT_SCORE_TIP },
+        { label: "Dev", letter: dev?.letter ?? null, score: dev ? signed(dev.avg) : "too new", tone: dev ? scoreClass(dev.avg) : undefined, title: DEV_SCORE_TIP },
+        { label: "Trades", letter: null, soon: true },
       ]}
+      stats={[{ label: "Draft rating", value: rating == null ? "—" : `${rating}/100` }, { label: "Dev picks", value: dev ? String(dev.n) : "—" }]}
       action={share}
     />
   );
@@ -201,12 +211,22 @@ export function EraProfile({
           </ul>
         </div>
         <div className="lg:col-span-2">
-          <ModulePreviews tabs={["development", "trades", "luck", "matchups"]} />
+          <ModulePreviews tabs={["trades", "luck", "matchups"]} />
         </div>
       </div>
     ),
     draft: draftPanel,
-    development: <ComingSoonPanel tab="development" subject={era.person} />,
+    development: (
+      <OrgDevelopment
+        subject={`${era.person} · ${era.teamName}, ${tenure}`}
+        dev={dev}
+        gems={devGems}
+        board={devBoard}
+        highlight={era.team}
+        matureThrough={matureThrough}
+        note="The Development Grade covers this team's run only. GM letters are compared with other general managers; the leaderboard below ranks franchises."
+      />
+    ),
     trades: <ComingSoonPanel tab="trades" subject={era.person} />,
     luck: <ComingSoonPanel tab="luck" subject={era.person} />,
     matchups: <ComingSoonPanel tab="matchups" subject={era.person} />,

@@ -13,6 +13,7 @@ import argparse
 from cards import render
 from fetch_gm_photos import main as fetch_gm_photos
 from fetch_nhl import fetch_all, sample
+from fetch_paths import main as fetch_paths
 from fetch_rosters import main as fetch_rosters
 from model import build
 
@@ -32,6 +33,7 @@ def main() -> None:
         # Side data. Each step keeps its last saved file if the source is down.
         fetch_rosters()
         fetch_gm_photos()
+        fetch_paths()
     build()
     if not args.skip_cards:
         render()

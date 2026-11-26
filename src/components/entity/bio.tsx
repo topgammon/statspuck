@@ -67,6 +67,52 @@ export function HeroGrade({
   );
 }
 
+export type Pillar = { label: string; letter: string | null; score?: string; tone?: string; soon?: boolean; title?: string };
+
+/** Draft, Development, and Trades grades side by side, with a stats row and share button underneath. */
+export function PillarGrades({
+  pillars,
+  stats,
+  action,
+}: {
+  pillars: Pillar[];
+  stats?: { label: string; value: string; tone?: string; title?: string }[];
+  action?: ReactNode;
+}) {
+  return (
+    <div className="flex h-full flex-col gap-3 rounded-xl border border-[#262B36] bg-[#0B0D10]/60 p-3">
+      <div className="grid grid-cols-3 gap-1.5">
+        {pillars.map((pillar) => (
+          <div key={pillar.label} title={pillar.title} className="flex flex-col items-center gap-1 text-center">
+            <span className="text-[9px] font-semibold tracking-[0.12em] text-[#94A3B8] uppercase">{pillar.label}</span>
+            {pillar.soon ? (
+              <span className="flex h-11 w-full items-center justify-center rounded-lg border border-dashed border-[#262B36] text-[10px] font-bold tracking-wider text-[#94A3B8]/70 uppercase">
+                Soon
+              </span>
+            ) : (
+              <span className={`display flex h-11 w-full items-center justify-center rounded-lg border text-2xl leading-none font-bold ${letterTone(pillar.letter)}`}>
+                {pillar.letter ?? "—"}
+              </span>
+            )}
+            <span className={`display text-xs font-bold ${pillar.tone ?? "text-[#94A3B8]"}`}>{pillar.soon ? " " : (pillar.score ?? " ")}</span>
+          </div>
+        ))}
+      </div>
+      {stats && stats.length ? (
+        <dl className="grid grid-cols-2 gap-2 text-center">
+          {stats.map((item) => (
+            <div key={item.label} title={item.title} className="rounded-lg bg-white/[0.03] px-2 py-1.5">
+              <dt className="text-[10px] tracking-[0.12em] text-[#94A3B8] uppercase">{item.label}</dt>
+              <dd className={`display text-base leading-tight font-bold ${item.tone ?? "text-[#F8FAFC]"}`}>{item.value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+      {action ? <div className="mt-auto flex justify-center">{action}</div> : null}
+    </div>
+  );
+}
+
 export function ContractPill({ contract }: { contract: PlayerContract | null }) {
   if (!contract) return null;
   const text = contract.elc ? `ELC · Exp ${contract.expires}` : `${money(contract.aav)} AAV · Exp ${contract.expires}`;
@@ -188,7 +234,7 @@ export function ModulePreviews({ tabs }: { tabs: (keyof typeof SOON)[] }) {
 export const PLAYER_TABS = [
   { id: "overview", label: "Overview" },
   { id: "draft", label: "Draft" },
-  { id: "development", label: "Development", soon: true },
+  { id: "development", label: "Development" },
   { id: "asset", label: "Asset Value", soon: true },
   { id: "luck", label: "Luck", soon: true },
   { id: "matchups", label: "Matchups", soon: true },
@@ -197,7 +243,7 @@ export const PLAYER_TABS = [
 export const ORG_TABS = [
   { id: "overview", label: "Overview" },
   { id: "draft", label: "Draft" },
-  { id: "development", label: "Development", soon: true },
+  { id: "development", label: "Development" },
   { id: "trades", label: "Trades & Cap", soon: true },
   { id: "luck", label: "Luck", soon: true },
   { id: "matchups", label: "Matchups", soon: true },

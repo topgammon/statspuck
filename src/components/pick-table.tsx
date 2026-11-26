@@ -41,6 +41,8 @@ function gapClass(pick: PickRow): string {
 }
 
 function sortValue(pick: PickRow, key: SortKey): string | number | null {
+  // Forfeited slots keep their place by year and pick number, and sort last on every stat.
+  if (pick.forfeited && key !== "year" && key !== "overall") return null;
   if (key === "letter") return pick.developing ? null : letterRank(pick.letter);
   if (key === "gp") return pick.gpCareer;
   if (key === "franchise") return pick.franchise;
@@ -104,7 +106,16 @@ export function PickTable({
   return (
     <>
       <div className="grid gap-2 md:hidden">
-        {rows.map((pick) => (
+        {rows.map((pick) =>
+          pick.forfeited ? (
+            <div key={pick.id} className="rounded-xl border border-dashed border-white/10 px-3 py-3 text-zinc-500">
+              <p className="display text-sm font-bold tracking-[0.14em]">FORFEITED PICK</p>
+              <p className="mt-1 text-xs">
+                {showYear ? `${pick.year} · ` : ""}
+                {showTeam ? `${pick.franchise} · ` : ""}R{pick.round} · #{pick.overall} · not graded
+              </p>
+            </div>
+          ) : (
           <Link
             key={pick.id}
             href={playerHref(pick.id, "draft")}
@@ -127,7 +138,8 @@ export function PickTable({
               <span className={gapClass(pick)}>{signed(pick.score)}</span>
             </p>
           </Link>
-        ))}
+          ),
+        )}
       </div>
       <div className="hidden md:block">
         <table className="sheet w-full border-separate border-spacing-0 text-left text-sm">
@@ -147,7 +159,7 @@ export function PickTable({
           </thead>
           <tbody>
             {rows.map((pick) => (
-              <tr key={pick.id}>
+              <tr key={pick.id} className={pick.forfeited ? "text-zinc-600" : undefined}>
                 {visible.map((column) => (
                   <td key={column.key} className={`border-t border-white/10 py-2.5 pr-3 ${column.key === "score" ? `font-semibold ${gapClass(pick)}` : ""}`}>
                     <Cell pick={pick} column={column.key} />
@@ -181,6 +193,18 @@ function RedraftCell({ pick }: { pick: PickRow }) {
 function Cell({ pick, column }: { pick: PickRow; column: SortKey }) {
   if (column === "year") return <span className="text-zinc-400">{pick.year}</span>;
   if (column === "overall") return <span className="text-zinc-400">R{pick.round} · #{pick.overall}</span>;
+  if (pick.forfeited) {
+    if (column === "name") return <span className="display text-xs font-bold tracking-[0.14em] text-zinc-500">FORFEITED PICK</span>;
+    if (column === "franchise") {
+      return (
+        <span className="inline-flex items-center gap-2 opacity-50">
+          <TeamLogo abbr={pick.franchise} name={pick.franchiseName} className="h-6 w-9" />
+          <span>{pick.franchise}</span>
+        </span>
+      );
+    }
+    return <span className="text-zinc-600">—</span>;
+  }
   if (column === "redraft") return <RedraftCell pick={pick} />;
   if (column === "franchise") {
     return (

@@ -7,6 +7,9 @@ export function signed(value: number | null | undefined, digits = 1): string {
 export const DRAFT_SCORE_TIP =
   "Average Impact above or below expected per graded pick, centered relative to the NHL league average of 0.0";
 
+export const DEV_SCORE_TIP =
+  "How well this franchise turns its picks into NHL players by year six, versus what those exact draft slots usually produce. Combines NHL graduation (25+ and 100+ Impact) with Impact growth from year two on. 0.0 is the NHL average.";
+
 const LETTER_ORDER = ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-"];
 
 /** A+ is 0 and D- is 11, so an ascending sort reads best grade first. */

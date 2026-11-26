@@ -7,7 +7,7 @@ export const dynamic = "force-static";
 export function GET() {
   const index: SearchIndex = {
     p: picks
-      .slice()
+      .filter((pick) => !pick.forfeited)
       .sort((a, b) => b.year - a.year || a.overall - b.overall)
       .map((pick) => [
         pick.id,

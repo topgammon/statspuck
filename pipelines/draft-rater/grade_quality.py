@@ -23,6 +23,7 @@ from collections import Counter
 from datetime import date, datetime, timezone
 from pathlib import Path
 
+from development import build_development
 from fetch_nhl import backfill_season_details, connect, season_calendar
 from model import fit_family, isotonic_increasing, refit, round0, round1
 from teams import FRANCHISES
@@ -735,6 +736,11 @@ def headshot_map() -> dict[int, bool]:
     return {int(key): bool(value) for key, value in raw.items()}
 
 
+def is_forfeit(pick: dict) -> bool:
+    """A slot the league took away (e.g. Arizona 2021 #11). It holds a place in the order and nothing else."""
+    return not pick.get("player_id") and (pick.get("player_name") or "").strip().upper() == "FORFEIT"
+
+
 def optional_json(path: Path) -> dict:
     """A side data file that may not exist yet. Missing means empty."""
     if not path.exists():
@@ -927,7 +933,7 @@ def build() -> None:
         anchor = []
         for pick in picks:
             pick_group = "G" if position_group(pick["position"]) == "G" else "S"
-            if pick_group != group:
+            if pick_group != group or is_forfeit(pick):
                 continue
             if pick["draft_year"] + SKATER_CAP - 1 <= last_complete:
                 anchor.append((pick["overall"], through(pick, SKATER_CAP)))
@@ -938,7 +944,7 @@ def build() -> None:
             slot_records = []
             for pick in picks:
                 pick_group = "G" if position_group(pick["position"]) == "G" else "S"
-                if pick_group != group:
+                if pick_group != group or is_forfeit(pick):
                     continue
                 if pick["draft_year"] + milestone - 1 > last_complete:
                     continue
@@ -998,7 +1004,13 @@ def build() -> None:
             window_quality = through(pick, window)
             window_expected = expected_at(table, pick["overall"], window, 1.0)
             window_score = round1(window_quality - window_expected)
-        if milestone <= 0:
+        forfeited = is_forfeit(pick)
+        if forfeited:
+            # A forfeited slot was never a pick. Keep it in the draft order, grade nothing.
+            expected_path = []
+            window_score = None
+            developing = False
+        if milestone <= 0 or forfeited:
             expected = None
             score = None
         else:
@@ -1060,6 +1072,7 @@ def build() -> None:
                 "redraft": None,
                 "stamps": [],
                 "alsoDrafted": also,
+                "forfeited": forfeited,
                 "currentTeam": rosters.get(str(pick["player_id"])) if pick["player_id"] else None,
                 "_windowScore": window_score,
                 "_bloomScore": bloom_score,
@@ -1080,7 +1093,7 @@ def build() -> None:
         bloom_score = pick.get("_bloomScore")
         if bloom_score is not None and bloom_pool:
             pick["_bloomLetter"] = rating_and_letter(bloom_score, bloom_pool)[1]
-        pick["stamps"] = stamps_for(pick)
+        pick["stamps"] = [] if pick["forfeited"] else stamps_for(pick)
         del pick["_windowScore"]
         pick.pop("_windowLetter", None)
         pick.pop("_bloomScore", None)
@@ -1090,9 +1103,13 @@ def build() -> None:
     for pick in scored:
         by_year.setdefault(pick["year"], []).append(pick)
     for group in by_year.values():
-        ordered = sorted(group, key=lambda item: (-item["qg"], item["overall"], item["id"]))
+        real = [item for item in group if not item["forfeited"]]
+        ordered = sorted(real, key=lambda item: (-item["qg"], item["overall"], item["id"]))
         for rank, item in enumerate(ordered, start=1):
             item["redraft"] = rank
+        for item in group:
+            if item["forfeited"]:
+                item["redraft"] = 0
 
     by_franchise: dict[str, list[dict]] = {}
     for pick in scored:
@@ -1237,6 +1254,9 @@ def build() -> None:
             rating, letter = rating_and_letter(era["avg"], gm_pool)
             era["rating"] = rating
             era["letter"] = letter
+
+    # Pillar 2: league paths and Team / GM Development Grades.
+    build_development(scored, curves, expected_at, last_complete, leaderboard, eras, rating_and_letter)
 
     conn.execute("DELETE FROM gm_eras")
     for era in eras:

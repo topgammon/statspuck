@@ -7,6 +7,7 @@ export type ModuleInfo = {
   status: ModuleStatus;
   blurb: string;
   href?: string;
+  cta?: string;
   icon: "draft" | "path" | "trade" | "luck" | "matchup" | "ref";
 };
 
@@ -15,18 +16,21 @@ export const modules: ModuleInfo[] = [
     name: "Draft Rater",
     status: "LIVE NOW",
     href: "/draft-rater",
+    cta: "Open the board →",
     icon: "draft",
     blurb: "Every NHL pick since 2005 graded on two-way Impact vs. draft slot—separating scouting skill from lottery luck.",
   },
   {
     name: "Development Path",
-    status: "UP NEXT",
+    status: "LIVE NOW",
+    href: "/development",
+    cta: "Explore the pathways →",
     icon: "path",
     blurb: "Interactive CHL, NCAA, European & AHL-to-NHL pathways showing graduation odds and optimal routes by draft slot.",
   },
   {
     name: "Trade Machine",
-    status: "COMING SOON",
+    status: "UP NEXT",
     icon: "trade",
     blurb: "EA-style trade simulator and historical trade grader powered by Impact per dollar, contract term, and injury risk.",
   },

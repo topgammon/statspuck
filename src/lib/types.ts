@@ -41,6 +41,8 @@ export type PickRow = {
   redraft: number;
   stamps: Stamp[];
   alsoDrafted: number[];
+  /** A slot the league took away. Shown in the draft order, never graded, no profile page. */
+  forfeited?: boolean;
   /** Current NHL team from today's rosters, or null if not on an NHL roster. */
   currentTeam?: string | null;
 };
@@ -83,7 +85,30 @@ export type YearPoint = {
   letter: string | null;
 };
 
+export type DevRound = {
+  label: string;
+  n: number;
+  rate25: number | null;
+  rate100: number | null;
+  expected25: number | null;
+  expected100: number | null;
+  league25: number | null;
+  league100: number | null;
+};
+
+/** Development Grade (Pillar 2). Dev Score is centered so 0.0 is the average NHL franchise. */
+export type DevGrade = {
+  avg: number;
+  rating: number | null;
+  letter: string | null;
+  rank?: number;
+  n: number;
+  rounds: DevRound[];
+  gems: { id: number; dev: number; q6: number }[];
+};
+
 export type TeamGrade = {
+  dev?: DevGrade | null;
   abbr: string;
   name: string;
   short: string;
@@ -117,6 +142,7 @@ export type Era = {
   total: number | null;
   rating: number | null;
   letter: string | null;
+  dev?: DevGrade | null;
   /** Wikimedia Commons photo, or null for the silhouette. */
   photoUrl?: string | null;
   /** Wikipedia page the photo came from, for credit. */

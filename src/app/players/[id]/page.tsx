@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { BioCard, ComingSoonPanel, ContractPill, HeroGrade, ModulePreviews, PillGrid, PLAYER_TABS, QuickPill, SectionLabel } from "@/components/entity/bio";
 import { EntityTabs, TabLink } from "@/components/entity/entity-tabs";
+import { PlayerDevelopment } from "@/components/entity/player-development";
 import { InfoTip } from "@/components/info-tip";
 import { PlayerCharts } from "@/components/player-charts";
 import { PlayerHeadshot } from "@/components/player-headshot";
@@ -19,7 +20,7 @@ import type { PickRow } from "@/lib/types";
 type Params = { id: string };
 
 export function generateStaticParams() {
-  return picks.map((pick) => ({ id: String(pick.id) }));
+  return picks.filter((pick) => !pick.forfeited).map((pick) => ({ id: String(pick.id) }));
 }
 
 export const dynamicParams = false;
@@ -126,7 +127,7 @@ export default async function PlayerPage({ params }: { params: Promise<Params> }
   const panels: Record<string, ReactNode> = {
     overview: <Overview pick={pick} />,
     draft: <DraftPanel pick={pick} color={color} />,
-    development: <ComingSoonPanel tab="development" subject={pick.name} />,
+    development: <PlayerDevelopment pick={pick} />,
     asset: <ComingSoonPanel tab="asset" subject={pick.name} />,
     luck: <ComingSoonPanel tab="luck" subject={pick.name} />,
     matchups: <ComingSoonPanel tab="matchups" subject={pick.name} />,
@@ -183,7 +184,7 @@ function Overview({ pick }: { pick: PickRow }) {
         </TabLink>
       </div>
       <div className="lg:col-span-2">
-        <ModulePreviews tabs={["development", "asset", "luck", "matchups"]} />
+        <ModulePreviews tabs={["asset", "luck", "matchups"]} />
       </div>
     </div>
   );
@@ -205,7 +206,7 @@ function DraftPanel({ pick, color }: { pick: PickRow; color: string }) {
   const partial =
     pick.active !== false && meta.seasonInProgress != null && pick.draftPlus === pick.milestone && pick.milestone > 0 && seriesCoversNow;
   const peers = picks
-    .filter((other) => other.year === pick.year)
+    .filter((other) => other.year === pick.year && !other.forfeited)
     .map((other) => ({ id: other.id, name: other.name, qg: other.qg, redraft: other.redraft, overall: other.overall }));
 
   return (

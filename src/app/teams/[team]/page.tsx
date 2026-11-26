@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
-import { BioCard, CapBar, ComingSoonPanel, DnaPills, HeroGrade, ModulePreviews, ORG_TABS, SectionLabel } from "@/components/entity/bio";
+import { BioCard, CapBar, ComingSoonPanel, DnaPills, ModulePreviews, ORG_TABS, PillarGrades, SectionLabel } from "@/components/entity/bio";
+import { OrgDevelopment } from "@/components/entity/org-development";
+import { devBoard, devGems } from "@/lib/dev-board";
+import { development } from "@/lib/development";
 import { EntityTabs, TabLink } from "@/components/entity/entity-tabs";
 import { ShareLauncher } from "@/components/share-modal";
 import { ScoutingPanels } from "@/components/scouting-panels";
@@ -10,7 +13,7 @@ import { TeamBreakdown } from "@/components/team-breakdown";
 import { TeamLogo } from "@/components/team-logo";
 import { teamCapHit } from "@/lib/cap";
 import { eras, leaderboard, og, picks } from "@/lib/data";
-import { DRAFT_SCORE_TIP, scoreClass, signed } from "@/lib/format";
+import { DEV_SCORE_TIP, DRAFT_SCORE_TIP, scoreClass, signed } from "@/lib/format";
 import { gmHref, playerHref, teamHref } from "@/lib/routes";
 import { scoutingReport } from "@/lib/scouting";
 import type { BriefPick, Era, TeamGrade } from "@/lib/types";
@@ -101,11 +104,15 @@ export default async function TeamPage({ params }: { params: Promise<Params> }) 
   );
 
   const right = (
-    <HeroGrade
-      letter={team.letter}
+    <PillarGrades
+      pillars={[
+        { label: "Draft", letter: team.letter, score: signed(team.avg), tone: scoreClass(team.avg), title: DRAFT_SCORE_TIP },
+        { label: "Dev", letter: team.dev?.letter ?? null, score: team.dev ? signed(team.dev.avg) : "too new", tone: team.dev ? scoreClass(team.dev.avg) : undefined, title: DEV_SCORE_TIP },
+        { label: "Trades", letter: null, soon: true },
+      ]}
       stats={[
-        { label: "Draft Score", value: signed(team.avg), tone: scoreClass(team.avg), title: DRAFT_SCORE_TIP },
-        { label: "Rank", value: `#${team.rank} of ${leaderboard.length}` },
+        { label: "Draft rank", value: `#${team.rank} of ${leaderboard.length}` },
+        { label: "Dev rank", value: team.dev?.rank ? `#${team.dev.rank} of ${devBoard.length}` : "—" },
       ]}
       action={share}
     />
@@ -129,7 +136,16 @@ export default async function TeamPage({ params }: { params: Promise<Params> }) 
         <TeamBreakdown eras={teamEras} color={team.color} byYear={team.byYear} picks={owned} />
       </div>
     ),
-    development: <ComingSoonPanel tab="development" subject={team.name} />,
+    development: (
+      <OrgDevelopment
+        subject={team.name}
+        dev={team.dev}
+        gems={devGems(team.dev)}
+        board={devBoard}
+        highlight={team.abbr}
+        matureThrough={development.matureThrough}
+      />
+    ),
     trades: <ComingSoonPanel tab="trades" subject={team.name} />,
     luck: <ComingSoonPanel tab="luck" subject={team.name} />,
     matchups: <ComingSoonPanel tab="matchups" subject={team.name} />,
@@ -180,8 +196,30 @@ function Overview({ team, currentGm, eraCount }: { team: TeamGrade; currentGm: E
           <p className="mt-3 text-sm text-[#94A3B8]">No current GM on file.</p>
         )}
       </div>
+      <div className="rounded-2xl border border-[#38BDF8]/40 bg-[#14171F] p-5 lg:col-span-2">
+        <div className="flex items-center justify-between gap-2">
+          <SectionLabel>Development</SectionLabel>
+          <span className="rounded-full bg-[#38BDF8]/15 px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#38BDF8] uppercase">Live</span>
+        </div>
+        <p className="mt-3 text-[#F8FAFC]">
+          {team.dev ? (
+            <>
+              <span className="display text-3xl font-bold">{team.dev.letter}</span>
+              <span className="text-[#94A3B8]">
+                {" "}
+                · Dev Score <span className={scoreClass(team.dev.avg)}>{signed(team.dev.avg)}</span> · #{team.dev.rank} at turning picks into NHL players
+              </span>
+            </>
+          ) : (
+            <span className="text-[#94A3B8]">Too new for a Development Grade. Picks need six full seasons.</span>
+          )}
+        </p>
+        <TabLink tab="development" className="mt-3 text-sm font-semibold text-[#38BDF8] hover:underline">
+          Open the Development breakdown →
+        </TabLink>
+      </div>
       <div className="lg:col-span-2">
-        <ModulePreviews tabs={["development", "trades", "luck", "matchups"]} />
+        <ModulePreviews tabs={["trades", "luck", "matchups"]} />
       </div>
     </div>
   );

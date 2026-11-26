@@ -165,7 +165,7 @@ function ModuleCard({ item }: { item: ModuleInfo }) {
       </div>
       <h3 className="display mt-4 text-xl font-bold sm:text-2xl">{item.name}</h3>
       <p className="mt-2 text-sm leading-relaxed text-[#94A3B8]">{item.blurb}</p>
-      {live ? <p className="mt-auto pt-4 text-sm font-semibold text-[#38BDF8]">Open the board →</p> : null}
+      {live ? <p className="mt-auto pt-4 text-sm font-semibold text-[#38BDF8]">{item.cta ?? "Open →"}</p> : null}
     </>
   );
   const base = "flex h-full flex-col rounded-2xl border bg-[#14171F] p-4 sm:p-5";

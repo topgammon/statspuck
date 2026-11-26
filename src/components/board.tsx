@@ -121,7 +121,7 @@ export function Board({
   const matches = useMemo(() => {
     if (needle.length < 2) return [];
     const ranked = picks
-      .filter((pick) => pick.name.toLowerCase().includes(needle))
+      .filter((pick) => !pick.forfeited && pick.name.toLowerCase().includes(needle))
       .sort((a, b) => {
         const aStart = a.name.toLowerCase().startsWith(needle) ? 0 : 1;
         const bStart = b.name.toLowerCase().startsWith(needle) ? 0 : 1;
