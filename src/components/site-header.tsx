@@ -1,7 +1,10 @@
 import Link from "next/link";
-import { GlobalSearch } from "@/components/global-search";
 import { MenuDrawer } from "@/components/menu-drawer";
+import { HeaderSearch, ToolsMenu } from "@/components/nav-controls";
 import { StatsPuckBadge } from "@/components/wordmark";
+
+// Top nav. Left: logo. Center: compact search (hidden on the home hero until scrolled).
+// Right: Tools dropdown, Leaderboards, and the slide-out menu.
 
 export function SiteHeader() {
   return (
@@ -9,12 +12,18 @@ export function SiteHeader() {
       <div className="mx-auto grid max-w-6xl grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3 sm:gap-5">
         <Link href="/" className="flex items-center gap-3" aria-label="StatsPuck home">
           <StatsPuckBadge height={40} />
-          <span className="display hidden text-xl font-bold tracking-[0.04em] lg:block">STATSPUCK</span>
+          <span className="display hidden text-xl font-bold tracking-[0.04em] xl:block">STATSPUCK</span>
         </Link>
-        <div className="mx-auto w-full max-w-xl">
-          <GlobalSearch />
-        </div>
-        <MenuDrawer />
+        <HeaderSearch />
+        <nav aria-label="Main" className="flex items-center gap-1">
+          <div className="hidden md:block">
+            <ToolsMenu />
+          </div>
+          <Link href="/leaderboards" className="hidden h-10 items-center rounded-xl px-3 text-sm font-semibold text-[#F8FAFC] transition hover:bg-white/[0.04] md:flex">
+            Leaderboards
+          </Link>
+          <MenuDrawer />
+        </nav>
       </div>
     </header>
   );

@@ -20,6 +20,7 @@ from fetch_nhl import fetch_all, sample
 from fetch_paths import main as fetch_paths
 from fetch_rosters import main as fetch_rosters
 from model import build
+from season_stats import build as build_season_stats
 
 
 def main() -> None:
@@ -43,6 +44,7 @@ def main() -> None:
     build()
     build_trades()
     build_asset_data()
+    build_season_stats()
     if not args.skip_cards:
         render()
 

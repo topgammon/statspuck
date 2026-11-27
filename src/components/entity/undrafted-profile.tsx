@@ -1,23 +1,12 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
-import { AssetTeaser, AssetValuePanel } from "@/components/entity/asset-value";
-import { ArchetypePill, BioCard, ComingSoonPanel, ContractPill, HeroGrade, ModulePreviews, PillGrid, PLAYER_TABS, QuickPill, SectionLabel, VitalsRow, type VitalItem } from "@/components/entity/bio";
-import { EntityTabs, TabLink } from "@/components/entity/entity-tabs";
-import { PlayerHeadshot } from "@/components/player-headshot";
-import { ShareLauncher } from "@/components/share-modal";
-import { StampRow } from "@/components/stamps";
-import { TeamLogo, TeamName } from "@/components/team-logo";
-import { classify } from "@/lib/archetypes";
-import { playerContract } from "@/lib/cap";
-import { teamsByAbbr } from "@/lib/data";
-import { nhlerFor } from "@/lib/nhlers";
-import { playerValue, type PlayerValue } from "@/lib/player-value";
-import { formatRating, ratingTone } from "@/lib/rating";
+import { SectionLabel } from "@/components/entity/bio";
 import { BUCKET_COLOR, BUCKET_LABEL, type Bucket } from "@/lib/development";
 import { signed } from "@/lib/format";
 import { gmHref, teamHref } from "@/lib/routes";
 import type { UndraftedPlayer } from "@/lib/types";
 
+// Career-tab pieces for undrafted graduates. The rest of their profile is the shared
+// PlayerProfile (components/entity/player-profile.tsx).
 const DEV_TIP =
   "Undrafted signings never count in Draft Rater. When one reaches 100+ career Impact, the franchise that gave him his NHL debut (and its GM that season) gets this credit in their Development Grade.";
 
@@ -63,174 +52,7 @@ function timeline(player: UndraftedPlayer): SeasonStep[] {
     });
 }
 
-export function UndraftedProfile({ player, vitals }: { player: UndraftedPlayer; vitals: VitalItem[] }) {
-  const color = (player.franchise && teamsByAbbr.get(player.franchise)?.color) || "#38BDF8";
-  const current = player.currentTeam ? teamsByAbbr.get(player.currentTeam) : null;
-  const retired = player.active === false;
-  const value = playerValue({ playerId: player.playerId, pick: null, retired });
-
-  const share = (
-    <ShareLauncher
-      fileSlug={player.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}
-      title={`${player.name}, undrafted`}
-      summary={`${player.name} went undrafted and built ${player.qg.toFixed(0)} career Impact in ${player.gpCareer} NHL games.`}
-      path={`/players/${player.id}`}
-      card={{ kind: "undrafted", player, color }}
-    />
-  );
-
-  const left = (
-    <div>
-      <div className="flex items-start gap-4">
-        <PlayerHeadshot playerId={player.playerId} name={player.name} available color={color} className="h-24 w-24 sm:h-28 sm:w-28" />
-        <div className="min-w-0">
-          <h1 className="display text-3xl leading-tight font-bold sm:text-4xl">{player.name}</h1>
-          <p className="mt-1 text-sm text-[#94A3B8]">
-            <span className="font-semibold text-[#F8FAFC]">{player.pos}</span> · Undrafted · First NHL Team:{" "}
-            {player.firstTeam ? (
-              <span className="font-semibold text-[#F8FAFC]">{player.firstTeamName}</span>
-            ) : (
-              "—"
-            )}{" "}
-            ({seasonLabel(player.debut)})
-          </p>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            {current ? (
-              <Link href={teamHref(current.abbr)} className="inline-flex items-center gap-1.5 rounded-full border border-[#262B36] bg-[#0B0D10]/60 py-0.5 pr-2.5 pl-1 text-xs font-semibold hover:border-[#38BDF8]/60">
-                <TeamLogo abbr={current.abbr} className="h-5 w-6" />
-                {current.name}
-              </Link>
-            ) : retired ? (
-              <span className="display rounded-full border border-[#64748B]/60 px-2.5 py-0.5 text-xs font-bold tracking-[0.14em] text-[#94A3B8]">RETIRED</span>
-            ) : (
-              <span className="rounded-full border border-[#262B36] px-2.5 py-0.5 text-xs text-[#94A3B8]">Not on an NHL roster</span>
-            )}
-            <ContractPill contract={retired ? null : playerContract(player.playerId)} />
-          </div>
-        </div>
-      </div>
-      <VitalsRow items={vitals} />
-    </div>
-  );
-
-  const middle = (
-    <div className="flex h-full flex-col gap-3">
-      <div className="flex min-h-7 flex-wrap items-center gap-2">
-        <StampRow stamps={player.stamps} />
-        <ArchetypePill archetype={classify(nhlerFor(player.playerId))} />
-      </div>
-      <PillGrid count={4}>
-        <QuickPill label="Career Impact" value={player.qg.toFixed(1)} title="Impact puts skaters and goalies on one scale where 1.0 is about one average NHL game. Seasons since 2005-06." />
-        <QuickPill label="Career GP" value={String(player.gpCareer)} title="NHL regular-season games since 2005-06" />
-        <QuickPill
-          label="Asset Value"
-          value={formatRating(value.rating)}
-          tone={ratingTone(value.rating)}
-          title="Trade value on a 0-100 scale. Retired and inactive players are 0, and so is anyone without an NHL contract."
-        />
-        {player.group === "G" ? (
-          <QuickPill label="SV%" value={player.savePct == null ? "—" : player.savePct.toFixed(3).replace(/^0/, "")} />
-        ) : (
-          <QuickPill label="PPG" value={player.ppg == null ? "—" : player.ppg.toFixed(2)} />
-        )}
-      </PillGrid>
-    </div>
-  );
-
-  const right = (
-    <HeroGrade
-      label="Draft status"
-      letter={null}
-      badge={
-        <span className="display inline-flex items-center justify-center self-center border-[3px] border-[#38BDF8] px-2.5 py-1.5 text-xl leading-none font-bold tracking-[0.16em] text-[#bae6fd]">
-          UNDRAFTED
-        </span>
-      }
-      stats={[
-        { label: "NHL debut", value: String(player.debut), title: `First NHL game in ${seasonLabel(player.debut)}` },
-        {
-          label: "Dev credit",
-          value: player.devCredit == null ? "—" : signed(player.devCredit),
-          tone: player.devCredit == null ? undefined : "text-[#10B981]",
-          title: DEV_TIP,
-        },
-      ]}
-      action={share}
-    />
-  );
-
-  const panels: Record<string, ReactNode> = {
-    overview: <Overview player={player} value={value} />,
-    draft: <DraftPanel player={player} />,
-    development: <DevelopmentPanel player={player} />,
-    asset: <AssetValuePanel playerId={player.playerId} name={player.name} value={value} />,
-    luck: <ComingSoonPanel tab="luck" subject={player.name} />,
-    matchups: <ComingSoonPanel tab="matchups" subject={player.name} />,
-  };
-
-  return (
-    <div>
-      <BioCard left={left} middle={middle} right={right} />
-      <EntityTabs tabs={PLAYER_TABS} panels={panels} />
-    </div>
-  );
-}
-
-function Overview({ player, value }: { player: UndraftedPlayer; value: PlayerValue }) {
-  const facts: [string, ReactNode][] = [
-    ["Position", player.pos],
-    ["Draft", "Undrafted"],
-    ["NHL debut", seasonLabel(player.debut)],
-  ];
-  if (player.firstTeam) facts.push(["First NHL team", <TeamName key="first" abbr={player.firstTeam} name={player.firstTeamName ?? player.firstTeam} logoClassName="h-5 w-7" />]);
-  if (player.origin) facts.push(["Before the NHL", [player.origin.club, player.origin.league].filter(Boolean).join(" · ")]);
-  if (player.goals != null) facts.push(["Career scoring", `${player.goals} G · ${player.assists ?? 0} A · ${player.points ?? 0} PTS`]);
-  if (player.gaa != null) facts.push(["Career GAA", player.gaa.toFixed(2)]);
-  return (
-    <div className="grid gap-5 lg:grid-cols-2">
-      <div className="rounded-2xl border border-[#262B36] bg-[#14171F] p-5">
-        <SectionLabel>Bio</SectionLabel>
-        <dl className="mt-3 divide-y divide-[#262B36]">
-          {facts.map(([label, value]) => (
-            <div key={label} className="flex items-center justify-between gap-4 py-2 text-sm">
-              <dt className="text-[#94A3B8]">{label}</dt>
-              <dd className="text-right text-[#F8FAFC]">{value}</dd>
-            </div>
-          ))}
-        </dl>
-      </div>
-      <div className="rounded-2xl border border-[#38BDF8]/40 bg-[#14171F] p-5">
-        <SectionLabel>Undrafted graduate</SectionLabel>
-        <p className="mt-3 text-sm leading-6 text-[#94A3B8]">
-          All 32 teams passed on {player.name} in every NHL Entry Draft. He signed as a free agent and has{" "}
-          <span className="font-semibold text-[#F8FAFC]">{player.qg.toFixed(1)} Impact</span> in {player.gpCareer} NHL games since 2005-06.
-        </p>
-        <p className="mt-3 text-sm leading-6 text-[#94A3B8]">
-          {player.devCredit != null && player.franchiseName ? (
-            <>
-              The <span className="font-semibold text-[#F8FAFC]">{player.franchiseName}</span>
-              {player.creditGm ? <> and GM {player.creditGm}</> : null} get{" "}
-              <span className="font-semibold text-[#10B981]">{signed(player.devCredit)}</span> Development credit for finding him.
-            </>
-          ) : (
-            "Development credit goes to his debut franchise once he reaches 100 career Impact."
-          )}
-        </p>
-        <TabLink tab="development" className="mt-4 text-sm font-semibold text-[#38BDF8] hover:underline">
-          See his path to the NHL →
-        </TabLink>
-      </div>
-      <div className="lg:col-span-2">
-        <div className="mb-3">
-          <AssetTeaser value={value} />
-        </div>
-        <ModulePreviews tabs={["luck", "matchups"]} />
-      </div>
-    </div>
-  );
-}
-
-function DraftPanel({ player }: { player: UndraftedPlayer }) {
+export function UndraftedDraftPanel({ player }: { player: UndraftedPlayer }) {
   return (
     <div className="rounded-2xl border border-dashed border-[#262B36] bg-[#14171F]/60 p-6">
       <span className="display inline-block border-[3px] border-[#38BDF8] px-2 py-1 text-sm leading-none font-bold tracking-[0.14em] text-[#bae6fd] uppercase">Undrafted</span>
@@ -248,7 +70,7 @@ function DraftPanel({ player }: { player: UndraftedPlayer }) {
   );
 }
 
-function DevelopmentPanel({ player }: { player: UndraftedPlayer }) {
+export function UndraftedDevelopmentPanel({ player }: { player: UndraftedPlayer }) {
   const steps = timeline(player);
   const nhlSeasons = player.seasons.map((impact, index) => ({ season: player.firstSeason + index, impact }));
   return (

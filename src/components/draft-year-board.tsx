@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PickBrowser, type GradeCaption } from "@/components/pick-browser";
 import { TeamName } from "@/components/team-logo";
 import { countryName } from "@/lib/countries";
@@ -165,6 +165,15 @@ export function DraftYearBoard({
   const [feeder, setFeeder] = useState<Feeder | "all">("all");
   const [group, setGroup] = useState<"all" | PickGroup>("all");
   const [nation, setNation] = useState("all");
+  // Links like /draft-rater/drafts/2015?sort=redraft (from a player's Redraft #) open the table sorted by Redraft.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("sort") !== "redraft") return;
+    const timer = window.setTimeout(() => {
+      setSortNonce((value) => value + 1);
+      document.getElementById("picks")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+    return () => window.clearTimeout(timer);
+  }, []);
   const real = picks.filter((pick) => !pick.forfeited);
   const nations = countBy(real.map((pick) => pick.country ?? "")).filter(([code]) => code);
   const filtering = feeder !== "all" || group !== "all" || nation !== "all";

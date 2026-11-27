@@ -1,6 +1,6 @@
 export type PickGroup = "F" | "D" | "G";
 
-export type Stamp = "DEVELOPING" | "STALLED" | "BUST" | "STEAL" | "LATE BLOOMER" | "ELITE" | "RETIRED" | "UNDRAFTED";
+export type Stamp = "DEVELOPING" | "STALLED" | "BUST" | "STEAL" | "LATE BLOOMER" | "ELITE" | "RETIRED" | "UNDRAFTED" | "IRON MAN";
 
 /** Draft-origin buckets for the draft class filters. */
 export type Feeder = "OHL" | "WHL" | "QMJHL" | "USHL/NCAA" | "Sweden" | "Finland" | "Russia" | "Other";

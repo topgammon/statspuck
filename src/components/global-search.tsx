@@ -22,7 +22,8 @@ function loadIndex(): Promise<SearchIndex> {
   return cached;
 }
 
-export function GlobalSearch() {
+export function GlobalSearch({ size = "compact" }: { size?: "compact" | "hero" }) {
+  const hero = size === "hero";
   const router = useRouter();
   const listId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -50,6 +51,10 @@ export function GlobalSearch() {
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) return;
+      // Two search boxes can be on the page (header + home hero). Only a visible one takes the shortcut.
+      if (!inputRef.current || inputRef.current.offsetParent === null) return;
+      if (!hero && document.getElementById("hero-search") && window.scrollY < 320) return;
+      if (hero && window.scrollY >= 320) return;
       const target = event.target as HTMLElement | null;
       if (target && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))) return;
       event.preventDefault();
@@ -57,7 +62,7 @@ export function GlobalSearch() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [hero]);
 
   useEffect(() => {
     function onPointer(event: PointerEvent) {
@@ -99,12 +104,16 @@ export function GlobalSearch() {
   let position = -1;
 
   return (
-    <div ref={boxRef} className="relative w-full">
+    <div ref={boxRef} id={hero ? "hero-search" : undefined} className="relative w-full">
       <label className="sr-only" htmlFor={`${listId}-input`}>
         Search StatsPuck
       </label>
-      <div className="flex items-center gap-2 rounded-xl border border-[#262B36] bg-[#14171F] px-3 transition focus-within:border-[#38BDF8] focus-within:shadow-[0_0_0_3px_rgba(56,189,248,0.15)]">
-        <svg aria-hidden viewBox="0 0 20 20" className="h-4 w-4 shrink-0 text-[#94A3B8]" fill="none" stroke="currentColor" strokeWidth="2">
+      <div
+        className={`flex items-center gap-2 border border-[#262B36] bg-[#14171F] transition focus-within:border-[#38BDF8] focus-within:shadow-[0_0_0_3px_rgba(56,189,248,0.15)] ${
+          hero ? "rounded-2xl px-5 shadow-[0_0_0_1px_rgba(225,29,72,0.15),0_20px_60px_rgba(0,0,0,0.45)]" : "rounded-xl px-3"
+        }`}
+      >
+        <svg aria-hidden viewBox="0 0 20 20" className={`shrink-0 text-[#94A3B8] ${hero ? "h-6 w-6" : "h-4 w-4"}`} fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="9" cy="9" r="6" />
           <path d="m14 14 4 4" strokeLinecap="round" />
         </svg>
@@ -131,8 +140,8 @@ export function GlobalSearch() {
             setOpen(true);
           }}
           onKeyDown={onKeyDown}
-          placeholder="Search any player, team, GM, or draft year..."
-          className="min-w-0 flex-1 bg-transparent py-2.5 text-sm text-[#F8FAFC] outline-none placeholder:text-[#94A3B8]/80"
+          placeholder={hero ? "Search any NHL player, team, GM, or draft year..." : "Search players, teams, GMs..."}
+          className={`min-w-0 flex-1 bg-transparent text-[#F8FAFC] outline-none placeholder:text-[#94A3B8]/80 ${hero ? "py-4 text-base sm:py-5 sm:text-lg" : "py-2 text-sm"}`}
         />
         <kbd className="hidden rounded-md border border-[#262B36] px-1.5 py-0.5 font-sans text-[11px] text-[#94A3B8] sm:inline-block">
           /

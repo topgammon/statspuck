@@ -9,11 +9,17 @@ const tones: Record<Stamp, string> = {
   ELITE: "border-[#e8c56b] text-[#f6e3a1]",
   RETIRED: "border-[#b7bdc7] text-[#c5ccd6]",
   UNDRAFTED: "border-[#38BDF8] text-[#bae6fd]",
+  "IRON MAN": "ink border-[#CBD5E1] text-[#E2E8F0] -rotate-2",
+};
+
+const TIPS: Partial<Record<Stamp, string>> = {
+  "IRON MAN": "Played 95%+ of his team's games in 5+ straight full seasons, or 300+ games in a row of complete seasons.",
 };
 
 export function StampMark({ stamp }: { stamp: Stamp }) {
   return (
     <span
+      title={TIPS[stamp]}
       className={`display inline-block border-[3px] px-1.5 py-0.5 text-[11px] leading-none font-bold tracking-[0.14em] uppercase ${tones[stamp]}`}
     >
       {stamp === "DEVELOPING" ? "PROSPECT" : stamp}

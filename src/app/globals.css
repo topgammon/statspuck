@@ -36,6 +36,23 @@ body {
   background-color: #0b0d10;
 }
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Rubber-ink stamp texture: a little speckle so badges look pressed, not printed. */
+.ink {
+  -webkit-mask-image: radial-gradient(circle at 30% 40%, #000 0 60%, rgba(0, 0, 0, 0.82) 61% 100%);
+  mask-image: radial-gradient(circle at 30% 40%, #000 0 60%, rgba(0, 0, 0, 0.82) 61% 100%);
+}
+
 ::selection {
   background: #e11d48;
   color: white;

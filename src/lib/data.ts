@@ -9,20 +9,31 @@ import picksJson from "../../data/draft-rater/picks.json";
 import teamsJson from "../../data/draft-rater/teams.json";
 import undraftedJson from "../../data/draft-rater/undrafted.json";
 import { gradeEras, gradeTeams, type GradeFilter } from "./grade";
-import type { CurveSet, DraftClass, Era, Headlines, Meta, OgIndex, PickRow, TeamGrade, TeamInfo, UndraftedPlayer } from "./types";
+import { ironMan } from "./season-stats";
+import type { CurveSet, DraftClass, Era, Headlines, Meta, OgIndex, PickRow, Stamp, TeamGrade, TeamInfo, UndraftedPlayer } from "./types";
 
-export const picks = picksJson as PickRow[];
+export const meta = metaJson as Meta;
+
+/** Adds the IRON MAN stamp (durability) on top of the pipeline's Draft Rater stamps. Never part of any grade. */
+function withIronMan<T extends { playerId: number | null; stamps: Stamp[] }>(row: T): T {
+  if (row.stamps.includes("IRON MAN") || !ironMan(row.playerId, meta.seasonInProgress)) return row;
+  return { ...row, stamps: [...row.stamps, "IRON MAN"] };
+}
+
+export const picks = (picksJson as PickRow[]).map(withIronMan);
 export const draftClasses = classesJson as DraftClass[];
 export const curves = curvesJson as CurveSet;
 export const leaderboard = leaderboardJson as TeamGrade[];
 export const eras = erasJson as Era[];
 export const headlines = headlinesJson as Headlines;
-export const meta = metaJson as Meta;
 export const teams = teamsJson as TeamInfo[];
 export const og = ogJson as OgIndex;
 
-/** Undrafted NHL graduates. Never part of Draft Rater grades. */
-export const undrafted = undraftedJson as unknown as UndraftedPlayer[];
+/**
+ * Undrafted NHL graduates. Never part of Draft Rater grades. Anyone who debuted
+ * before 2005-06 is left out so the 2005+ era stays fair (the pipeline drops them too).
+ */
+export const undrafted = (undraftedJson as unknown as UndraftedPlayer[]).filter((player) => player.debut >= meta.curveFirstYear).map(withIronMan);
 
 export const picksById = new Map(picks.map((pick) => [pick.id, pick]));
 export const undraftedById = new Map(undrafted.map((player) => [player.id, player]));

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
-import { BioCard, CapBar, ComingSoonPanel, DnaPills, ModulePreviews, ORG_TABS, PillarGrades, SectionLabel } from "@/components/entity/bio";
+import { BioCard, CapBar, DnaPills, PillarGrades, SectionLabel } from "@/components/entity/bio";
 import type { DevLeaderRow } from "@/components/entity/dev-leaderboard";
 import { OrgDevelopment, type DevGem, type UndraftedGem } from "@/components/entity/org-development";
 import { EntityTabs, TabLink } from "@/components/entity/entity-tabs";
@@ -193,9 +193,28 @@ export function EraProfile({
   );
 
   const panels: Record<string, ReactNode> = {
-    overview: (
+    report: (
       <div className="grid gap-5 lg:grid-cols-2">
-        <div className="rounded-2xl border border-[#E11D48]/40 bg-[#14171F] p-5">
+        <div className="rounded-2xl border border-[#E11D48]/40 bg-[#14171F] p-5 lg:col-span-2">
+          <div className="flex items-center justify-between gap-2">
+            <SectionLabel>GM report card</SectionLabel>
+            <span className="rounded-full bg-[#E11D48]/15 px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#E11D48] uppercase">3 pillars</span>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <ReportTile label="Drafting" letter={gm?.draft.letter ?? null} note={gm?.draft.rating != null ? `${gm.draft.rating}/100` : "needs 5 graded picks"} tab="drafting" />
+            <ReportTile label="Development" letter={gm?.dev.letter ?? null} note={gm?.dev.rating != null ? `${gm.dev.rating}/100` : "too new"} tab="development" />
+            <ReportTile label="Trades" letter={gm?.asset?.letter ?? null} note={gm?.asset ? `${gm.asset.rating}/100 · ${gm.asset.trades} trades` : "no trade data"} tab="transactions" />
+            <ReportTile label="Asset Management" letter={null} note="coming soon" soon />
+            <ReportTile label="Overall GM Grade" letter={gm?.overall?.letter ?? null} note={gm?.overall ? `${gm.overall.rating}/100 · ${gm.overall.pillars} pillars` : "needs 2 pillars"} hero />
+          </div>
+          <p className="mt-3 text-xs text-[#94A3B8]">
+            The overall grade averages the pillars that have data. Trade data covers 2005-06 onward; a general manager with fewer than two trades is graded on the other pillars.{" "}
+            <Link href="/leaderboards?board=gms" className="font-semibold text-[#38BDF8] hover:underline">
+              GM leaderboard →
+            </Link>
+          </p>
+        </div>
+        <div className="rounded-2xl border border-[#262B36] bg-[#14171F] p-5">
           <div className="flex items-center justify-between gap-2">
             <SectionLabel>Draft Rater</SectionLabel>
             <span className="rounded-full bg-[#E11D48]/15 px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#E11D48] uppercase">Live</span>
@@ -207,8 +226,8 @@ export function EraProfile({
             {ranked.best ? <PickLine title="Best pick" pick={ranked.best} /> : null}
             {ranked.worst && ranked.worst !== ranked.best ? <PickLine title="Worst pick" pick={ranked.worst} /> : null}
           </div>
-          <TabLink tab="draft" className="mt-4 text-sm font-semibold text-[#38BDF8] hover:underline">
-            Open the full Draft breakdown →
+          <TabLink tab="drafting" className="mt-4 text-sm font-semibold text-[#38BDF8] hover:underline">
+            Open the full Drafting breakdown →
           </TabLink>
         </div>
         <div className="rounded-2xl border border-[#262B36] bg-[#14171F] p-5">
@@ -230,31 +249,9 @@ export function EraProfile({
             ))}
           </ul>
         </div>
-        <div className="rounded-2xl border border-[#E11D48]/40 bg-[#14171F] p-5 lg:col-span-2">
-          <div className="flex items-center justify-between gap-2">
-            <SectionLabel>GM report card</SectionLabel>
-            <span className="rounded-full bg-[#E11D48]/15 px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#E11D48] uppercase">3 pillars</span>
-          </div>
-          <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
-            <ReportTile label="Drafting" letter={gm?.draft.letter ?? null} note={gm?.draft.rating != null ? `${gm.draft.rating}/100` : "needs 5 graded picks"} />
-            <ReportTile label="Development" letter={gm?.dev.letter ?? null} note={gm?.dev.rating != null ? `${gm.dev.rating}/100` : "too new"} />
-            <ReportTile label="Trades" letter={gm?.asset?.letter ?? null} note={gm?.asset ? `${gm.asset.rating}/100 · ${gm.asset.trades} trades` : "no trade data"} />
-            <ReportTile label="Asset Management" letter={null} note="coming soon" soon />
-            <ReportTile label="Overall GM Grade" letter={gm?.overall?.letter ?? null} note={gm?.overall ? `${gm.overall.rating}/100 · ${gm.overall.pillars} pillars` : "needs 2 pillars"} hero />
-          </dl>
-          <p className="mt-3 text-xs text-[#94A3B8]">
-            The overall grade averages the pillars that have data. Trade data covers 2005-06 onward; a general manager with fewer than two trades is graded on the other pillars.
-          </p>
-          <TabLink tab="trades-cap" className="mt-3 text-sm font-semibold text-[#38BDF8] hover:underline">
-            Open the Trades breakdown →
-          </TabLink>
-        </div>
-        <div className="lg:col-span-2">
-          <ModulePreviews tabs={["luck", "matchups"]} />
-        </div>
       </div>
     ),
-    draft: draftPanel,
+    drafting: draftPanel,
     development: (
       <OrgDevelopment
         subject={`${era.person} · ${era.teamName}, ${tenure}`}
@@ -267,31 +264,59 @@ export function EraProfile({
         note="The Development Grade covers this team's run only. GM letters are compared with other general managers; the leaderboard below ranks franchises."
       />
     ),
-    "trades-cap": tradesPanel,
-    luck: <ComingSoonPanel tab="luck" subject={era.person} />,
-    matchups: <ComingSoonPanel tab="matchups" subject={era.person} />,
+    transactions: (
+      <div className="grid gap-5">
+        {tradesPanel}
+        <div className="rounded-2xl border border-dashed border-[#262B36] bg-[#14171F]/60 p-5">
+          <div className="flex items-center justify-between gap-2">
+            <SectionLabel>Signings · Buyouts · Waivers</SectionLabel>
+            <span className="text-[10px] font-bold tracking-wider text-[#94A3B8] uppercase">Soon</span>
+          </div>
+          <p className="mt-2 text-sm text-[#94A3B8]">Free-agent signings, extensions, buyouts and waiver moves will join trades here and feed the Asset Management grade.</p>
+        </div>
+      </div>
+    ),
   };
 
   return (
     <div>
       <BioCard left={left} middle={middle} right={right} />
-      <EntityTabs tabs={ORG_TABS} panels={panels} />
+      <EntityTabs tabs={GM_TABS} panels={panels} aliases={GM_ALIASES} />
     </div>
   );
 }
 
+const GM_TABS = [
+  { id: "report", label: "Report Card" },
+  { id: "drafting", label: "Drafting" },
+  { id: "development", label: "Development" },
+  { id: "transactions", label: "Transactions" },
+];
+
+const GM_ALIASES: Record<string, string> = { overview: "report", draft: "drafting", "trades-cap": "transactions", luck: "report", matchups: "report" };
+
 const ASSET_SCORE_TIP =
   "Trades: net Impact (five seasons out) from the trades he made. 0.0 is the league-average GM, and short tenures are pulled toward it.";
 
-function ReportTile({ label, letter, note, hero, soon }: { label: string; letter: string | null; note: string; hero?: boolean; soon?: boolean }) {
-  return (
+function ReportTile({ label, letter, note, hero, soon, tab }: { label: string; letter: string | null; note: string; hero?: boolean; soon?: boolean; tab?: string }) {
+  const body = (
+    <>
+      <span className="block text-[10px] font-semibold tracking-[0.12em] text-[#94A3B8] uppercase">{label}</span>
+      <span className={`display mx-auto mt-1.5 flex h-14 w-20 items-center justify-center rounded-xl border text-4xl leading-none font-bold ${letterTone(letter)}`}>{letter ?? "—"}</span>
+      <span className="mt-1.5 block text-[11px] text-[#94A3B8]">{note}</span>
+    </>
+  );
+  const cls = `rounded-xl border bg-[#0B0D10]/60 px-3 py-3 text-center ${hero ? "border-[#F59E0B]/40" : soon ? "border-dashed border-[#262B36]" : "border-[#262B36]"}`;
+  return tab ? (
+    <TabLink tab={tab} className={`${cls} transition hover:border-[#38BDF8]/60`}>
+      {body}
+    </TabLink>
+  ) : (
     <div
       title={soon ? "A separate grade for the whole picture: drafts, trades, signings, buyouts and waivers. Not live yet, and not part of the Overall GM Grade." : undefined}
-      className={`rounded-xl border bg-[#0B0D10]/60 px-3 py-3 text-center ${hero ? "border-[#F59E0B]/40" : soon ? "border-dashed border-[#262B36]" : "border-[#262B36]"}`}
+      className={cls}
     >
-      <dt className="text-[10px] font-semibold tracking-[0.12em] text-[#94A3B8] uppercase">{label}</dt>
-      <dd className={`display mx-auto mt-1.5 flex h-14 w-20 items-center justify-center rounded-xl border text-4xl leading-none font-bold ${letterTone(letter)}`}>{letter ?? "—"}</dd>
-      <dd className="mt-1.5 text-[11px] text-[#94A3B8]">{note}</dd>
+      {body}
     </div>
   );
 }

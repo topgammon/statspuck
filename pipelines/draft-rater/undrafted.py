@@ -134,6 +134,9 @@ def build_undrafted(
         if not played:
             continue
         debut = nhl_rows[0][0] if nhl_rows else played[0]
+        # The book starts in 2005-06. Undrafted veterans who debuted earlier are left out so the era stays fair.
+        if debut < FIRST_CREDIT_SEASON:
+            continue
         first_name = nhl_rows[0][1] if nhl_rows else None
         team = team_for(first_name) if first_name else None
         first_season = max(debut, FIRST_CREDIT_SEASON)

@@ -130,4 +130,5 @@ export const stampTone: Record<string, string> = {
   DEVELOPING: "text-[#3B82F6]",
   RETIRED: "text-[#64748B]",
   UNDRAFTED: "text-[#38BDF8]",
+  "IRON MAN": "text-[#CBD5E1]",
 };

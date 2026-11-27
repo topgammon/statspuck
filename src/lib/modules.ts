@@ -1,4 +1,4 @@
-// The six core StatsPuck modules. Used by the home page grid and the menu drawer.
+// The six core StatsPuck tools. Used by the home page cards, the Tools dropdown and the menu drawer.
 
 export type ModuleStatus = "LIVE NOW" | "UP NEXT" | "COMING SOON";
 
@@ -6,9 +6,11 @@ export type ModuleInfo = {
   name: string;
   status: ModuleStatus;
   blurb: string;
-  href?: string;
-  cta?: string;
-  icon: "draft" | "path" | "trade" | "luck" | "matchup" | "ref";
+  href: string;
+  live: boolean;
+  icon: "draft" | "path" | "trade" | "edge" | "ref" | "board";
+  /** Sub-pages shown in the menu drawer. */
+  links?: { href: string; label: string }[];
 };
 
 export const modules: ModuleInfo[] = [
@@ -16,42 +18,61 @@ export const modules: ModuleInfo[] = [
     name: "Draft Rater",
     status: "LIVE NOW",
     href: "/draft-rater",
-    cta: "Open the board →",
+    live: true,
     icon: "draft",
-    blurb: "Every NHL pick since 2005 graded on two-way Impact vs. draft slot—separating scouting skill from lottery luck.",
+    blurb: "Every NHL pick since 2005 graded on Impact vs. draft slot.",
+    links: [
+      { href: "/draft-rater", label: "Board" },
+      { href: "/draft-rater/drafts", label: "Drafts" },
+      { href: "/draft-rater/methodology", label: "Method" },
+    ],
   },
   {
     name: "Development Path",
     status: "LIVE NOW",
     href: "/development",
-    cta: "Explore the pathways →",
+    live: true,
     icon: "path",
-    blurb: "Interactive CHL, NCAA, European & AHL-to-NHL pathways showing graduation odds and optimal routes by draft slot.",
+    blurb: "League-by-league routes to the NHL and the teams that develop best.",
   },
   {
     name: "Trade Machine",
     status: "LIVE NOW",
     href: "/trade-machine",
-    cta: "Make a trade →",
+    live: true,
     icon: "trade",
-    blurb: "EA-style trade simulator: every player and pick on one 0–100 Asset Value scale, with live salary cap floor and ceiling checks.",
+    blurb: "Every player and pick on one 0–100 Asset Value scale, with live cap checks.",
+    links: [
+      { href: "/trade-machine", label: "Mock Trade" },
+      { href: "/trade-machine/rater", label: "Trade Rater" },
+      { href: "/trade-machine/trees", label: "Trade Trees" },
+    ],
   },
   {
-    name: "Luck Meter",
+    name: "Game Edge",
     status: "COMING SOON",
-    icon: "luck",
-    blurb: "Quantifying shooting/save luck, injury man-games lost, and linemate quality for every player, team, GM, and coach.",
+    href: "/game-edge",
+    live: false,
+    icon: "edge",
+    blurb: "Goal types, line chemistry, goalie tendencies and pregame matchup edges.",
   },
   {
-    name: "Matchup Edge",
+    name: "Ref Watch",
     status: "COMING SOON",
-    icon: "matchup",
-    blurb: "Goal-type breakdowns, goalie tendency heatmaps, and line chemistry reports for actionable pregame edges.",
-  },
-  {
-    name: "Ref Rater",
-    status: "COMING SOON",
+    href: "/ref-watch",
+    live: false,
     icon: "ref",
-    blurb: "Referee crew transparency reports, penalty call tendencies, and team-specific pregame officiating edges.",
+    blurb: "Referee crew tendencies, penalty differentials and a pregame Ref Edge.",
+  },
+  {
+    name: "Leaderboards",
+    status: "LIVE NOW",
+    href: "/leaderboards",
+    live: true,
+    icon: "board",
+    blurb: "Skill, contracts, steals, teams and GMs. Every row clicks through.",
   },
 ];
+
+/** The five tools in the Tools dropdown (Leaderboards has its own nav link). */
+export const tools = modules.filter((item) => item.icon !== "board");

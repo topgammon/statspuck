@@ -1,138 +1,130 @@
 import Link from "next/link";
-import { TeamLogo } from "@/components/team-logo";
-import { leaderboard, meta, officialFilter, picks, teams } from "@/lib/data";
-import { heroSet } from "@/lib/grade";
+import type { ReactNode } from "react";
+import { GlobalSearch } from "@/components/global-search";
+import { Cell, RowImage } from "@/components/leaderboard-table";
+import { StatsPuckBadge } from "@/components/wordmark";
+import { leaderboard } from "@/lib/data";
+import { devBoard } from "@/lib/dev-board";
+import { contractBoard, skillBoard, stealBoard, type Board, type BoardRow } from "@/lib/leaderboards";
 import { modules, type ModuleInfo } from "@/lib/modules";
-import { teamHref } from "@/lib/routes";
+import { profileRows } from "@/lib/profiles";
+import { formatRating } from "@/lib/rating";
+import { playerHref, teamHref } from "@/lib/routes";
 import { letterTone } from "@/lib/search";
 
-export default function HubPage() {
-  const top = leaderboard.find((team) => team.rank === 1) ?? leaderboard[0];
-  const { gems } = heroSet(picks, teams, officialFilter());
+// Search-first home page. Above the fold: logo, one line, one big search bar.
+// Below: six tool cards with live top-3 mini leaderboards, then a Featured strip.
+
+type MiniRow = { href: string; name: string; image: BoardRow["image"]; value: ReactNode };
+
+function topAssetPlayers(): MiniRow[] {
+  return profileRows()
+    .filter((row) => row.assetRating != null)
+    .sort((a, b) => (b.assetRating ?? 0) - (a.assetRating ?? 0))
+    .slice(0, 3)
+    .map((row) => ({
+      href: playerHref(row.routeId, "asset"),
+      name: row.name,
+      image: { kind: "player", playerId: row.playerId, headshot: row.hasHeadshot },
+      value: <span className="display text-base font-bold text-[#10B981]">{formatRating(row.assetRating ?? 0)}</span>,
+    }));
+}
+
+function letter(value: string | null) {
+  return <span className={`display inline-flex min-w-8 justify-center rounded-md border px-1 text-sm font-bold ${letterTone(value)}`}>{value ?? "—"}</span>;
+}
+
+export default function HomePage() {
+  const skills = skillBoard(5);
+  const contracts = contractBoard(5);
+  const steals = stealBoard(5);
+
+  const minis: Record<string, { title: string; rows: MiniRow[] } | null> = {
+    "Draft Rater": {
+      title: "Top drafting teams",
+      rows: [...leaderboard]
+        .sort((a, b) => a.rank - b.rank)
+        .slice(0, 3)
+        .map((team) => ({ href: teamHref(team.abbr, "draft-dev"), name: team.name, image: { kind: "team", abbr: team.abbr }, value: letter(team.letter) })),
+    },
+    "Development Path": {
+      title: "Top development teams",
+      rows: devBoard.slice(0, 3).map((row) => ({ href: teamHref(row.abbr, "draft-dev"), name: row.name, image: { kind: "team", abbr: row.abbr }, value: letter(row.letter) })),
+    },
+    "Trade Machine": { title: "Highest Asset Value", rows: topAssetPlayers() },
+    Leaderboards: {
+      title: "Top Overall Skill",
+      rows: skills.rows.slice(0, 3).map((row) => ({ href: row.href, name: row.name, image: row.image, value: <Cell value={row.values.skill} column={skills.columns[0]} /> })),
+    },
+    "Game Edge": null,
+    "Ref Watch": null,
+  };
 
   return (
     <div>
-      <section className="grid items-center gap-10 lg:grid-cols-[1.15fr_1fr]">
-        <div>
-          <p className="text-sm font-semibold tracking-[0.2em] text-[#E11D48] uppercase">Hockey intelligence platform</p>
-          <h1 className="display mt-3 text-5xl leading-[0.95] font-bold sm:text-6xl lg:text-7xl">
-            Every hockey decision,
-            <br />
-            <span className="text-[#38BDF8]">settled by the math.</span>
-          </h1>
-          <p className="mt-5 max-w-xl text-lg text-[#94A3B8]">
-            StatsPuck turns two decades of NHL data into clear, objective grades—no hot takes, no team bias. Built for
-            hardcore fans, player agents, and front offices who want the answer, not the noise.
-          </p>
-          <div className="mt-7 grid max-w-md grid-cols-3 gap-4 text-sm">
-            <Stat value={meta.pickCount.toLocaleString()} label="NHL picks graded" />
-            <Stat value={`${meta.curveFirstYear}–${meta.latestDraftYear}`} label="Draft years" />
-            <Stat value={String(leaderboard.length)} label="Franchises ranked" />
-          </div>
+      <section className="flex min-h-[calc(100svh-11rem)] flex-col items-center justify-center py-10 text-center">
+        <StatsPuckBadge height={88} />
+        <h1 className="display mt-7 text-4xl leading-[1.02] font-bold sm:text-6xl">
+          Every hockey decision, <span className="text-[#38BDF8]">settled by the math.</span>
+        </h1>
+        <div className="mt-8 w-full max-w-2xl">
+          <GlobalSearch size="hero" />
         </div>
-
-        <SnapshotCard top={top} gems={gems} />
+        <p className="mt-4 text-sm text-[#94A3B8]">
+          Try{" "}
+          <Link href="/leaderboards" className="text-[#F8FAFC] underline decoration-[#38BDF8]/50 underline-offset-4 hover:decoration-[#38BDF8]">
+            Leaderboards
+          </Link>{" "}
+          or press <kbd className="rounded border border-[#262B36] px-1.5 py-0.5 font-sans text-xs">/</kbd> to search from anywhere.
+        </p>
+        <a href="#tools" aria-label="Scroll to the tools" className="mt-10 text-[#94A3B8] transition hover:text-white">
+          <svg aria-hidden viewBox="0 0 20 20" className="h-6 w-6 animate-bounce" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="m5 8 5 5 5-5" />
+          </svg>
+        </a>
       </section>
 
-      <section className="mt-16">
+      <section id="tools" className="scroll-mt-24">
         <div className="flex items-end justify-between gap-4">
-          <h2 className="display text-3xl font-bold">The StatsPuck modules</h2>
-          <p className="hidden text-sm text-[#94A3B8] sm:block">One platform. Six lenses on the game.</p>
+          <h2 className="display text-3xl font-bold">Tools</h2>
+          <p className="hidden text-sm text-[#94A3B8] sm:block">Click a card to open the tool. Click a row to jump straight to that team or player.</p>
         </div>
         <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
           {modules.map((item) => (
-            <ModuleCard key={item.name} item={item} />
+            <ToolCard key={item.name} item={item} mini={minis[item.name] ?? null} />
           ))}
+        </div>
+      </section>
+
+      <section className="mt-14">
+        <div className="flex items-end justify-between gap-4">
+          <h2 className="display text-3xl font-bold">Featured leaderboards</h2>
+          <Link href="/leaderboards" className="text-sm font-semibold text-[#38BDF8] hover:underline">
+            All leaderboards →
+          </Link>
+        </div>
+        <div className="mt-5 grid gap-4 lg:grid-cols-3">
+          <FeaturedBoard title="Top 5 Overall Skill" board={skills} valueKey="skill" boardId="players" />
+          <FeaturedBoard title="Best Impact per % Cap" board={contracts} valueKey="perCap" boardId="contracts" />
+          <FeaturedBoard title="Top Draft Steals" board={steals} valueKey="score" boardId="steals" />
         </div>
       </section>
     </div>
   );
 }
 
-function Stat({ value, label }: { value: string; label: string }) {
-  return (
-    <div>
-      <p className="display text-xl font-bold text-[#F8FAFC] sm:text-2xl">{value}</p>
-      <p className="text-xs tracking-wide text-[#94A3B8] uppercase">{label}</p>
-    </div>
-  );
-}
-
-function SnapshotCard({
-  top,
-  gems,
-}: {
-  top: (typeof leaderboard)[number];
-  gems: ReturnType<typeof heroSet>["gems"];
-}) {
-  return (
-    <div className="relative overflow-hidden rounded-2xl border border-[#262B36] bg-[#14171F] p-5 shadow-[0_0_0_1px_rgba(225,29,72,0.15),0_20px_60px_rgba(0,0,0,0.45)] sm:p-6">
-      <div className="pointer-events-none absolute -top-24 -right-24 h-56 w-56 rounded-full bg-[#E11D48]/15 blur-3xl" />
-      <div className="relative flex items-center justify-between gap-3">
-        <p className="display text-lg font-bold tracking-wide">Draft Rater snapshot</p>
-        <span className="flex items-center gap-1.5 rounded-full bg-[#E11D48]/15 px-2.5 py-1 text-[10px] font-bold tracking-wider text-[#E11D48] uppercase">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#E11D48]" />
-          Live data
-        </span>
-      </div>
-
-      <Link
-        href={teamHref(top.abbr)}
-        className="relative mt-5 flex items-center gap-3 rounded-xl border border-[#262B36] bg-[#0B0D10]/70 p-3 sm:gap-4 sm:p-4 transition hover:border-[#38BDF8]/60"
-      >
-        <TeamLogo abbr={top.abbr} className="h-10 w-10 sm:h-14 sm:w-14" />
-        <div className="min-w-0">
-          <p className="text-[11px] font-semibold tracking-[0.14em] text-[#94A3B8] uppercase">#1 drafting franchise</p>
-          <p className="display truncate text-xl font-bold sm:text-2xl">{top.name}</p>
-          <p className="text-xs text-[#94A3B8]">
-            {top.n} graded picks since {meta.curveFirstYear}
-          </p>
-        </div>
-        <span className={`display ml-auto shrink-0 rounded-lg border px-2.5 py-1 text-2xl font-bold ${letterTone(top.letter)}`}>
-          {top.letter}
-        </span>
-      </Link>
-
-      {gems ? (
-        <Link
-          href={teamHref(gems.franchise)}
-          className="relative mt-3 flex items-center gap-3 rounded-xl border border-[#262B36] bg-[#0B0D10]/70 p-3 sm:gap-4 sm:p-4 transition hover:border-[#38BDF8]/60"
-        >
-          <TeamLogo abbr={gems.franchise} className="h-10 w-10 sm:h-14 sm:w-14" />
-          <div className="min-w-0">
-            <p className="text-[11px] font-semibold tracking-[0.14em] text-[#94A3B8] uppercase">Top gem finder</p>
-            <p className="display truncate text-xl font-bold sm:text-2xl">{gems.franchiseName}</p>
-            <p className="text-xs text-[#94A3B8]">Most steals, late bloomers &amp; elite hits</p>
-          </div>
-          <span className="ml-auto shrink-0 text-right">
-            <span className="display block text-2xl font-bold text-[#10B981]">{gems.count}</span>
-            <span className="block text-[11px] text-[#94A3B8]">{(gems.rate * 100).toFixed(1)}% rate</span>
-          </span>
-        </Link>
-      ) : null}
-
-      <Link
-        href="/draft-rater"
-        className="relative mt-5 flex w-full items-center justify-center rounded-xl bg-[#E11D48] px-5 py-3 font-semibold text-white transition hover:bg-[#be123c]"
-      >
-        Launch Draft Rater →
-      </Link>
-    </div>
-  );
-}
-
-function ModuleIcon({ icon, live }: { icon: ModuleInfo["icon"]; live: boolean }) {
-  const paths: Record<ModuleInfo["icon"], React.ReactNode> = {
+function ToolIcon({ icon, live }: { icon: ModuleInfo["icon"]; live: boolean }) {
+  const paths: Record<ModuleInfo["icon"], ReactNode> = {
     draft: <path d="M4 18V9m5 9V5m5 13v-6m5 6V3" />,
     path: <path d="M4 19c4 0 4-7 8-7s4-7 8-7M4 19h.01M20 5h.01" />,
     trade: <path d="M4 8h14l-3-3M20 16H6l3 3" />,
-    luck: <path d="M12 3v3m0 12v3M3 12h3m12 0h3M6 6l2 2m8 8 2 2M6 18l2-2m8-8 2-2M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" />,
-    matchup: <path d="M4 4h16v16H4zM12 4v16M12 12m-3 0a3 3 0 1 0 6 0 3 3 0 1 0-6 0" />,
+    edge: <path d="M4 4h16v16H4zM12 4v16M12 12m-3 0a3 3 0 1 0 6 0 3 3 0 1 0-6 0" />,
     ref: <path d="M8 3h8l-1 5H9L8 3Zm1 5v13m6-13v13M9 12h6m-6 4h6" />,
+    board: <path d="M5 20V10m7 10V4m7 16v-7M3 20h18" />,
   };
   return (
     <span
-      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${
+      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${
         live ? "border-[#E11D48]/50 bg-[#E11D48]/10 text-[#E11D48]" : "border-[#262B36] bg-[#0B0D10] text-[#94A3B8]"
       }`}
     >
@@ -143,40 +135,87 @@ function ModuleIcon({ icon, live }: { icon: ModuleInfo["icon"]; live: boolean })
   );
 }
 
-function StatusPill({ status }: { status: ModuleInfo["status"] }) {
-  const tone =
-    status === "LIVE NOW"
-      ? "bg-[#E11D48] text-white"
-      : status === "UP NEXT"
-        ? "bg-[#38BDF8]/12 text-[#38BDF8] ring-1 ring-[#38BDF8]/40"
-        : "bg-white/5 text-[#94A3B8] ring-1 ring-[#262B36]";
+function ToolCard({ item, mini }: { item: ModuleInfo; mini: { title: string; rows: MiniRow[] } | null }) {
   return (
-    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider whitespace-nowrap ${tone}`}>{status}</span>
+    <div
+      className={`group relative flex h-full flex-col rounded-2xl border bg-[#14171F] p-4 transition hover:-translate-y-0.5 sm:p-5 ${
+        item.live ? "border-[#E11D48]/50 hover:border-[#38BDF8] hover:shadow-[0_0_40px_-8px_rgba(56,189,248,0.45)]" : "border-[#262B36] hover:border-[#38BDF8]/50"
+      }`}
+    >
+      {/* The whole card opens the tool; rows below sit above this link and open their own page. */}
+      <Link href={item.href} className="absolute inset-0 z-0 rounded-2xl" aria-label={`Open ${item.name}`} />
+      <div className="pointer-events-none relative flex items-start justify-between gap-2">
+        <ToolIcon icon={item.icon} live={item.live} />
+        <span
+          className={`rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider whitespace-nowrap ${
+            item.live ? "bg-[#E11D48] text-white" : "bg-white/5 text-[#94A3B8] ring-1 ring-[#262B36]"
+          }`}
+        >
+          {item.live ? "LIVE" : "SOON"}
+        </span>
+      </div>
+      <h3 className="display pointer-events-none relative mt-3 text-xl font-bold sm:text-2xl">{item.name}</h3>
+      <p className="pointer-events-none relative mt-1 text-xs leading-relaxed text-[#94A3B8] sm:text-sm">{item.blurb}</p>
+      {mini ? (
+        <div className="relative z-10 mt-4">
+          <p className="text-[10px] font-semibold tracking-[0.14em] text-[#94A3B8] uppercase">{mini.title}</p>
+          <ol className="mt-1.5 divide-y divide-[#262B36] rounded-xl border border-[#262B36] bg-[#0B0D10]/60">
+            {mini.rows.map((row, index) => (
+              <li key={row.href}>
+                <Link href={row.href} className="flex items-center gap-2 px-2.5 py-1.5 transition hover:bg-[#38BDF8]/[0.07]">
+                  <span className="w-3 text-xs font-semibold text-[#94A3B8]">{index + 1}</span>
+                  <span className="hidden shrink-0 sm:inline-flex">
+                    <RowImage image={row.image} />
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-xs font-semibold text-[#F8FAFC] sm:text-sm" title={row.name}>
+                    {row.name.includes(" ") ? (
+                      <>
+                        <span className="sm:hidden">{row.name.split(" ").slice(-1)[0]}</span>
+                        <span className="hidden sm:inline">{row.name}</span>
+                      </>
+                    ) : (
+                      row.name
+                    )}
+                  </span>
+                  {row.value}
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </div>
+      ) : (
+        <div className="pointer-events-none relative mt-4 rounded-xl border border-dashed border-[#262B36] px-3 py-4 text-center text-xs text-[#94A3B8]">Preview coming soon</div>
+      )}
+      <p className="pointer-events-none relative mt-auto pt-3 text-sm font-semibold text-[#38BDF8]">{item.live ? "Open →" : "Preview →"}</p>
+    </div>
   );
 }
 
-function ModuleCard({ item }: { item: ModuleInfo }) {
-  const live = Boolean(item.href);
-  const body = (
-    <>
-      <div className="flex items-start justify-between gap-2">
-        <ModuleIcon icon={item.icon} live={live} />
-        <StatusPill status={item.status} />
+function FeaturedBoard({ title, board, valueKey, boardId }: { title: string; board: Board; valueKey: string; boardId: string }) {
+  const column = board.columns.find((col) => col.key === valueKey)!;
+  return (
+    <div className="rounded-2xl border border-[#262B36] bg-[#14171F] p-4">
+      <div className="flex items-center justify-between gap-2">
+        <p className="display text-lg font-bold">{title}</p>
+        <Link href={`/leaderboards?board=${boardId}`} className="text-xs font-semibold text-[#38BDF8] hover:underline">
+          Full board →
+        </Link>
       </div>
-      <h3 className="display mt-4 text-xl font-bold sm:text-2xl">{item.name}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-[#94A3B8]">{item.blurb}</p>
-      {live ? <p className="mt-auto pt-4 text-sm font-semibold text-[#38BDF8]">{item.cta ?? "Open →"}</p> : null}
-    </>
-  );
-  const base = "flex h-full flex-col rounded-2xl border bg-[#14171F] p-4 sm:p-5";
-  return live && item.href ? (
-    <Link
-      href={item.href}
-      className={`${base} border-[#E11D48]/60 shadow-[0_0_0_1px_rgba(225,29,72,0.25),0_0_32px_-6px_rgba(56,189,248,0.35)] transition hover:-translate-y-0.5 hover:border-[#38BDF8] hover:shadow-[0_0_0_1px_rgba(56,189,248,0.4),0_0_40px_-4px_rgba(225,29,72,0.45)]`}
-    >
-      {body}
-    </Link>
-  ) : (
-    <div className={`${base} border-[#262B36]`}>{body}</div>
+      <ol className="mt-3 divide-y divide-[#262B36]">
+        {board.rows.slice(0, 5).map((row, index) => (
+          <li key={row.href}>
+            <Link href={row.href} className="flex items-center gap-2.5 py-2 transition hover:bg-[#38BDF8]/[0.05]">
+              <span className="w-4 text-xs font-semibold text-[#94A3B8]">{index + 1}</span>
+              <RowImage image={row.image} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold">{row.name}</span>
+                <span className="block truncate text-xs text-[#94A3B8]">{row.sub}</span>
+              </span>
+              <Cell value={row.values[valueKey]} column={column} />
+            </Link>
+          </li>
+        ))}
+      </ol>
+    </div>
   );
 }

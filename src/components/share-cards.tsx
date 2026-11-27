@@ -379,7 +379,25 @@ export type ShareCardModel =
       rows: { rank: number; name: string; abbr?: string; letter: string; score: number; color: string }[];
     }
   | { kind: "trade"; headline: string; sub: string; sides: TradeSide[]; capNotes: string[]; note?: string; eyebrow?: string }
-  | { kind: "assets"; subtitle: string; rows: { rank: number; name: string; abbr: string; total: number; roster: number; prospects: number; picks: number }[] };
+  | { kind: "assets"; subtitle: string; rows: { rank: number; name: string; abbr: string; total: number; roster: number; prospects: number; picks: number }[] }
+  | MetricCard;
+
+/** Tab-synced profile card: one hero metric, up to four tiles, optional skill bars. */
+export type MetricCard = {
+  kind: "metric";
+  product: { name: string; path: string };
+  color: string;
+  eyebrow: string;
+  title: string;
+  subtitle?: string;
+  playerId?: number | null;
+  teamAbbr?: string;
+  teamName?: string;
+  stamps?: string[];
+  hero: { label: string; value: string; unit?: string; color?: string; note?: string };
+  tiles: { label: string; value: string; note?: string; color?: string }[];
+  bars?: { label: string; value: number | null }[];
+};
 
 export type TradeSide = {
   abbr: string;
@@ -394,6 +412,7 @@ export type TradeSide = {
 };
 
 export function ShareCardView({ format, card }: { format: ShareFormat; card: ShareCardModel }) {
+  if (card.kind === "metric") return <MetricShareCard format={format} card={card} />;
   if (card.kind === "assets") return <AssetsShareCard format={format} subtitle={card.subtitle} rows={card.rows} />;
   if (card.kind === "trade") return <TradeShareCard format={format} headline={card.headline} sub={card.sub} sides={card.sides} capNotes={card.capNotes} note={card.note} eyebrow={card.eyebrow} />;
   if (card.kind === "player") return <PlayerShareCard format={format} pick={card.pick} color={card.color} />;
@@ -527,6 +546,155 @@ export function PlayerShareCard({ format, pick, color }: { format: ShareFormat; 
         </div>
       </div>
       {tiles}
+    </Frame>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Tab-synced metric card (Skills, Stats, Asset Value, Team tabs...)    */
+/* ------------------------------------------------------------------ */
+
+function skillBarColor(value: number | null): string {
+  if (value == null) return DIM;
+  if (value >= 90) return GOLD;
+  if (value >= 80) return EMERALD;
+  if (value >= 65) return CYAN;
+  if (value >= 50) return INK;
+  return "#F97316";
+}
+
+export function MetricShareCard({ format, card }: { format: ShareFormat; card: MetricCard }) {
+  const remote = card.playerId ? `https://assets.nhle.com/mugs/nhl/latest/${card.playerId}.png` : null;
+  const photo = useSameOriginImage(remote);
+  const d = dims(format);
+  const heroColor = card.hero.color ?? INK;
+  const nameSize = d.wide ? fitSize(card.title, 60, 17) : 76;
+  const heroSize = d.wide ? 210 : 250;
+
+  const visual = card.teamAbbr ? (
+    <span
+      style={{
+        width: d.wide ? 180 : 240,
+        height: d.wide ? 180 : 240,
+        flex: "none",
+        borderRadius: 22,
+        border: `1px solid ${LINE}`,
+        background: PANEL,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Logo abbr={card.teamAbbr} name={card.teamName} size={d.wide ? 140 : 190} />
+    </span>
+  ) : (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={photo || SILHOUETTE}
+      alt=""
+      width={d.wide ? 180 : 240}
+      height={d.wide ? 216 : 280}
+      style={{
+        width: d.wide ? 180 : 240,
+        height: d.wide ? 216 : 280,
+        flex: "none",
+        objectFit: "cover",
+        objectPosition: "center top",
+        borderRadius: 22,
+        border: `1px solid ${LINE}`,
+        background: `linear-gradient(180deg, ${hexA(card.color, 0.35)}, ${PANEL})`,
+      }}
+    />
+  );
+
+  const heroBox = (
+    <div
+      style={{
+        width: heroSize,
+        flex: "none",
+        borderRadius: 24,
+        background: PANEL,
+        border: `1px solid ${LINE}`,
+        boxShadow: `0 0 60px ${hexA(heroColor, 0.14)}`,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+        textAlign: "center",
+      }}
+    >
+      <div style={{ color: MUTED, fontSize: d.wide ? 15 : 18, letterSpacing: 2.2, textTransform: "uppercase", fontWeight: 600 }}>{card.hero.label}</div>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 6, marginTop: 8 }}>
+        <span style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: d.wide ? 92 : 112, lineHeight: 1, color: heroColor }}>{card.hero.value}</span>
+        {card.hero.unit ? <span style={{ color: MUTED, fontSize: d.wide ? 20 : 24, paddingBottom: 12 }}>{card.hero.unit}</span> : null}
+      </div>
+      {card.hero.note ? <div style={{ color: MUTED, fontSize: d.wide ? 17 : 20, marginTop: 8, ...ellipsis, maxWidth: "100%" }}>{card.hero.note}</div> : null}
+    </div>
+  );
+
+  const identity = (
+    <div style={{ minWidth: 0, flex: 1, display: "flex", flexDirection: "column" }}>
+      <Eyebrow size={d.wide ? 15 : 18}>{card.eyebrow}</Eyebrow>
+      <Title size={nameSize} wrap={!d.wide}>
+        {card.title}
+      </Title>
+      {card.subtitle ? <div style={{ color: MUTED, fontSize: d.wide ? 20 : 24, marginTop: d.wide ? 10 : 14, ...ellipsis }}>{card.subtitle}</div> : null}
+      {card.stamps?.length ? (
+        <div style={{ marginTop: d.wide ? 14 : 20 }}>
+          <Stamps stamps={card.stamps} size={d.wide ? 14 : 17} />
+        </div>
+      ) : null}
+    </div>
+  );
+
+  const bars = card.bars?.length ? (
+    <div style={{ display: "grid", gridTemplateColumns: `repeat(${d.wide ? 3 : 2}, minmax(0, 1fr))`, gap: d.wide ? "10px 22px" : "14px 26px" }}>
+      {card.bars.map((bar) => (
+        <div key={bar.label} style={{ minWidth: 0 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: d.wide ? 14 : 18, color: MUTED, textTransform: "uppercase", letterSpacing: 1.4, fontWeight: 600 }}>
+            <span style={ellipsis}>{bar.label}</span>
+            <span style={{ color: bar.value == null ? DIM : INK, fontFamily: DISPLAY, fontWeight: 700 }}>{bar.value ?? "SOON"}</span>
+          </div>
+          <div style={{ height: d.wide ? 8 : 10, borderRadius: 99, background: BG, border: `1px solid ${LINE}`, marginTop: 6, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${bar.value ?? 0}%`, background: skillBarColor(bar.value), borderRadius: 99 }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  ) : null;
+
+  const tiles = card.tiles.length ? (
+    <Grid columns={Math.min(4, card.tiles.length)} gap={d.wide ? 14 : 18}>
+      {card.tiles.slice(0, 4).map((tile) => (
+        <Tile key={tile.label} label={tile.label} value={tile.value} note={tile.note} valueColor={tile.color} />
+      ))}
+    </Grid>
+  ) : null;
+
+  if (d.wide) {
+    return (
+      <Frame format={format} accent={card.color} product={card.product}>
+        <div style={{ display: "flex", gap: 28, alignItems: "stretch" }}>
+          {visual}
+          {identity}
+          {heroBox}
+        </div>
+        {bars ?? tiles}
+      </Frame>
+    );
+  }
+  return (
+    <Frame format={format} accent={card.color} product={card.product}>
+      <div style={{ display: "flex", gap: 32, alignItems: "center" }}>
+        {visual}
+        {identity}
+      </div>
+      <div style={{ display: "flex", gap: 18, alignItems: "stretch" }}>
+        {heroBox}
+        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>{bars ?? tiles}</div>
+      </div>
+      {bars ? tiles : null}
     </Frame>
   );
 }
@@ -1160,6 +1328,7 @@ function stampColor(stamp: string): string {
   if (stamp === "STALLED") return "#F97316";
   if (stamp === "DEVELOPING") return "#3B82F6";
   if (stamp === "UNDRAFTED") return "#38BDF8";
+  if (stamp === "IRON MAN") return "#CBD5E1";
   return DIM;
 }
 
