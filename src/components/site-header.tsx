@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { MenuDrawer } from "@/components/menu-drawer";
-import { HeaderSearch, ToolsMenu } from "@/components/nav-controls";
+import { HeaderSearch } from "@/components/nav-controls";
 import { StatsPuckBadge } from "@/components/wordmark";
 
 // Top nav. Left: logo. Center: compact search (hidden on the home hero until scrolled).
-// Right: Tools dropdown, Leaderboards, and the slide-out menu.
+// Right: the slide-out menu (every tool plus Leaderboards).
 
 export function SiteHeader() {
   return (
@@ -15,15 +15,7 @@ export function SiteHeader() {
           <span className="display hidden text-xl font-bold tracking-[0.04em] xl:block">STATSPUCK</span>
         </Link>
         <HeaderSearch />
-        <nav aria-label="Main" className="flex items-center gap-1">
-          <div className="hidden md:block">
-            <ToolsMenu />
-          </div>
-          <Link href="/leaderboards" className="hidden h-10 items-center rounded-xl px-3 text-sm font-semibold text-[#F8FAFC] transition hover:bg-white/[0.04] md:flex">
-            Leaderboards
-          </Link>
-          <MenuDrawer />
-        </nav>
+        <MenuDrawer />
       </div>
     </header>
   );

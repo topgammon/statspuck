@@ -72,7 +72,7 @@ export function DevLeaderboard({ rows, highlight }: { rows: DevLeaderRow[]; high
             <tr key={row.abbr} className={row.abbr === highlight ? "bg-[#38BDF8]/10" : undefined}>
               <td className="border-t border-[#262B36] py-2 pr-3 text-[#94A3B8]">{row.rank}</td>
               <td className="border-t border-[#262B36] py-2 pr-3">
-                <Link href={teamHref(row.abbr, "development")} className="inline-flex items-center gap-2 font-medium hover:text-white">
+                <Link href={teamHref(row.abbr, "draft-dev")} className="inline-flex items-center gap-2 font-medium hover:text-white">
                   <TeamLogo abbr={row.abbr} className="h-6 w-8" />
                   {row.name}
                 </Link>

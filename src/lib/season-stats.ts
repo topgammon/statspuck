@@ -37,11 +37,16 @@ export type SkaterSeason = [number, number, number, number, number, number, numb
 /** [season, gp, starts, shotsAgainst, saves, goalsAgainst, toiSec] */
 export type GoalieSeason = [number, number, number, number, number, number, number];
 
-type StatsFile = { lastSeason: number; skaters: Record<string, SkaterSeason[]>; goalies: Record<string, GoalieSeason[]> };
+type StatsFile = { lastSeason: number; skaters: Record<string, SkaterSeason[]>; goalies: Record<string, GoalieSeason[]>; names?: Record<string, string> };
 
 const file = statsJson as unknown as StatsFile;
 
 export const statsLastSeason = file.lastSeason;
+
+/** Player name from the NHL stats feed (covers players from before the 2005 draft book too). */
+export function statsName(playerId: number): string | null {
+  return file.names?.[String(playerId)] ?? null;
+}
 
 export function skaterSeasons(playerId: number | null | undefined): SkaterSeason[] {
   return playerId == null ? [] : (file.skaters[String(playerId)] ?? []);
@@ -80,6 +85,40 @@ function bySeason<T extends number[]>(rows: T[]): Map<number, number> {
   const out = new Map<number, number>();
   for (const row of rows) out.set(row[0], (out.get(row[0]) ?? 0) + row[1]);
   return out;
+}
+
+/**
+ * Longest run of back-to-back full seasons where he played 95%+ of his team's games.
+ * Returns the number of seasons and the games played across that run (season in progress excluded).
+ */
+export function ironRun(playerId: number | null | undefined, inProgress: number | null): { seasons: number; games: number; from: number; to: number } | null {
+  const seasons = bySeason([...skaterSeasons(playerId), ...goalieSeasons(playerId)] as number[][]);
+  const years = [...seasons.keys()].filter((year) => year !== inProgress).sort((a, b) => a - b);
+  let best: { seasons: number; games: number; from: number; to: number } | null = null;
+  let run = 0;
+  let games = 0;
+  let from = 0;
+  let prev = -1;
+  for (const year of years) {
+    const gp = seasons.get(year) ?? 0;
+    const length = teamGames(year);
+    const contiguous = prev !== -1 && year === prev + 1;
+    if (length > 0 && gp >= length * 0.95) {
+      if (!contiguous || run === 0) {
+        run = 0;
+        games = 0;
+        from = year;
+      }
+      run += 1;
+      games += gp;
+      if (!best || games > best.games) best = { seasons: run, games, from, to: year };
+    } else {
+      run = 0;
+      games = 0;
+    }
+    prev = year;
+  }
+  return best;
 }
 
 /**

@@ -22,7 +22,10 @@ import { franchiseAssets, franchiseAssetsFor } from "@/lib/franchise-assets";
 import { DEV_SCORE_TIP, DRAFT_SCORE_TIP, scoreClass, signed } from "@/lib/format";
 import { teamTradeReport } from "@/lib/gm-grades";
 import { rosterBoard, teamSkill, teamSkillRank } from "@/lib/leaderboards";
-import { gmHref, playerHref, teamHref } from "@/lib/routes";
+import { teamOverall } from "@/lib/overall-grades";
+import { contractSeasons, teamContracts } from "@/lib/team-contracts";
+import { TeamContractsTable } from "@/components/entity/team-contracts-table";
+import { gmTeamHref, playerHref, teamHref } from "@/lib/routes";
 import { scoutingReport } from "@/lib/scouting";
 import { letterTone } from "@/lib/search";
 import { skillColor, skillTone } from "@/lib/skills";
@@ -92,6 +95,7 @@ export default async function TeamPage({ params }: { params: Promise<Params> }) 
   const cap = teamCap(team.abbr);
   const roster = rosterBoard(team.abbr);
   const n = leaderboard.length;
+  const overall = teamOverall(team.abbr);
 
   const metric = (over: Pick<Extract<ShareCardModel, { kind: "metric" }>, "hero" | "tiles"> & { product?: { name: string; path: string } }): ShareCardModel => ({
     kind: "metric",
@@ -118,15 +122,25 @@ export default async function TeamPage({ params }: { params: Promise<Params> }) 
         {currentGm ? (
           <p className="mt-2 text-sm text-[#94A3B8]">
             GM{" "}
-            <Link href={gmHref(currentGm.slug)} className="font-semibold text-[#F8FAFC] underline decoration-[#38BDF8]/50 underline-offset-4 hover:decoration-[#38BDF8]">
+            <Link href={gmTeamHref(currentGm.slug)} className="font-semibold text-[#F8FAFC] underline decoration-[#38BDF8]/50 underline-offset-4 hover:decoration-[#38BDF8]">
               {currentGm.person}
             </Link>{" "}
             · since {currentGm.startYear}
           </p>
         ) : null}
-        <p className="mt-1 text-xs text-[#94A3B8]">
-          {roster.rows.length} players with StatsPuck profiles on today&apos;s roster
-        </p>
+        <Link
+          href="/leaderboards?board=teams"
+          title="Overall Grade: average of the Draft, Development and Trades ratings. Click for the team leaderboard."
+          className="mt-3 inline-flex items-center gap-2.5 rounded-xl border border-[#262B36] bg-[#0B0D10]/60 py-1.5 pr-3 pl-1.5 transition hover:border-[#38BDF8]/60"
+        >
+          <span className={`display flex h-10 min-w-12 items-center justify-center rounded-lg border px-1.5 text-2xl leading-none font-bold ${letterTone(overall?.letter ?? null)}`}>
+            {overall?.letter ?? "—"}
+          </span>
+          <span className="text-left leading-tight">
+            <span className="block text-[10px] font-semibold tracking-[0.14em] text-[#94A3B8] uppercase">Overall grade</span>
+            <span className="block text-sm font-semibold">{overall ? `${overall.rating}/100 · #${overall.rank} of ${n}` : "Needs 2 pillars"}</span>
+          </span>
+        </Link>
       </div>
     </div>
   );
@@ -151,7 +165,7 @@ export default async function TeamPage({ params }: { params: Promise<Params> }) 
         caption="Top 12 F, 6 D and the starting goalie"
         stats={[
           { label: "Skill rank", value: skillRank ? `#${skillRank}/${n}` : "—", href: "/leaderboards?board=teams" },
-          { label: "Best player", value: roster.rows[0]?.name.split(" ").slice(-1)[0] ?? "—", title: roster.rows[0]?.name, href: roster.rows[0]?.href },
+          { label: "Best player", value: roster.rows[0]?.name.split(" ").slice(-1)[0] ?? "—", title: roster.rows[0]?.name, href: roster.rows[0]?.href ?? undefined },
         ]}
         action={share(
           "roster",
@@ -195,6 +209,12 @@ export default async function TeamPage({ params }: { params: Promise<Params> }) 
     ),
     "draft-dev": (
       <PillarGrades
+        hero={{
+          label: "Overall Grade",
+          letter: overall?.letter ?? null,
+          note: overall ? `${overall.rating}/100 · #${overall.rank} of ${n}` : "Needs 2 pillars",
+          title: "Average of the Draft, Development and Trades ratings.",
+        }}
         pillars={[
           { label: "Draft", letter: team.letter, score: signed(team.avg), tone: scoreClass(team.avg), title: DRAFT_SCORE_TIP },
           { label: "Dev", letter: team.dev?.letter ?? null, score: team.dev ? signed(team.dev.avg) : "too new", tone: team.dev ? scoreClass(team.dev.avg) : undefined, title: DEV_SCORE_TIP },
@@ -281,6 +301,7 @@ export default async function TeamPage({ params }: { params: Promise<Params> }) 
         </div>
         <FranchiseAssetCard abbr={team.abbr} />
         <DraftCapitalMatrix abbr={team.abbr} teamName={team.name} />
+        <TeamContractsTable rows={teamContracts(team.abbr)} seasons={contractSeasons()} teamName={team.name} ceiling={capCeiling} />
         <AssetMgmtSoon subject={team.name} />
       </div>
     ),
@@ -325,7 +346,7 @@ export default async function TeamPage({ params }: { params: Promise<Params> }) 
               .sort((a, b) => b.startYear - a.startYear)
               .map((era) => (
                 <li key={era.slug}>
-                  <Link href={gmHref(era.slug)} className="flex items-center justify-between gap-3 rounded-xl border border-[#262B36] bg-[#0B0D10]/60 px-3 py-2 text-sm hover:border-[#38BDF8]/60">
+                  <Link href={gmTeamHref(era.slug)} className="flex items-center justify-between gap-3 rounded-xl border border-[#262B36] bg-[#0B0D10]/60 px-3 py-2 text-sm hover:border-[#38BDF8]/60">
                     <span className="font-semibold">{era.person}</span>
                     <span className="flex items-center gap-2 text-[#94A3B8]">
                       {era.startYear}–{era.endYear ?? "now"}

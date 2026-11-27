@@ -5,7 +5,7 @@ import { Cell, RowImage } from "@/components/leaderboard-table";
 import { StatsPuckBadge } from "@/components/wordmark";
 import { leaderboard } from "@/lib/data";
 import { devBoard } from "@/lib/dev-board";
-import { contractBoard, skillBoard, stealBoard, type Board, type BoardRow } from "@/lib/leaderboards";
+import { skillBoard, type BoardRow } from "@/lib/leaderboards";
 import { modules, type ModuleInfo } from "@/lib/modules";
 import { profileRows } from "@/lib/profiles";
 import { formatRating } from "@/lib/rating";
@@ -36,8 +36,6 @@ function letter(value: string | null) {
 
 export default function HomePage() {
   const skills = skillBoard(5);
-  const contracts = contractBoard(5);
-  const steals = stealBoard(5);
 
   const minis: Record<string, { title: string; rows: MiniRow[] } | null> = {
     "Draft Rater": {
@@ -54,7 +52,7 @@ export default function HomePage() {
     "Trade Machine": { title: "Highest Asset Value", rows: topAssetPlayers() },
     Leaderboards: {
       title: "Top Overall Skill",
-      rows: skills.rows.slice(0, 3).map((row) => ({ href: row.href, name: row.name, image: row.image, value: <Cell value={row.values.skill} column={skills.columns[0]} /> })),
+      rows: skills.rows.slice(0, 3).map((row) => ({ href: row.href ?? "/leaderboards", name: row.name, image: row.image, value: <Cell value={row.values.skill} column={skills.columns[0]} /> })),
     },
     "Game Edge": null,
     "Ref Watch": null,
@@ -62,29 +60,32 @@ export default function HomePage() {
 
   return (
     <div>
-      <section className="flex min-h-[calc(100svh-11rem)] flex-col items-center justify-center py-10 text-center">
-        <StatsPuckBadge height={88} />
-        <h1 className="display mt-7 text-4xl leading-[1.02] font-bold sm:text-6xl">
+      {/* Full-screen hero: header + logo + search fill the first screen; tools start below the fold. */}
+      <section className="relative -mt-8 flex min-h-[calc(100svh-4.25rem)] flex-col items-center justify-center pb-16 text-center">
+        <span className="hidden sm:block">
+          <StatsPuckBadge height={150} />
+        </span>
+        <span className="sm:hidden">
+          <StatsPuckBadge height={112} />
+        </span>
+        <h1 className="display mt-8 text-4xl leading-[1.02] font-bold sm:text-6xl">
           Every hockey decision, <span className="text-[#38BDF8]">settled by the math.</span>
         </h1>
+        <p className="mt-4 max-w-2xl text-base text-[#94A3B8] sm:text-lg">
+          StatsPuck turns two decades of NHL data into clear, objective grades—no hot takes, no team bias. Built for hardcore fans, player agents, and front offices who want the
+          answer, not the noise.
+        </p>
         <div className="mt-8 w-full max-w-2xl">
           <GlobalSearch size="hero" />
         </div>
-        <p className="mt-4 text-sm text-[#94A3B8]">
-          Try{" "}
-          <Link href="/leaderboards" className="text-[#F8FAFC] underline decoration-[#38BDF8]/50 underline-offset-4 hover:decoration-[#38BDF8]">
-            Leaderboards
-          </Link>{" "}
-          or press <kbd className="rounded border border-[#262B36] px-1.5 py-0.5 font-sans text-xs">/</kbd> to search from anywhere.
-        </p>
-        <a href="#tools" aria-label="Scroll to the tools" className="mt-10 text-[#94A3B8] transition hover:text-white">
-          <svg aria-hidden viewBox="0 0 20 20" className="h-6 w-6 animate-bounce" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <a href="#tools" aria-label="Scroll to the tools" className="absolute bottom-6 text-[#94A3B8] transition hover:text-white">
+          <svg aria-hidden viewBox="0 0 20 20" className="h-7 w-7 animate-bounce" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="m5 8 5 5 5-5" />
           </svg>
         </a>
       </section>
 
-      <section id="tools" className="scroll-mt-24">
+      <section id="tools" className="mt-10 scroll-mt-24">
         <div className="flex items-end justify-between gap-4">
           <h2 className="display text-3xl font-bold">Tools</h2>
           <p className="hidden text-sm text-[#94A3B8] sm:block">Click a card to open the tool. Click a row to jump straight to that team or player.</p>
@@ -96,19 +97,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mt-14">
-        <div className="flex items-end justify-between gap-4">
-          <h2 className="display text-3xl font-bold">Featured leaderboards</h2>
-          <Link href="/leaderboards" className="text-sm font-semibold text-[#38BDF8] hover:underline">
-            All leaderboards →
-          </Link>
-        </div>
-        <div className="mt-5 grid gap-4 lg:grid-cols-3">
-          <FeaturedBoard title="Top 5 Overall Skill" board={skills} valueKey="skill" boardId="players" />
-          <FeaturedBoard title="Best Impact per % Cap" board={contracts} valueKey="perCap" boardId="contracts" />
-          <FeaturedBoard title="Top Draft Steals" board={steals} valueKey="score" boardId="steals" />
-        </div>
-      </section>
+
     </div>
   );
 }
@@ -187,35 +176,6 @@ function ToolCard({ item, mini }: { item: ModuleInfo; mini: { title: string; row
         <div className="pointer-events-none relative mt-4 rounded-xl border border-dashed border-[#262B36] px-3 py-4 text-center text-xs text-[#94A3B8]">Preview coming soon</div>
       )}
       <p className="pointer-events-none relative mt-auto pt-3 text-sm font-semibold text-[#38BDF8]">{item.live ? "Open →" : "Preview →"}</p>
-    </div>
-  );
-}
-
-function FeaturedBoard({ title, board, valueKey, boardId }: { title: string; board: Board; valueKey: string; boardId: string }) {
-  const column = board.columns.find((col) => col.key === valueKey)!;
-  return (
-    <div className="rounded-2xl border border-[#262B36] bg-[#14171F] p-4">
-      <div className="flex items-center justify-between gap-2">
-        <p className="display text-lg font-bold">{title}</p>
-        <Link href={`/leaderboards?board=${boardId}`} className="text-xs font-semibold text-[#38BDF8] hover:underline">
-          Full board →
-        </Link>
-      </div>
-      <ol className="mt-3 divide-y divide-[#262B36]">
-        {board.rows.slice(0, 5).map((row, index) => (
-          <li key={row.href}>
-            <Link href={row.href} className="flex items-center gap-2.5 py-2 transition hover:bg-[#38BDF8]/[0.05]">
-              <span className="w-4 text-xs font-semibold text-[#94A3B8]">{index + 1}</span>
-              <RowImage image={row.image} />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold">{row.name}</span>
-                <span className="block truncate text-xs text-[#94A3B8]">{row.sub}</span>
-              </span>
-              <Cell value={row.values[valueKey]} column={column} />
-            </Link>
-          </li>
-        ))}
-      </ol>
     </div>
   );
 }

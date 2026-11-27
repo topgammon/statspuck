@@ -161,6 +161,8 @@ SEASON_DETAIL_COLUMNS = (
     ("sh_toi", "INTEGER"),
     # Impact inputs (goalies).
     ("saves", "INTEGER"),
+    # Display name, so season leaderboards can show players from before the 2005 draft book.
+    ("player_name", "TEXT"),
 )
 
 # Extra skater reports merged into each season row, keyed by playerId.
@@ -194,6 +196,7 @@ SEASON_COLUMNS = (
     "pp_toi",
     "sh_toi",
     "saves",
+    "player_name",
 )
 
 
@@ -455,6 +458,7 @@ def load_season(
                 "shots": row.get("shots"),
                 "pim": row.get("penaltyMinutes"),
                 "sh_points": row.get("shPoints"),
+                "player_name": row.get("skaterFullName"),
             }
         for report, fields in SKATER_EXTRA_REPORTS:
             extra = fetch_report(report, season_start, refresh, report.split("/")[1])
@@ -478,6 +482,7 @@ def load_season(
                 "time_on_ice": row.get("timeOnIce"),
                 "saves": row.get("saves"),
                 "pim": row.get("penaltyMinutes"),
+                "player_name": row.get("goalieFullName"),
             }
     if not found:
         raise RuntimeError(f"No {role} rows for {season_start}. The stats endpoint may have changed.")

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LeaderboardsHub } from "@/components/leaderboards-hub";
 import { allBoards } from "@/lib/leaderboards";
+import { seasonList } from "@/lib/season-leaders";
 
 export const metadata: Metadata = {
   title: "Leaderboards",
@@ -16,7 +17,7 @@ export default function LeaderboardsPage() {
       <h1 className="display mt-2 text-4xl font-bold sm:text-5xl">Every ranking, one click deep</h1>
       <p className="mt-2 max-w-2xl text-[#94A3B8]">Sort any board, then click a row to jump straight to that player, team or GM.</p>
       <div className="mt-6">
-        <LeaderboardsHub boards={boards} />
+        <LeaderboardsHub boards={boards} seasons={seasonList()} />
       </div>
     </div>
   );

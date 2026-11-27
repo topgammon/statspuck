@@ -17,6 +17,7 @@ from fetch_contracts import main as fetch_contracts
 from fetch_trades import build as build_trades
 from fetch_gm_photos import main as fetch_gm_photos
 from fetch_nhl import fetch_all, sample
+from fetch_edge import build as fetch_edge
 from fetch_paths import main as fetch_paths
 from fetch_playoffs import build as fetch_playoffs
 from fetch_rosters import main as fetch_rosters
@@ -47,6 +48,8 @@ def main() -> None:
     build_trades()
     build_asset_data()
     build_season_stats()
+    if not args.skip_fetch:
+        fetch_edge()  # needs nhlers.json from build_asset_data
     if not args.skip_cards:
         render()
 

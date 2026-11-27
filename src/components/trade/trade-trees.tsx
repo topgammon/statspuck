@@ -6,7 +6,7 @@ import { Carousel } from "@/components/carousel";
 import { TeamLogo } from "@/components/team-logo";
 import { TogglePill } from "@/components/toggle-pill";
 import { formatRating, ratingTone } from "@/lib/rating";
-import { gmHref, playerHref } from "@/lib/routes";
+import { gmTeamHref, playerHref } from "@/lib/routes";
 import type { Callout, TreePiece, TreeStep, TreeSummary } from "@/lib/trade-trees";
 
 type Sort = "deep" | "big" | "old" | "new";
@@ -181,19 +181,284 @@ function TreeCard({ tree, steps, team, open, onToggle }: { tree: TreeSummary; st
           </span>
         </div>
       </button>
-      {open ? (
-        <div className="min-w-0 border-t border-[#262B36] p-4">
-          <Carousel label="Trade tree">
-            <div className="py-2 pr-6">
-              <Branch id={tree.root} steps={steps} root />
-            </div>
-          </Carousel>
-          <p className="mt-2 text-[11px] text-[#94A3B8]">
-            Read left to right. Each card is one trade by {team?.short ?? tree.team}: what went out, what came back. Anything that was traded again continues to the right. Numbers are Impact over the five seasons after the deal.
-          </p>
-        </div>
-      ) : null}
+      {open ? <ExpandedTree tree={tree} steps={steps} team={team} /> : null}
     </li>
+  );
+}
+
+// ---- Expanded tree: Explorer (outline + detail) or Map (the full diagram) ------------------
+
+type Node = { id: string; depth: number; parent: string | null; index: number };
+
+function flatten(root: string, steps: Record<string, TreeStep>): Node[] {
+  const out: Node[] = [];
+  const walk = (id: string, depth: number, parent: string | null) => {
+    if (!steps[id]) return;
+    out.push({ id, depth, parent, index: out.length });
+    for (const kid of steps[id].kids) walk(kid, depth + 1, id);
+  };
+  walk(root, 0, null);
+  return out;
+}
+
+/** Short "what came back" label for outline rows. */
+function gotLabel(step: TreeStep): string {
+  const players = step.got.filter((p) => p.kind === "p").map((p) => p.label);
+  const picks = step.got.filter((p) => p.kind === "k").map((p) => p.label);
+  const names = [...players, ...picks];
+  if (!names.length) return "nothing back";
+  return names.length > 2 ? `${names.slice(0, 2).join(", ")} +${names.length - 2}` : names.join(", ");
+}
+
+function sentLabel(step: TreeStep): string {
+  const names = [...step.gave.filter((p) => p.kind === "p"), ...step.gave.filter((p) => p.kind === "k")].map((p) => p.label);
+  if (!names.length) return "—";
+  return names.length > 2 ? `${names.slice(0, 2).join(", ")} +${names.length - 2}` : names.join(", ");
+}
+
+function ExpandedTree({ tree, steps, team }: { tree: TreeSummary; steps: Record<string, TreeStep>; team?: Team }) {
+  const [view, setView] = useState<"explore" | "map">("explore");
+  const nodes = useMemo(() => flatten(tree.root, steps), [tree.root, steps]);
+  const byId = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
+  const [selected, setSelected] = useState(tree.root);
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
+
+  // Rows hidden under a collapsed ancestor.
+  const visible = useMemo(() => {
+    const hidden = new Set<string>();
+    for (const node of nodes) if (node.parent && (collapsed.has(node.parent) || hidden.has(node.parent))) hidden.add(node.id);
+    return nodes.filter((node) => !hidden.has(node.id));
+  }, [nodes, collapsed]);
+
+  const path = useMemo(() => {
+    const out: string[] = [];
+    let cursor: string | null = selected;
+    while (cursor) {
+      out.unshift(cursor);
+      cursor = byId.get(cursor)?.parent ?? null;
+    }
+    return out;
+  }, [selected, byId]);
+
+  function select(id: string) {
+    // Opening a node inside a collapsed branch expands its ancestors.
+    setCollapsed((current) => {
+      const next = new Set(current);
+      let cursor = byId.get(id)?.parent ?? null;
+      while (cursor) {
+        next.delete(cursor);
+        cursor = byId.get(cursor)?.parent ?? null;
+      }
+      return next;
+    });
+    setSelected(id);
+    window.setTimeout(() => document.getElementById(`row-${tree.root}-${id}`)?.scrollIntoView({ block: "nearest" }), 0);
+  }
+
+  function onKey(event: React.KeyboardEvent) {
+    const at = visible.findIndex((node) => node.id === selected);
+    const step = steps[selected];
+    if (event.key === "ArrowDown" && at < visible.length - 1) select(visible[at + 1].id);
+    else if (event.key === "ArrowUp" && at > 0) select(visible[at - 1].id);
+    else if (event.key === "ArrowRight" && step?.kids[0]) select(step.kids[0]);
+    else if (event.key === "ArrowLeft" && byId.get(selected)?.parent) select(byId.get(selected)!.parent!);
+    else return;
+    event.preventDefault();
+  }
+
+  // Players still on the roster, and the trade that brought each one in.
+  const live = useMemo(() => {
+    const out: { name: string; step: string; rid: number }[] = [];
+    for (const node of nodes) {
+      const step = steps[node.id];
+      for (const p of step.got) if (p.status === "a") out.push({ name: p.label, step: node.id, rid: p.rid });
+      for (const d of step.drafted) if (d.status === "a") out.push({ name: d.name, step: node.id, rid: d.rid });
+    }
+    return out;
+  }, [nodes, steps]);
+
+  const current = steps[selected];
+  const currentNode = byId.get(selected);
+
+  return (
+    <div className="min-w-0 border-t border-[#262B36] p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <TogglePill<"explore" | "map">
+          value={view}
+          options={[
+            { id: "explore", label: "Explorer" },
+            { id: "map", label: "Full map" },
+          ]}
+          onChange={setView}
+          label="Tree view"
+        />
+        {live.length ? (
+          <div className="flex flex-wrap items-center gap-1.5 text-xs">
+            <span className="text-[10px] font-semibold tracking-[0.12em] text-[#94A3B8] uppercase">Still on the roster</span>
+            {live.map((item) => (
+              <button
+                key={`${item.name}-${item.step}`}
+                type="button"
+                onClick={() => {
+                  setView("explore");
+                  select(item.step);
+                }}
+                className="rounded-full bg-[#10B981]/15 px-2 py-0.5 font-semibold text-[#10B981] transition hover:bg-[#10B981]/25"
+                title="Jump to the trade that brought him in"
+              >
+                {item.name}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
+
+      {view === "map" ? (
+        <>
+          <div className="mt-3">
+            <Carousel label="Trade tree">
+              <div className="py-2 pr-6">
+                <Branch id={tree.root} steps={steps} root />
+              </div>
+            </Carousel>
+          </div>
+          <p className="mt-2 text-[11px] text-[#94A3B8]">
+            Read left to right. Each card is one trade by {team?.short ?? tree.team}. Anything traded again continues to the right. Numbers are Impact over the five seasons after the deal.
+          </p>
+        </>
+      ) : (
+        <div className="mt-3 grid min-w-0 gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
+          {/* Outline: every trade in the tree, in order, indented by generation. */}
+          <div className="min-w-0 rounded-xl border border-[#262B36] bg-[#0B0D10]/60">
+            <div className="flex items-center justify-between gap-2 border-b border-[#262B36] px-3 py-2">
+              <span className="text-[10px] font-semibold tracking-[0.12em] text-[#94A3B8] uppercase">
+                {nodes.length} trades · {tree.depth} deep
+              </span>
+              <span className="flex gap-2 text-[10px] font-semibold">
+                <button type="button" className="text-[#38BDF8] hover:underline" onClick={() => setCollapsed(new Set())}>
+                  Expand all
+                </button>
+                <button
+                  type="button"
+                  className="text-[#38BDF8] hover:underline"
+                  onClick={() => {
+                    setCollapsed(new Set(nodes.filter((node) => node.depth >= 1 && steps[node.id].kids.length).map((node) => node.id)));
+                    setSelected(tree.root);
+                  }}
+                >
+                  Collapse
+                </button>
+              </span>
+            </div>
+            <ol role="tree" aria-label="Trades in this tree" tabIndex={0} onKeyDown={onKey} className="max-h-[28rem] overflow-y-auto py-1 outline-none focus-visible:ring-1 focus-visible:ring-[#38BDF8]">
+              {visible.map((node) => {
+                const step = steps[node.id];
+                const on = node.id === selected;
+                const inPath = path.includes(node.id);
+                const indent = Math.min(node.depth, 8);
+                return (
+                  <li key={node.id} id={`row-${tree.root}-${node.id}`} role="treeitem" aria-selected={on} aria-level={node.depth + 1}>
+                    <div
+                      className={`flex items-center gap-1 pr-2 transition ${on ? "bg-[#38BDF8]/15" : inPath ? "bg-[#38BDF8]/[0.05]" : "hover:bg-white/[0.03]"}`}
+                      style={{ paddingLeft: `${0.5 + indent * 0.85}rem` }}
+                    >
+                      {step.kids.length ? (
+                        <button
+                          type="button"
+                          aria-label={collapsed.has(node.id) ? "Expand" : "Collapse"}
+                          onClick={() =>
+                            setCollapsed((currentSet) => {
+                              const next = new Set(currentSet);
+                              if (next.has(node.id)) next.delete(node.id);
+                              else next.add(node.id);
+                              return next;
+                            })
+                          }
+                          className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[#94A3B8] hover:text-white"
+                        >
+                          <svg viewBox="0 0 12 12" className={`h-3 w-3 transition ${collapsed.has(node.id) ? "" : "rotate-90"}`} aria-hidden>
+                            <path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                          </svg>
+                        </button>
+                      ) : (
+                        <span className="h-5 w-5 shrink-0" />
+                      )}
+                      <button type="button" onClick={() => select(node.id)} className="min-w-0 flex-1 py-1.5 text-left">
+                        <span className="flex items-center gap-1.5 text-[10px] text-[#94A3B8]">
+                          <span className={`rounded px-1 font-bold ${node.depth === 0 ? "bg-[#E11D48]/20 text-[#E11D48]" : "bg-white/5"}`}>{node.depth === 0 ? "START" : `G${node.depth}`}</span>
+                          {step.d}
+                          {step.kids.length > 1 ? <span className="text-[#38BDF8]">· splits {step.kids.length} ways</span> : null}
+                        </span>
+                        <span className={`block truncate text-xs ${on ? "font-semibold text-[#F8FAFC]" : "text-[#F8FAFC]/85"}`}>→ {gotLabel(step)}</span>
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+            <p className="border-t border-[#262B36] px-3 py-1.5 text-[10px] text-[#94A3B8]">↑ ↓ move · → follow · ← go back</p>
+          </div>
+
+          {/* Detail: the selected trade, how we got here, and where it led. */}
+          <div className="min-w-0">
+            <nav aria-label="Path to this trade" className="flex flex-wrap items-center gap-1 text-xs">
+              {path.map((id, index) => (
+                <span key={id} className="flex items-center gap-1">
+                  {index > 0 ? <span className="text-[#94A3B8]">›</span> : null}
+                  <button
+                    type="button"
+                    onClick={() => select(id)}
+                    className={`max-w-[12rem] truncate rounded-full border px-2 py-0.5 ${id === selected ? "border-[#38BDF8] bg-[#38BDF8]/10 text-[#38BDF8]" : "border-[#262B36] text-[#94A3B8] hover:text-white"}`}
+                  >
+                    {index === 0 ? "Start" : steps[id].d.slice(0, 7)} · {gotLabel(steps[id])}
+                  </button>
+                </span>
+              ))}
+            </nav>
+            {current ? (
+              <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,14rem)]">
+                <div className="[&>div]:w-full">
+                  <StepCard step={current} root={selected === tree.root} />
+                </div>
+                <div className="flex flex-col gap-2">
+                  {currentNode?.parent ? (
+                    <button
+                      type="button"
+                      onClick={() => select(currentNode.parent!)}
+                      className="rounded-xl border border-[#262B36] bg-[#0B0D10]/60 p-3 text-left text-xs transition hover:border-[#38BDF8]/60"
+                    >
+                      <span className="block text-[9px] font-semibold tracking-[0.12em] text-[#94A3B8] uppercase">← Came from</span>
+                      <span className="mt-0.5 block truncate font-semibold">{steps[currentNode.parent].d}</span>
+                      <span className="block truncate text-[#94A3B8]">sent {sentLabel(steps[currentNode.parent])}</span>
+                    </button>
+                  ) : null}
+                  <p className="text-[9px] font-semibold tracking-[0.12em] text-[#94A3B8] uppercase">{current.kids.length ? `Led to ${current.kids.length} more ${current.kids.length === 1 ? "trade" : "trades"} →` : "End of this branch"}</p>
+                  {current.kids.map((kid) => (
+                    <button
+                      key={kid}
+                      type="button"
+                      onClick={() => select(kid)}
+                      className="rounded-xl border border-[#38BDF8]/30 bg-[#38BDF8]/[0.05] p-3 text-left text-xs transition hover:border-[#38BDF8]"
+                    >
+                      <span className="block font-semibold">{steps[kid].d}</span>
+                      <span className="block truncate text-[#94A3B8]">sent {sentLabel(steps[kid])}</span>
+                      <span className="block truncate text-[#F8FAFC]/85">got {gotLabel(steps[kid])}</span>
+                    </button>
+                  ))}
+                  {!current.kids.length ? (
+                    <p className="rounded-xl border border-dashed border-[#262B36] p-3 text-xs text-[#94A3B8]">Nothing from this trade was traded again.</p>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+            <p className="mt-3 text-[11px] text-[#94A3B8]">
+              Each trade by {team?.short ?? tree.team}: what went out, what came back. Numbers are Impact over the five seasons after the deal. G1, G2… is how many trades
+              removed from the start.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -246,7 +511,7 @@ function StepCard({ step, root }: { step: TreeStep; root: boolean }) {
             {step.d} · {step.t} ↔ {step.o}
           </p>
           {step.gm ? (
-            <Link href={gmHref(step.gm.slug, "trades-cap")} className="block truncate text-[10px] text-[#38BDF8] hover:underline">
+            <Link href={`${gmTeamHref(step.gm.slug)}&tab=transactions`} className="block truncate text-[10px] text-[#38BDF8] hover:underline">
               GM {step.gm.person}
             </Link>
           ) : null}

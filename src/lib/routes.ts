@@ -44,3 +44,8 @@ export function teamHref(abbr: string, tab?: EntityTab): string {
 export function gmHref(slug: string, tab?: EntityTab): string {
   return withTab(`/gms/${slug}`, tab);
 }
+
+/** A GM link from a team context: opens on that tenure instead of his whole career. */
+export function gmTeamHref(slug: string): string {
+  return `/gms/${slug}?view=team`;
+}

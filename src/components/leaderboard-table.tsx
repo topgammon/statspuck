@@ -46,6 +46,12 @@ export function Cell({ value, column }: { value: number | string | null; column:
       return <>{Number(value).toFixed(2)}</>;
     case "rank":
       return <>#{value}</>;
+    case "svpct":
+      return <>{Number(value).toFixed(3).replace(/^0/, "")}</>;
+    case "toi": {
+      const seconds = Number(value);
+      return <>{`${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, "0")}`}</>;
+    }
     case "int":
       return <>{typeof value === "number" ? Math.round(value) : value}</>;
     default:
@@ -131,32 +137,49 @@ export function LeaderboardTable({ board, limit, search = "" }: { board: Board; 
         <thead>
           <tr>
             {header("rank", "#", "Rank on this board", true)}
-            {header("name", board.id === "teams" || board.id === "development" ? "Team" : board.id === "gms" ? "General manager" : "Player", undefined, true)}
+            {header("name", board.id === "teams" ? "Team" : board.id === "gms" ? "General manager" : "Player", undefined, true)}
             {board.columns.map((col) => header(col.key, col.label, col.tip, col.format === "text"))}
           </tr>
         </thead>
         <tbody className="divide-y divide-[#262B36]">
-          {rows.map(({ row, rank }) => (
-            <tr key={row.href} className="group transition hover:bg-[#38BDF8]/[0.05]">
-              <td className="w-10 px-3 py-2 text-left text-xs font-semibold text-[#94A3B8] tabular-nums">{rank}</td>
-              <td className="px-3 py-2">
-                <Link href={row.href} className="flex min-w-0 items-center gap-2.5">
-                  <RowImage image={row.image} />
-                  <span className="min-w-0">
-                    <span className="block truncate font-semibold text-[#F8FAFC] group-hover:text-[#38BDF8]">{row.name}</span>
-                    <span className="block truncate text-xs text-[#94A3B8]">{row.sub}</span>
-                  </span>
-                </Link>
-              </td>
-              {board.columns.map((col) => (
-                <td key={col.key} className={`px-3 py-2 whitespace-nowrap tabular-nums ${col.format === "text" ? "text-left text-[#F8FAFC]/85" : "text-right"}`}>
-                  <Link href={row.href} tabIndex={-1} className="block">
-                    <Cell value={row.values[col.key]} column={col} />
-                  </Link>
+          {rows.map(({ row, rank }) => {
+            const who = (
+              <>
+                <RowImage image={row.image} />
+                <span className="min-w-0">
+                  <span className={`block truncate font-semibold text-[#F8FAFC] ${row.href ? "group-hover:text-[#38BDF8]" : ""}`}>{row.name}</span>
+                  <span className="block truncate text-xs text-[#94A3B8]">{row.sub}</span>
+                </span>
+              </>
+            );
+            return (
+              <tr key={`${row.href ?? row.name}-${rank}`} className="group transition hover:bg-[#38BDF8]/[0.05]">
+                <td className="w-10 px-3 py-2 text-left text-xs font-semibold text-[#94A3B8] tabular-nums">{rank}</td>
+                <td className="px-3 py-2">
+                  {row.href ? (
+                    <Link href={row.href} className="flex min-w-0 items-center gap-2.5">
+                      {who}
+                    </Link>
+                  ) : (
+                    <span className="flex min-w-0 items-center gap-2.5" title="Debuted before 2005-06: no StatsPuck profile">
+                      {who}
+                    </span>
+                  )}
                 </td>
-              ))}
-            </tr>
-          ))}
+                {board.columns.map((col) => (
+                  <td key={col.key} className={`px-3 py-2 whitespace-nowrap tabular-nums ${col.format === "text" ? "text-left text-[#F8FAFC]/85" : "text-right"}`}>
+                    {row.href ? (
+                      <Link href={row.href} tabIndex={-1} className="block">
+                        <Cell value={row.values[col.key]} column={col} />
+                      </Link>
+                    ) : (
+                      <Cell value={row.values[col.key]} column={col} />
+                    )}
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
           {rows.length === 0 ? (
             <tr>
               <td colSpan={board.columns.length + 2} className="px-3 py-6 text-center text-sm text-[#94A3B8]">

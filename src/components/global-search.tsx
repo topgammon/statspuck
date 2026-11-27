@@ -53,8 +53,8 @@ export function GlobalSearch({ size = "compact" }: { size?: "compact" | "hero" }
       if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) return;
       // Two search boxes can be on the page (header + home hero). Only a visible one takes the shortcut.
       if (!inputRef.current || inputRef.current.offsetParent === null) return;
-      if (!hero && document.getElementById("hero-search") && window.scrollY < 320) return;
-      if (hero && window.scrollY >= 320) return;
+      if (!hero && document.getElementById("hero-search") && window.scrollY < window.innerHeight * 0.55) return;
+      if (hero && window.scrollY >= window.innerHeight * 0.55) return;
       const target = event.target as HTMLElement | null;
       if (target && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))) return;
       event.preventDefault();
@@ -143,9 +143,6 @@ export function GlobalSearch({ size = "compact" }: { size?: "compact" | "hero" }
           placeholder={hero ? "Search any NHL player, team, GM, or draft year..." : "Search players, teams, GMs..."}
           className={`min-w-0 flex-1 bg-transparent text-[#F8FAFC] outline-none placeholder:text-[#94A3B8]/80 ${hero ? "py-4 text-base sm:py-5 sm:text-lg" : "py-2 text-sm"}`}
         />
-        <kbd className="hidden rounded-md border border-[#262B36] px-1.5 py-0.5 font-sans text-[11px] text-[#94A3B8] sm:inline-block">
-          /
-        </kbd>
       </div>
 
       {showPanel ? (
@@ -195,10 +192,24 @@ export function GlobalSearch({ size = "compact" }: { size?: "compact" | "hero" }
   );
 }
 
-function Grade({ letter }: { letter: string }) {
+function Grade({ letter, label = "Overall grade" }: { letter: string; label?: string }) {
   if (!letter) return null;
   return (
-    <span className={`display ml-auto shrink-0 rounded-md border px-1.5 py-0.5 text-xs font-bold ${letterTone(letter)}`}>{letter}</span>
+    <span title={label} className={`display ml-auto shrink-0 rounded-md border px-1.5 py-0.5 text-xs font-bold ${letterTone(letter)}`}>
+      {letter}
+    </span>
+  );
+}
+
+/** Overall Skill Rating chip (0-99) for player results. */
+function Skill({ value }: { value: string }) {
+  if (!value) return null;
+  const n = Number(value);
+  const tone = n >= 90 ? "text-[#F59E0B] border-[#F59E0B]/50" : n >= 80 ? "text-[#10B981] border-[#10B981]/50" : n >= 65 ? "text-[#38BDF8] border-[#38BDF8]/50" : "text-[#F8FAFC] border-[#262B36]";
+  return (
+    <span title="Overall Skill Rating (0-99)" className={`display ml-auto shrink-0 rounded-md border bg-white/[0.03] px-1.5 py-0.5 text-xs font-bold ${tone}`}>
+      {value}
+    </span>
   );
 }
 
@@ -224,7 +235,7 @@ function Headshot({ playerId }: { playerId: number }) {
 
 function HitRow({ hit }: { hit: SearchHit }) {
   if (hit.kind === "player") {
-    const [, name, year, overall, franchise, playerId, letter, stamp] = hit.entry;
+    const [, name, year, overall, franchise, playerId, skill, stamp] = hit.entry;
     return (
       <>
         <Headshot playerId={playerId} />
@@ -237,7 +248,7 @@ function HitRow({ hit }: { hit: SearchHit }) {
             ) : null}
           </span>
         </span>
-        <Grade letter={letter} />
+        <Skill value={skill} />
       </>
     );
   }
@@ -248,7 +259,7 @@ function HitRow({ hit }: { hit: SearchHit }) {
         <Logo abbr={abbr} />
         <span className="min-w-0">
           <span className="block truncate text-sm font-medium text-[#F8FAFC]">{name}</span>
-          <span className="block text-xs text-[#94A3B8]">#{rank} drafting franchise</span>
+          <span className="block text-xs text-[#94A3B8]">{rank < 99 ? `#${rank} overall franchise` : "NHL franchise"}</span>
         </span>
         <Grade letter={letter} />
       </>
@@ -279,7 +290,7 @@ function HitRow({ hit }: { hit: SearchHit }) {
         <span className="block text-sm font-medium text-[#F8FAFC]">{year} NHL Draft</span>
         <span className="block text-xs text-[#94A3B8]">Full class graded</span>
       </span>
-      <Grade letter={letter} />
+      <Grade letter={letter} label="Draft class grade" />
     </>
   );
 }

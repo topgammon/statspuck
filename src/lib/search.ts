@@ -2,9 +2,9 @@
 // Results open each entity's Overview tab.
 import { gmHref, playerHref, teamHref } from "./routes";
 
-/** [id, name, year, overall, franchise, headshotPlayerId (0 = none), letter, stamp]. Undrafted: year = NHL debut, overall = 0. */
+/** [id, name, year, overall, franchise, headshotPlayerId (0 = none), Overall Skill ("" = not rated), stamp]. Undrafted: year = NHL debut, overall = 0. */
 export type PlayerEntry = [number, string, number, number, string, number, string, string];
-/** [abbr, name, short, letter, rank] */
+/** [abbr, name, short, Overall letter, Overall rank] */
 export type TeamEntry = [string, string, string, string, number];
 /** [slug, person, team, teamName, startYear, endYear, letter] */
 export type GmEntry = [string, string, string, string, number, number | null, string];
@@ -90,9 +90,10 @@ export function searchIndex(index: SearchIndex, raw: string): SearchGroup[] {
       const score = scoreText(normalize(entry[1]), words);
       if (score >= 0) players.push({ entry, score });
     }
-    // Overall 0 marks an undrafted player; rank them with late picks, not ahead of #1.
+    // Better match first, then higher Overall Skill, then draft slot (undrafted rank with late picks).
     const slot = (entry: PlayerEntry) => entry[3] || 120;
-    players.sort((a, b) => a.score - b.score || slot(a.entry) - slot(b.entry));
+    const skill = (entry: PlayerEntry) => Number(entry[6]) || 0;
+    players.sort((a, b) => a.score - b.score || skill(b.entry) - skill(a.entry) || slot(a.entry) - slot(b.entry));
     const hits = players
       .slice(0, LIMITS.player)
       .map(({ entry }): SearchHit => ({ kind: "player", href: playerHref(entry[0]), entry }));

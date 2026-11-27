@@ -32,7 +32,7 @@ def build() -> None:
         """
         SELECT player_id, season_start, role, gp, goals, assists, points, plus_minus, pim, shots, blocks,
                fo_wins, fo_losses, toi_per_game, pp_toi, sh_toi, games_started, shots_against, saves,
-               goals_against, time_on_ice
+               goals_against, time_on_ice, player_name
         FROM player_seasons
         WHERE gp > 0
         ORDER BY player_id, season_start
@@ -42,8 +42,11 @@ def build() -> None:
 
     skaters: dict[str, list] = {}
     goalies: dict[str, list] = {}
-    for (pid, season, role, gp, g, a, pts, pm, pim, sog, blk, fw, fl, toi_pg, pp, sh, gs, sa, sv, ga, toi) in rows:
+    names: dict[str, str] = {}
+    for (pid, season, role, gp, g, a, pts, pm, pim, sog, blk, fw, fl, toi_pg, pp, sh, gs, sa, sv, ga, toi, name) in rows:
         key = str(pid)
+        if name:
+            names[key] = name
         if role == "goalie":
             goalies.setdefault(key, []).append([season, gp, _int(gs), _int(sa), _int(sv), _int(ga), _int(toi)])
         else:
@@ -52,7 +55,7 @@ def build() -> None:
             )
 
     last = max((row[0] for rows_ in skaters.values() for row in rows_), default=0)
-    out = {"lastSeason": last, "skaters": skaters, "goalies": goalies}
+    out = {"lastSeason": last, "skaters": skaters, "goalies": goalies, "names": names}
     OUT.write_text(json.dumps(out, separators=(",", ":")), encoding="utf-8")
     print(f"season_stats: {len(skaters)} skaters, {len(goalies)} goalies -> {OUT.name}")
 

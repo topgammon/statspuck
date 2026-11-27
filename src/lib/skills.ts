@@ -1,3 +1,4 @@
+import edgeJson from "../../data/draft-rater/edge.json";
 import { classify, ratesOf } from "./archetypes";
 import type { Archetype } from "./archetype-meta";
 import { nhlersFile, type Group, type Nhler } from "./nhlers";
@@ -91,6 +92,28 @@ function isCurrent(player: Nhler): boolean {
   return last >= nhlersFile.season - 1;
 }
 
+// ---- NHL EDGE skating (pipelines/draft-rater/fetch_edge.py) -----------------------------
+
+/** seasonStart -> [topSpeedMph, speedPercentile, burstsOver20, burstsPercentile] */
+const edgeFile = edgeJson as unknown as { players: Record<string, Record<string, [number, number, number, number]>> };
+
+/** EDGE skating over the player's Skills window: 55% top-speed percentile, 45% burst percentile. */
+function edgeSkating(id: number, player: Nhler): { share: number; top: number; bursts: number; window: string } | null {
+  const seasons = edgeFile.players[String(id)];
+  if (!seasons) return null;
+  const window = new Set(player.ss.map((row) => row[0]));
+  const rows = Object.entries(seasons).filter(([season]) => window.has(Number(season)));
+  if (!rows.length) return null;
+  const mean = (i: number) => rows.reduce((sum, [, row]) => sum + row[i], 0) / rows.length;
+  const years = rows.map(([season]) => Number(season)).sort((a, b) => a - b);
+  return {
+    share: 0.55 * mean(1) + 0.45 * mean(3),
+    top: Math.max(...rows.map(([, row]) => row[0])),
+    bursts: rows.reduce((sum, [, row]) => sum + row[2], 0),
+    window: years.length === 1 ? seasonLabel(years[0]) : `${seasonLabel(years[0])} to ${seasonLabel(years[years.length - 1])}`,
+  };
+}
+
 // ---- Skaters -------------------------------------------------------------------------
 
 type SkaterRaw = {
@@ -149,7 +172,8 @@ const WEIGHTS: Record<"F" | "D", Record<string, number>> = {
 function skaterAxes(raw: SkaterRaw, p: (key: SkaterKey, value: number) => number): { axes: SkillAxis[]; shares: Record<string, number> } {
   const offense = 0.35 * p("gpg", raw.gpg) + 0.35 * p("apg", raw.apg) + 0.2 * p("sogg", raw.sogg) + 0.1 * p("ppMin", raw.ppMin);
   const defense = 0.4 * p("pkMin", raw.pkMin) + 0.3 * p("blkg", raw.blkg) + 0.3 * p("pmg", raw.pmg);
-  const skating = 0.6 * p("toi", raw.toi) + 0.4 * p("evMin", raw.evMin);
+  const edge = edgeSkating(raw.id, raw.player);
+  const skating = edge ? edge.share : 0.6 * p("toi", raw.toi) + 0.4 * p("evMin", raw.evMin);
   const physicality = 0.45 * p("size", raw.size) + 0.35 * p("blkg", raw.blkg) + 0.2 * p("pimg", raw.pimg);
   const discipline = 1 - p("pimg", raw.pimg);
   const faceoffs = raw.fowPct != null && raw.draws >= 150 ? clamp01((raw.fowPct - 0.4) / 0.2) : null;
@@ -158,13 +182,20 @@ function skaterAxes(raw: SkaterRaw, p: (key: SkaterKey, value: number) => number
   const axes: SkillAxis[] = [
     { id: "offense", label: "Offense", value: toSkill(offense), tip: "Goals, assists and shots per game plus power-play role, ranked against NHL regulars at his position. Expected goals arrive with play-by-play data." },
     { id: "defense", label: "Defense", value: toSkill(defense), tip: "Penalty-kill minutes, blocked shots and goal differential while he plays. Takeaways arrive with play-by-play data." },
-    {
-      id: "skating",
-      label: "Skating",
-      value: toSkill(skating),
-      proxy: true,
-      tip: "Pace proxy: total and even-strength ice time per game. NHL EDGE burst and top-speed data (2021-22+) is the next upgrade.",
-    },
+    edge
+      ? {
+          id: "skating",
+          label: "Skating",
+          value: toSkill(skating),
+          tip: `NHL EDGE tracking: top speed ${edge.top.toFixed(1)} mph and ${edge.bursts} bursts over 20 mph (${edge.window}), each as a league percentile.`,
+        }
+      : {
+          id: "skating",
+          label: "Skating",
+          value: toSkill(skating),
+          proxy: true,
+          tip: "No NHL EDGE tracking for these seasons (it starts in 2021-22), so this uses ice-time pace: total and even-strength minutes per game.",
+        },
     { id: "physicality", label: "Physicality", value: toSkill(physicality), tip: "Size, blocked shots and penalty minutes. Hits arrive with play-by-play data." },
     { id: "discipline", label: "Discipline", value: toSkill(discipline), tip: "Fewer penalty minutes per game ranks higher. Penalties drawn arrive with play-by-play data." },
     {

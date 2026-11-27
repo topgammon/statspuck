@@ -92,7 +92,7 @@ const efficiencyByTeam = new Map(teams.map((team) => [team.abbr, contractEfficie
 
 type Row = { era: Era; sides: TradeSide[]; net: number; tradeScore: number; efficiency: number | null };
 
-function summarize(side: TradeSide[]) {
+export function summarize(side: TradeSide[]) {
   const sorted = [...side].sort((a, b) => b.net - a.net);
   return { best: sorted[0] ?? null, worst: sorted[sorted.length - 1] ?? null, recent: [...side].sort((a, b) => b.d.localeCompare(a.d)).slice(0, 5) };
 }

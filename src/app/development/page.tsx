@@ -2,12 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PathOptimizer } from "@/components/development/path-optimizer";
 import { PathwayFlow } from "@/components/development/pathway-flow";
-import { TeamLogo } from "@/components/team-logo";
+import { DevLeaderboard } from "@/components/entity/dev-leaderboard";
 import { undrafted } from "@/lib/data";
 import { devBoard } from "@/lib/dev-board";
 import { development } from "@/lib/development";
-import { scoreClass, signed } from "@/lib/format";
-import { playerHref, teamHref } from "@/lib/routes";
+import { playerHref } from "@/lib/routes";
 
 export const metadata: Metadata = {
   title: "Development Path",
@@ -15,7 +14,6 @@ export const metadata: Metadata = {
 };
 
 export default function DevelopmentPage() {
-  const top = devBoard.slice(0, 5);
   const graduates = [...undrafted].sort((a, b) => b.qg - a.qg);
   const gems = graduates.filter((player) => player.qg >= 100).length;
   const tally = new Map<string, number>();
@@ -69,7 +67,7 @@ export default function DevelopmentPage() {
         <ol className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
           {graduates.slice(0, 10).map((player) => (
             <li key={player.id}>
-              <Link href={playerHref(player.id, "development")} className="block rounded-xl border border-[#262B36] bg-[#0B0D10]/60 p-3 hover:border-[#38BDF8]/60">
+              <Link href={playerHref(player.id, "career")} className="block rounded-xl border border-[#262B36] bg-[#0B0D10]/60 p-3 hover:border-[#38BDF8]/60">
                 <span className="display inline-block border-2 border-[#38BDF8] px-1 py-0.5 text-[9px] leading-none font-bold tracking-[0.14em] text-[#bae6fd]">UNDRAFTED</span>
                 <span className="mt-2 block truncate font-semibold">{player.name}</span>
                 <span className="block truncate text-xs text-[#94A3B8]">
@@ -92,21 +90,10 @@ export default function DevelopmentPage() {
           <h2 className="display text-2xl font-bold">Best developing franchises</h2>
           <p className="text-sm text-[#94A3B8]">Development Grade · picks turned into NHL players vs their draft slots</p>
         </div>
-        <ol className="mt-4 grid gap-2 sm:grid-cols-5">
-          {top.map((row) => (
-            <li key={row.abbr}>
-              <Link href={teamHref(row.abbr, "development")} className="flex items-center gap-3 rounded-xl border border-[#262B36] bg-[#0B0D10]/60 p-3 hover:border-[#38BDF8]/60">
-                <TeamLogo abbr={row.abbr} className="h-9 w-10" />
-                <span className="min-w-0">
-                  <span className="block text-xs text-[#94A3B8]">#{row.rank}</span>
-                  <span className="display block text-xl font-bold">{row.letter}</span>
-                  <span className={`block text-xs ${scoreClass(row.avg)}`}>{signed(row.avg)}</span>
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ol>
-        <p className="mt-3 text-xs text-[#94A3B8]">Open any team page and choose the Development tab for the full league leaderboard.</p>
+        <div className="mt-4">
+          <DevLeaderboard rows={devBoard} />
+        </div>
+        <p className="mt-3 text-xs text-[#94A3B8]">All 32 franchises. Click any column to sort, or any team to open its Draft &amp; Dev tab.</p>
       </section>
     </div>
   );

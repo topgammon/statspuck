@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { EraProfile } from "@/components/era-profile";
+import { EraProfile, type GmView } from "@/components/era-profile";
 import { AssetRankMini, GmTradesPanel } from "@/components/entity/trades-cap";
-import { gmReport } from "@/lib/gm-grades";
 import { devBoard, devGems, undraftedGems } from "@/lib/dev-board";
 import { development } from "@/lib/development";
 import { eras, erasBySlug, meta, og, picks } from "@/lib/data";
+import { gmReport } from "@/lib/gm-grades";
+import { gmCareer } from "@/lib/overall-grades";
 import { gmHref } from "@/lib/routes";
 import { scoutingReport } from "@/lib/scouting";
 
@@ -21,10 +22,11 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const { gm } = await params;
   const era = erasBySlug.get(gm);
   if (!era) return {};
+  const career = gmCareer(era.person);
   const title = era.person;
-  const description = era.letter
-    ? `${era.person}, ${era.role} of the ${era.teamName}, grades ${era.letter} on drafts from ${era.startYear}.`
-    : `${era.person}, ${era.role} of the ${era.teamName}. Not enough graded drafts for a letter yet.`;
+  const description = career?.overall
+    ? `${era.person}: ${career.overall.letter} Overall GM Grade across ${career.stops.length} ${career.stops.length === 1 ? "team" : "teams"} since 2005 (drafting, development and trades).`
+    : `${era.person}, ${era.role} of the ${era.teamName}. Not enough data for an overall grade yet.`;
   const image = og.eras[era.slug];
   return {
     title,
@@ -39,50 +41,56 @@ export default async function GmPage({ params }: { params: Promise<Params> }) {
   const { gm } = await params;
   const era = erasBySlug.get(gm);
   if (!era) notFound();
-  const latest = meta.latestDraftYear;
-  const samePerson = eras.filter((item) => item.person === era.person);
-  const teamPicks = picksFor(era, latest);
-  const careerPicks = dedupe(samePerson.flatMap((item) => picksFor(item, latest)));
-  const pool = eras.filter((item) => item.avg != null && item.n >= 5).map((item) => item.avg as number);
-  const otherStops = samePerson
-    .filter((item) => item.slug !== era.slug)
-    .map((item) => ({ slug: item.slug, team: item.team, teamName: item.teamName, startYear: item.startYear, endYear: item.endYear }));
-  const report = gmReport(era.slug);
-  const current = era.endYear == null;
+  const career = gmCareer(era.person)!;
+  const current = career.current;
+  const latestEnd = Math.max(...career.stops.map((stop) => stop.endYear ?? 0));
+
+  const all: GmView = {
+    id: "all",
+    label: "All teams",
+    team: null,
+    teamName: null,
+    tenure: `${career.firstYear}–${current ? "present" : latestEnd}`,
+    color: career.latest.color,
+    report: career,
+    draft: { avg: career.draftAvg, letter: career.draft.letter, rating: career.draft.rating, n: career.draftN, developing: career.picks.filter((pick) => pick.developing).length },
+    scouting: scoutingReport(career.picks, picks),
+    dev: null,
+    devGems: [],
+    undraftedGems: [],
+    tradesPanel: <GmTradesPanel person={era.person} team={career.latest.team} teamName={career.latest.teamName} current={current} report={career} />,
+  };
+
+  const stopViews: GmView[] = career.stops.map((stop) => {
+    const end = stop.endYear ?? meta.latestDraftYear;
+    const own = picks.filter((pick) => pick.franchise === stop.team && pick.year >= stop.startYear && pick.year <= end && !pick.forfeited);
+    const report = gmReport(stop.slug);
+    return {
+      id: stop.slug,
+      label: `${stop.team} ${stop.startYear}–${stop.endYear == null ? "now" : String(stop.endYear).slice(2)}`,
+      team: stop.team,
+      teamName: stop.teamName,
+      tenure: `${stop.startYear}–${stop.endYear ?? "present"}`,
+      color: stop.color,
+      report,
+      draft: { avg: stop.avg, letter: stop.letter, rating: stop.rating, n: stop.n, developing: stop.developing },
+      scouting: scoutingReport(own, picks),
+      dev: stop.dev ?? null,
+      devGems: devGems(stop.dev),
+      undraftedGems: undraftedGems({ era: stop.slug }),
+      tradesPanel: <GmTradesPanel person={stop.person} team={stop.team} teamName={stop.teamName} current={stop.endYear == null} report={report} />,
+      note: stop.note,
+    };
+  });
+
   return (
     <EraProfile
       era={era}
-      gm={report}
-      tradesPanel={<GmTradesPanel person={era.person} team={era.team} teamName={era.teamName} current={current} report={report} />}
-      assetMini={current ? <AssetRankMini abbr={era.team} /> : null}
-      teamPicks={teamPicks}
-      careerPicks={careerPicks}
-      pool={pool}
-      league={meta.leagueAvg}
-      multiTeam={samePerson.length > 1}
-      otherStops={otherStops}
-      devGems={devGems(era.dev)}
-      undraftedGems={undraftedGems({ era: era.slug })}
+      views={[all, ...stopViews]}
+      careerPicks={career.picks}
+      assetMini={current ? <AssetRankMini abbr={career.latest.team} /> : null}
       devBoard={devBoard}
       matureThrough={development.matureThrough}
-      teamReport={scoutingReport(teamPicks, picks)}
-      careerReport={scoutingReport(careerPicks, picks)}
     />
   );
-}
-
-function picksFor(era: { team: string; startYear: number; endYear: number | null }, latest: number): typeof picks {
-  const end = era.endYear ?? latest;
-  return picks
-    .filter((pick) => pick.franchise === era.team && pick.year >= era.startYear && pick.year <= end)
-    .sort((a, b) => a.year - b.year || a.overall - b.overall);
-}
-
-function dedupe(rows: typeof picks): typeof picks {
-  const seen = new Set<number>();
-  return rows.filter((pick) => {
-    if (seen.has(pick.id)) return false;
-    seen.add(pick.id);
-    return true;
-  });
 }
