@@ -164,6 +164,7 @@ SEASON_DETAIL_COLUMNS = (
     # Display name, so season leaderboards can show players from before the 2005 draft book.
     ("player_name", "TEXT"),
     ("shutouts", "INTEGER"),
+    ("wins", "INTEGER"),
 )
 
 # Extra skater reports merged into each season row, keyed by playerId.
@@ -199,6 +200,7 @@ SEASON_COLUMNS = (
     "saves",
     "player_name",
     "shutouts",
+    "wins",
 )
 
 
@@ -486,6 +488,7 @@ def load_season(
                 "pim": row.get("penaltyMinutes"),
                 "player_name": row.get("goalieFullName"),
                 "shutouts": row.get("shutouts"),
+                "wins": row.get("wins"),
             }
     if not found:
         raise RuntimeError(f"No {role} rows for {season_start}. The stats endpoint may have changed.")

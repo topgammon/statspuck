@@ -117,18 +117,20 @@ function goalieTable(source: GoalieSeason[], impact: Map<number, number>): Omit<
     sv: r[4],
     ga: r[5],
     so: r.length > 7 ? r[7] : null,
+    w: r.length > 8 ? r[8] : null,
     impact: season != null && impact.has(season) ? round(impact.get(season)!) : null,
   });
   const all = [...merged.values()];
   const rows = all.map((r) => toRow(r, r[0]));
-  const hasShutouts = all.some((r) => r.length > 7);
-  const total = all.reduce((acc, r) => acc.map((value, i) => (i === 0 ? 0 : value + (r[i] ?? 0))), hasShutouts ? [0, 0, 0, 0, 0, 0, 0, 0] : [0, 0, 0, 0, 0, 0, 0]);
+  const width = Math.max(7, ...all.map((r) => r.length));
+  const total = all.reduce((acc, r) => acc.map((value, i) => (i === 0 ? 0 : value + (r[i] ?? 0))), Array(width).fill(0) as number[]);
   const totals = rows.length ? { ...toRow(total, null), impact: rows.some((row) => row.impact != null) ? round(rows.reduce((t, row) => t + (Number(row.impact) || 0), 0)) : null } : null;
   return {
     columns: [
       { key: "season", label: "Season" },
       { key: "gp", label: "GP" },
       { key: "gs", label: "GS", tip: "Games started" },
+      { key: "w", label: "W", tip: "Wins" },
       { key: "svPct", label: "SV%", tip: "Save percentage" },
       { key: "gaa", label: "GAA", digits: 2, tip: "Goals against per 60 minutes" },
       { key: "sa", label: "SA", tip: "Shots against" },

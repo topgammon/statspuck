@@ -5,7 +5,7 @@ compact data/draft-rater/season_stats.json for the Stats tab, the Skills ratings
 the IRON MAN stamp. No network calls.
 
 Skater row: [season, gp, g, a, pts, plusMinus, pim, shots, blocks, foWins, foLosses, toiPerGameSec, ppToiSec, shToiSec]
-Goalie row: [season, gp, starts, shotsAgainst, saves, goalsAgainst, toiSec, shutouts]
+Goalie row: [season, gp, starts, shotsAgainst, saves, goalsAgainst, toiSec, shutouts, wins]
 """
 
 from __future__ import annotations
@@ -32,7 +32,7 @@ def build() -> None:
         """
         SELECT player_id, season_start, role, gp, goals, assists, points, plus_minus, pim, shots, blocks,
                fo_wins, fo_losses, toi_per_game, pp_toi, sh_toi, games_started, shots_against, saves,
-               goals_against, time_on_ice, player_name, shutouts
+               goals_against, time_on_ice, player_name, shutouts, wins
         FROM player_seasons
         WHERE gp > 0
         ORDER BY player_id, season_start
@@ -43,12 +43,12 @@ def build() -> None:
     skaters: dict[str, list] = {}
     goalies: dict[str, list] = {}
     names: dict[str, str] = {}
-    for (pid, season, role, gp, g, a, pts, pm, pim, sog, blk, fw, fl, toi_pg, pp, sh, gs, sa, sv, ga, toi, name, so) in rows:
+    for (pid, season, role, gp, g, a, pts, pm, pim, sog, blk, fw, fl, toi_pg, pp, sh, gs, sa, sv, ga, toi, name, so, w) in rows:
         key = str(pid)
         if name:
             names[key] = name
         if role == "goalie":
-            goalies.setdefault(key, []).append([season, gp, _int(gs), _int(sa), _int(sv), _int(ga), _int(toi), _int(so)])
+            goalies.setdefault(key, []).append([season, gp, _int(gs), _int(sa), _int(sv), _int(ga), _int(toi), _int(so), _int(w)])
         else:
             skaters.setdefault(key, []).append(
                 [season, gp, _int(g), _int(a), _int(pts), _int(pm), _int(pim), _int(sog), _int(blk), _int(fw), _int(fl), _int(toi_pg), _int(pp), _int(sh)]

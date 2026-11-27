@@ -26,6 +26,7 @@ import { teamOverall } from "@/lib/overall-grades";
 import { contractSeasons, teamContracts } from "@/lib/team-contracts";
 import { TeamContractsTable } from "@/components/entity/team-contracts-table";
 import { ExpiringContracts } from "@/components/entity/expiring-contracts";
+import { LotteryLuckCard } from "@/components/entity/lottery-luck-card";
 import { gmTeamHref, playerHref, teamHref } from "@/lib/routes";
 import { scoutingReport } from "@/lib/scouting";
 import { letterTone } from "@/lib/search";
@@ -319,6 +320,9 @@ export default async function TeamPage({ params }: { params: Promise<Params> }) 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <PickCard title="Best pick" pick={team.best} />
             <PickCard title="Worst pick" pick={team.worst} />
+          </div>
+          <div className="mt-5">
+            <LotteryLuckCard abbr={team.abbr} />
           </div>
           <ScoutingPanels report={report} />
           <TeamBreakdown eras={teamEras} color={team.color} byYear={team.byYear} picks={owned} />

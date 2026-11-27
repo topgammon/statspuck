@@ -137,7 +137,7 @@ export function LeaderboardTable({ board, limit, search = "" }: { board: Board; 
         <thead>
           <tr>
             {header("rank", "#", "Rank on this board", true)}
-            {header("name", board.id === "teams" ? "Team" : board.id === "gms" ? "General manager" : "Player", undefined, true)}
+            {header("name", board.id === "teams" || board.id === "lottery" ? "Team" : board.id === "gms" ? "General manager" : "Player", undefined, true)}
             {board.columns.map((col) => header(col.key, col.label, col.tip, col.format === "text"))}
           </tr>
         </thead>

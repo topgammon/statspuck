@@ -2,7 +2,9 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { GlobalSearch } from "@/components/global-search";
 import { Cell, RowImage } from "@/components/leaderboard-table";
+import { money, RosterCard } from "@/components/perfect-roster-view";
 import { StatsPuckBadge } from "@/components/wordmark";
+import { perfectRoster } from "@/lib/perfect-roster";
 import { leaderboard } from "@/lib/data";
 import { devBoard } from "@/lib/dev-board";
 import { skillBoard, type BoardRow } from "@/lib/leaderboards";
@@ -97,8 +99,63 @@ export default function HomePage() {
         </div>
       </section>
 
-
+      <PerfectRosterPreview />
     </div>
+  );
+}
+
+/** "Live Perfect Roster (Cap-Compliant)": 1st line, 1st pair, starting goalie, cap used. */
+function PerfectRosterPreview() {
+  const roster = perfectRoster();
+  if (!roster) return null;
+  const line = roster.forwards[0];
+  const pair = roster.defense[0];
+  return (
+    <section className="mt-14">
+      <div className="rounded-2xl border border-[#E11D48]/40 bg-[#14171F] p-5 shadow-[0_0_40px_-12px_rgba(225,29,72,0.35)]">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-[11px] font-semibold tracking-[0.16em] text-[#E11D48] uppercase">Live Perfect Roster · Cap-compliant</p>
+            <h2 className="display mt-1 text-2xl font-bold sm:text-3xl">The best team that fits under the cap</h2>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] tracking-[0.12em] text-[#94A3B8] uppercase">Cap used</p>
+            <p className="display text-2xl font-bold">
+              {money(roster.total)} <span className="text-sm font-normal text-[#94A3B8]">/ {money(roster.ceiling)}</span>
+            </p>
+          </div>
+        </div>
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#0B0D10] ring-1 ring-[#262B36]">
+          <div className="h-full rounded-full bg-gradient-to-r from-[#38BDF8] to-[#10B981]" style={{ width: `${Math.min(100, (roster.total / roster.ceiling) * 100)}%` }} />
+        </div>
+        <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)_minmax(0,1fr)]">
+          <div>
+            <p className="text-[10px] font-semibold tracking-[0.12em] text-[#94A3B8] uppercase">1st line</p>
+            <div className="mt-1.5 grid gap-2 sm:grid-cols-3">
+              <RosterCard player={line.LW} label="LW" compact />
+              <RosterCard player={line.C} label="C" compact />
+              <RosterCard player={line.RW} label="RW" compact />
+            </div>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold tracking-[0.12em] text-[#94A3B8] uppercase">1st pair</p>
+            <div className="mt-1.5 grid gap-2 sm:grid-cols-2">
+              <RosterCard player={pair.LD} label="LD" compact />
+              <RosterCard player={pair.RD} label="RD" compact />
+            </div>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold tracking-[0.12em] text-[#94A3B8] uppercase">Starter</p>
+            <div className="mt-1.5">
+              <RosterCard player={roster.goalies[0]} label="G" compact />
+            </div>
+          </div>
+        </div>
+        <Link href="/perfect-roster" className="mt-4 inline-block text-sm font-semibold text-[#38BDF8] hover:underline">
+          View Full 20-Man Roster →
+        </Link>
+      </div>
+    </section>
   );
 }
 

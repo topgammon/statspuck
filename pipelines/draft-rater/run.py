@@ -20,8 +20,10 @@ from fetch_contracts import main as fetch_contracts
 from fetch_trades import build as build_trades
 from fetch_gm_photos import main as fetch_gm_photos
 from fetch_nhl import fetch_all, sample
+from fetch_debuts import build as fetch_debuts
 from fetch_edge import build as fetch_edge
 from fetch_ironman import build as fetch_ironman
+from fetch_lottery import build as fetch_lottery
 from fetch_paths import main as fetch_paths
 from fetch_playoffs import build as fetch_playoffs
 from fetch_rosters import main as fetch_rosters
@@ -65,6 +67,7 @@ def main() -> None:
         else:
             print(f"contracts: last synced under {CONTRACT_REFRESH_DAYS} days ago; skipping (monthly)", flush=True)
         fetch_playoffs()
+        fetch_lottery()
     build()
     build_trades()
     build_asset_data()
@@ -72,6 +75,7 @@ def main() -> None:
     if not args.skip_fetch:
         fetch_edge()  # needs nhlers.json from build_asset_data
         fetch_ironman()  # needs season_stats.json
+        fetch_debuts()  # needs season_stats.json
     if not args.skip_cards:
         render()
 

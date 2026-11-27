@@ -34,8 +34,8 @@ export function playoffTotals(playerId: number | null | undefined): { gp: number
 
 /** [season, gp, g, a, pts, plusMinus, pim, shots, blocks, foWins, foLosses, toiPerGameSec, ppToiSec, shToiSec] */
 export type SkaterSeason = [number, number, number, number, number, number, number, number, number, number, number, number, number, number];
-/** [season, gp, starts, shotsAgainst, saves, goalsAgainst, toiSec, shutouts?] */
-export type GoalieSeason = [number, number, number, number, number, number, number, number?]
+/** [season, gp, starts, shotsAgainst, saves, goalsAgainst, toiSec, shutouts?, wins?] */
+export type GoalieSeason = [number, number, number, number, number, number, number, number?, number?]
 
 type StatsFile = { lastSeason: number; skaters: Record<string, SkaterSeason[]>; goalies: Record<string, GoalieSeason[]>; names?: Record<string, string> };
 

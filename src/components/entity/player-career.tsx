@@ -7,6 +7,7 @@ import { TeamName } from "@/components/team-logo";
 import { meta, picks, picksById } from "@/lib/data";
 import { scoreClass, seasonLabel, signed } from "@/lib/format";
 import { playerHref, teamHref } from "@/lib/routes";
+import type { Progress } from "@/lib/milestones";
 import type { PickRow } from "@/lib/types";
 
 // Career tab pieces for drafted players: the Draft Rater breakdown with its trajectory
@@ -103,7 +104,18 @@ export function DraftPanel({ pick, color }: { pick: PickRow; color: string }) {
 }
 
 /** NHL debut box plus the franchise records and milestones placeholder. */
-export function DebutAndMilestones({ debut, team, gp }: { debut: number | null; team: { abbr: string; name: string } | null; gp: number }) {
+export function DebutAndMilestones({
+  debut,
+  team,
+  gp,
+  milestones,
+}: {
+  debut: number | null;
+  team: { abbr: string; name: string } | null;
+  gp: number;
+  /** Next round-number milestones (active players only). */
+  milestones?: Progress[];
+}) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <div className="rounded-2xl border border-[#262B36] bg-[#14171F] p-5">
@@ -128,16 +140,48 @@ export function DebutAndMilestones({ debut, team, gp }: { debut: number | null; 
           <p className="mt-2 text-sm text-[#94A3B8]">No NHL games yet.</p>
         )}
       </div>
-      <div className="rounded-2xl border border-dashed border-[#262B36] bg-[#14171F]/60 p-5">
-        <div className="flex items-center justify-between gap-2">
-          <SectionLabel>Franchise records · Milestones · Trophies</SectionLabel>
-          <span className="text-[10px] font-bold tracking-wider text-[#94A3B8] uppercase">Soon</span>
+      {milestones && milestones.length ? (
+        <div className="rounded-2xl border border-[#262B36] bg-[#14171F] p-5">
+          <div className="flex items-center justify-between gap-2">
+            <SectionLabel>Milestone progress</SectionLabel>
+            <Link href="/leaderboards?board=milestones" className="text-xs font-semibold text-[#38BDF8] hover:underline">
+              Milestone Watch →
+            </Link>
+          </div>
+          <ul className="mt-3 space-y-3">
+            {milestones.map((m) => {
+              const pct = Math.max(0, Math.min(100, ((m.value - m.previous) / Math.max(1, m.target - m.previous)) * 100));
+              const close = m.remaining <= 25;
+              return (
+                <li key={m.stat}>
+                  <div className="flex items-baseline justify-between gap-2 text-sm">
+                    <span className="font-semibold">
+                      {m.target.toLocaleString("en-US")} {MILESTONE_LABEL[m.stat]}
+                    </span>
+                    <span className={`text-xs ${close ? "font-bold text-[#F59E0B]" : "text-[#94A3B8]"}`}>
+                      {m.value.toLocaleString("en-US")} now · {m.remaining} to go
+                    </span>
+                  </div>
+                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-[#0B0D10] ring-1 ring-[#262B36]">
+                    <div className={`h-full rounded-full ${close ? "bg-[#F59E0B]" : "bg-[#38BDF8]"}`} style={{ width: `${pct}%` }} />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-3 text-[11px] text-[#94A3B8]">NHL regular season since 2005-06. Bars run from his last round-number milestone to the next.</p>
         </div>
-        <p className="mt-2 text-sm text-[#94A3B8]">Where he ranks in his franchise&apos;s record book, career milestones (100th goal, 500th game) and NHL awards. Coming with the awards data feed.</p>
-      </div>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-[#262B36] bg-[#14171F]/60 p-5">
+          <SectionLabel>Franchise records · Trophies</SectionLabel>
+          <p className="mt-2 text-sm text-[#94A3B8]">Where he ranks in his franchise&apos;s record book and NHL awards. Coming with the awards data feed.</p>
+        </div>
+      )}
     </div>
   );
 }
+
+const MILESTONE_LABEL: Record<string, string> = { gp: "games", goals: "goals", points: "points", wins: "wins" };
 
 function Move({ moved }: { moved: number }) {
   if (moved === 0) return <span className="font-semibold text-zinc-500">Even</span>;

@@ -41,6 +41,7 @@ export function ToolNav({ tool, sections, hideOn = [] }: { tool: string; section
 export const DRAFT_RATER_SECTIONS: ToolSection[] = [
   { href: "/draft-rater", label: "Board" },
   { href: "/draft-rater/drafts", label: "Draft Classes", prefix: true },
+  { href: "/lottery", label: "Lottery Simulator" },
 ];
 
 export const TRADE_MACHINE_SECTIONS: ToolSection[] = [

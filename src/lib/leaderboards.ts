@@ -2,6 +2,8 @@ import { capShare } from "./cap";
 import { leaderboard, picks, teamsByAbbr } from "./data";
 import { allGmCareers, teamOverall } from "./overall-grades";
 import { ironStreak } from "./ironman";
+import { lotteryLuck } from "./lottery";
+import { debutSeason, milestoneWatch, nhlDebuts, STAT_LABEL, WATCH_WINDOW } from "./milestones";
 import { franchiseAssets, franchiseAssetsFor } from "./franchise-assets";
 import { teamTradeReport } from "./gm-grades";
 import { impactPerCap, profileRows, type ProfileRow } from "./profiles";
@@ -42,7 +44,7 @@ export type Board = {
   selects?: { id: string; label: string; segment?: string; options: { tag: string; label: string }[] }[];
 };
 
-export type BoardId = "players" | "teams" | "gms" | "contracts" | "steals" | "seasons";
+export type BoardId = "players" | "teams" | "gms" | "contracts" | "steals" | "seasons" | "lottery" | "debuts" | "milestones";
 
 function playerImage(row: ProfileRow): BoardRow["image"] {
   return { kind: "player", playerId: row.playerId, headshot: row.hasHeadshot };
@@ -334,6 +336,102 @@ export function gmBoard(): Board {
     rows,
   };
 }
+/** Franchise Lottery Luck since 2006: where the ping-pong balls put each team's own picks. */
+export function lotteryBoard(): Board {
+  return {
+    id: "lottery",
+    label: "Lottery Luck",
+    blurb: "Every NHL draft lottery since 2006: spots each franchise gained or lost versus its pre-lottery seed, and the expected Impact that luck was worth. Pure luck, not scouting.",
+    rankBy: "impact",
+    columns: [
+      { key: "impact", label: "Impact luck", format: "signed", desc: true, tip: "Expected 7-year Impact of the slots it got minus the slots it had before the lottery (Draft Rater pick curve)." },
+      { key: "spots", label: "Net spots", format: "int", desc: true, tip: "Spots gained (+) or lost (-) across every lottery" },
+      { key: "first", label: "Jumps to #1", format: "int", desc: true },
+      { key: "top3", label: "Top-3 jumps", format: "int", desc: true },
+      { key: "drops", label: "Pushed down", format: "int", tip: "Lotteries where another club's jump pushed its pick down" },
+      { key: "lotteries", label: "Lotteries", format: "int", desc: true },
+      { key: "biggest", label: "Biggest jump", format: "text" },
+    ],
+    rows: lotteryLuck.map((row) => ({
+      href: teamHref(row.abbr, "draft-dev"),
+      name: row.name,
+      sub: `#${row.rank} of ${lotteryLuck.length} in lottery luck`,
+      image: { kind: "team", abbr: row.abbr },
+      values: {
+        impact: row.netImpact,
+        spots: row.netSpots,
+        first: row.jumpsToFirst,
+        top3: row.jumpsTop3,
+        drops: row.drops,
+        lotteries: row.lotteries,
+        biggest: row.biggest ? `${row.biggest.year}: seed ${row.biggest.seed} → #${row.biggest.overall}` : "—",
+      },
+    })),
+  };
+}
+
+/** Everyone who played his first NHL game this season, newest first. */
+export function debutsBoard(): Board {
+  return {
+    id: "debuts",
+    label: "NHL Debuts",
+    blurb: `Every player who played his first NHL game in ${debutSeason}-${String(debutSeason + 1).slice(2)}, newest first, with his draft slot, his road to the NHL and his debut box score.`,
+    rankBy: "date",
+    columns: [
+      { key: "date", label: "Debut", format: "text" },
+      { key: "matchup", label: "Game", format: "text" },
+      { key: "line", label: "Debut line", format: "text", tip: "Goals-assists and ice time in his first game (goalies: decision and saves)" },
+      { key: "draft", label: "Drafted", format: "text" },
+      { key: "path", label: "Road to the NHL", format: "text", tip: "League before the draft, then the leagues he played in after it" },
+      { key: "gp", label: "GP since", format: "int", desc: true, tip: "NHL games played this season" },
+    ],
+    rows: nhlDebuts().map((d) => ({
+      href: d.routeId ? playerHref(d.routeId, "career") : null,
+      name: d.name,
+      sub: d.team,
+      image: { kind: "player", playerId: d.playerId, headshot: d.headshot },
+      values: {
+        date: d.date,
+        matchup: `${d.team} ${d.home ? "vs" : "@"} ${d.opponent}`,
+        line: d.goalie
+          ? `${d.goalie.decision ?? "—"} · ${(d.goalie.shotsAgainst ?? 0) - (d.goalie.goalsAgainst ?? 0)}/${d.goalie.shotsAgainst ?? 0} saves`
+          : `${d.goals}G ${d.assists}A · ${d.toi ?? "—"} TOI`,
+        draft: d.draft,
+        path: d.path ?? "—",
+        gp: d.gp,
+      },
+    })),
+  };
+}
+
+/** Active players closing in on 1,000 GP, 500 goals, 1,000 points or 300 goalie wins. */
+export function milestonesBoard(): Board {
+  return {
+    id: "milestones",
+    label: "Milestone Watch",
+    blurb: `Active players within ${WATCH_WINDOW} of 1,000 games, 500 goals, 1,000 points or 300 goalie wins (career totals since 2005-06).`,
+    rankBy: "pct",
+    columns: [
+      { key: "milestone", label: "Milestone", format: "text" },
+      { key: "value", label: "Now", format: "int", desc: true },
+      { key: "remaining", label: "To go", format: "int" },
+      { key: "pct", label: "Progress", format: "pct", desc: true },
+    ],
+    rows: milestoneWatch().map((w) => ({
+      href: playerHref(w.row.routeId, "career"),
+      name: w.row.name,
+      sub: `${w.row.pos} · ${w.row.team ?? "—"}`,
+      image: { kind: "player", playerId: w.row.playerId, headshot: w.row.hasHeadshot },
+      values: {
+        milestone: `${w.target.toLocaleString("en-US")} ${STAT_LABEL[w.stat].toLowerCase()}`,
+        value: w.value,
+        remaining: w.remaining,
+        pct: Math.round((w.value / w.target) * 1000) / 10,
+      },
+    })),
+  };
+}
+
 export function allBoards(): Board[] {
-  return [skillBoard(), teamBoard(), gmBoard(), contractBoard(), stealBoard()];
+  return [skillBoard(), teamBoard(), gmBoard(), contractBoard(), stealBoard(), lotteryBoard(), milestonesBoard(), debutsBoard()];
 }

@@ -20,8 +20,9 @@ export function LeaderboardsHub({ boards, seasons }: { boards: Board[]; seasons:
   const params = useSearchParams();
   const fromUrl = params.get("board") ?? params.get("view");
   const urlBoard = fromUrl && tabs.some((tab) => tab.id === fromUrl) ? fromUrl : null;
-  const [picked, setPicked] = useState<{ id: string; url: string | null } | null>(null);
-  const active = picked && picked.url === urlBoard ? picked.id : (urlBoard ?? boards[0].id);
+  // A tab click wins until the address changes from somewhere else (e.g. the nav's Teams link).
+  const [picked, setPicked] = useState<{ id: string; from: string | null } | null>(null);
+  const active = picked && (picked.from === urlBoard || picked.id === urlBoard) ? picked.id : (urlBoard ?? boards[0].id);
   const [query, setQuery] = useState("");
 
   function pick(id: string) {
@@ -30,7 +31,7 @@ export function LeaderboardsHub({ boards, seasons }: { boards: Board[]; seasons:
     url.searchParams.delete("view");
     if (id === boards[0].id) url.searchParams.delete("board");
     else url.searchParams.set("board", id);
-    setPicked({ id, url: id === boards[0].id ? null : id });
+    setPicked({ id, from: urlBoard });
     window.history.replaceState(window.history.state, "", url);
   }
 
