@@ -46,32 +46,57 @@ export type HubLeague = {
   sv: number | null;
 };
 type Game = { id: number; start: string; away: string; home: string; refs: string[] };
+export type HubView = { teams: HubTeam[]; goalies: HubGoalie[]; league: HubLeague; lines: HubUnit[]; pairs: HubUnit[] };
 
 type Tab = "matchups" | "goalies" | "chemistry";
 
+/** "This season only" (default) vs "include last season" switch, shared by the hub and profile tabs. */
+export function SeasonSwitch({ two, onChange, season }: { two: boolean; onChange: (two: boolean) => void; season: string }) {
+  return (
+    <div className="inline-flex rounded-full border border-[#262B36] bg-[#14171F] p-0.5 text-xs font-semibold" role="group" aria-label="Seasons included">
+      <button type="button" aria-pressed={!two} onClick={() => onChange(false)} className={`rounded-full px-3 py-1.5 ${!two ? "bg-[#38BDF8] text-[#0B0D10]" : "text-[#94A3B8] hover:text-white"}`}>
+        {season} only
+      </button>
+      <button type="button" aria-pressed={two} onClick={() => onChange(true)} className={`rounded-full px-3 py-1.5 ${two ? "bg-[#38BDF8] text-[#0B0D10]" : "text-[#94A3B8] hover:text-white"}`}>
+        + last season
+      </button>
+    </div>
+  );
+}
+
+/** Client wrapper for server-rendered profile panels: shows the this-season or two-season version. */
+export function SeasonViews({ season, two, current }: { season: string; two: React.ReactNode; current: React.ReactNode }) {
+  const [both, setBoth] = useState(false);
+  return (
+    <div className="grid gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <SeasonSwitch two={both} onChange={setBoth} season={season} />
+        <span className="text-xs text-[#94A3B8]">{both ? "This season and last season, equal weight" : "This season only"}</span>
+      </div>
+      {both ? two : current}
+    </div>
+  );
+}
+
 export function GameEdgeHub({
-  teams,
-  goalies,
-  league,
+  views,
   games: initialGames,
   date,
   refs,
   leagueRate,
-  lines,
-  pairs,
   hrefs,
+  season,
 }: {
-  teams: HubTeam[];
-  goalies: HubGoalie[];
-  league: HubLeague;
+  views: Record<"season" | "two", HubView>;
   games: Game[];
   date: string;
   refs: EdgeRef[];
   leagueRate: number;
-  lines: HubUnit[];
-  pairs: HubUnit[];
   hrefs: Record<number, string>;
+  season: string;
 }) {
+  const [both, setBoth] = useState(false);
+  const { teams, goalies, league, lines, pairs } = views[both ? "two" : "season"];
   const [tab, setTab] = useState<Tab>("matchups");
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -93,6 +118,10 @@ export function GameEdgeHub({
   }
   return (
     <div>
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <SeasonSwitch two={both} onChange={setBoth} season={season} />
+        <span className="text-xs text-[#94A3B8]">{both ? "Using this season and last season at equal weight." : "Using this season's games only (default)."}</span>
+      </div>
       <div role="tablist" className="flex flex-wrap gap-2">
         {(
           [
@@ -472,7 +501,7 @@ function GoalieExplorer({ goalies, league, hrefs }: { goalies: HubGoalie[]; leag
           <div className="flex-1">
             <p className="display text-2xl font-bold">{hrefs[g.id] ? <Link href={hrefs[g.id]} className="hover:text-[#38BDF8]">{g.name}</Link> : g.name}</p>
             <p className="text-xs text-[#94A3B8]">
-              {g.team ?? ""} · SV {g.sv?.toFixed(3).replace(/^0/, "") ?? "—"} (league {league.sv?.toFixed(3).replace(/^0/, "") ?? "—"}) · {Math.round(g.sa)} weighted shots
+              {g.team ?? ""} · SV {g.sv?.toFixed(3).replace(/^0/, "") ?? "—"} (league {league.sv?.toFixed(3).replace(/^0/, "") ?? "—"}) · {Math.round(g.sa)} shots
             </p>
           </div>
         </div>

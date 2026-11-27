@@ -1,14 +1,13 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { CHANCE_KEYS, CHANCE_NAME, goalieZoneValues, perGame, shareOf, SHOT_KEYS, SHOT_NAME, signed, ZONE_KEYS, ZONE_NAME, type SG } from "@/components/game-edge/edge-math";
-import { SvTable, UnitTable } from "@/components/game-edge/game-edge-hub";
+import { SeasonViews, SvTable, UnitTable } from "@/components/game-edge/game-edge-hub";
 import { InfoTip } from "@/components/info-tip";
 import { HalfRinkShots, HalfRinkZones } from "@/components/rink";
-import { goalieEdge, leagueEdge, leagueGoalie, playerEdge, playerIdHref, teamEdge, type RefSplit } from "@/lib/game-edge";
+import { edgeCurrentSeason, goalieEdge, leagueEdgeFor, leagueGoalieFor, playerEdge, playerIdHref, teamEdge, type EdgeView, type RefSplit } from "@/lib/game-edge";
 
 // Live Game Edge tabs for team and player profiles (replace the old Coming Soon mockups).
 
-const HUB_LEAGUE = leagueGoalie;
 
 function Card({ title, tip, children, action }: { title: string; tip?: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
@@ -84,17 +83,26 @@ function Bars({ rows }: { rows: { label: string; value: number; compare?: number
 
 // ------------------------------------------------------------------ Team
 
+const SEASON_LABEL = `${edgeCurrentSeason}-${String(edgeCurrentSeason + 1).slice(2)}`;
+
+/** Team Game Edge tab: this season by default, with a switch to add last season. */
 export function TeamGameEdge({ abbr, name }: { abbr: string; name: string }) {
-  const t = teamEdge(abbr);
+  return <SeasonViews season={SEASON_LABEL} current={<TeamEdgeView abbr={abbr} name={name} view="season" />} two={<TeamEdgeView abbr={abbr} name={name} view="two" />} />;
+}
+
+function TeamEdgeView({ abbr, name, view }: { abbr: string; name: string; view: EdgeView }) {
+  const t = teamEdge(abbr, view);
+  const leagueEdge = leagueEdgeFor(view);
+  const leagueGoalie = leagueGoalieFor(view);
   if (!t) return <p className="text-sm text-[#94A3B8]">No play-by-play sample for {name} yet.</p>;
   const hrefs = (ids: number[]) => Object.fromEntries(ids.map((id) => [id, playerIdHref(id, "game-edge")]).filter((e): e is [number, string] => Boolean(e[1])));
   const unitIds = [...t.lines, ...t.pairs].flatMap((u) => u.ids);
-  const goalies = t.goalies.map((id) => goalieEdge(id)).filter((g) => Boolean(g)).slice(0, 2);
+  const goalies = t.goalies.map((id) => goalieEdge(id, view)).filter((g) => Boolean(g)).slice(0, 2);
   return (
     <div className="grid gap-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-[#94A3B8]">
-          {t.games} games this season · last season at half weight ·{" "}
+          {t.games} games this season{view === "two" ? " + last season" : ""} ·{" "}
           <Link href="/game-edge" className="font-semibold text-[#38BDF8] hover:underline">
             Build a pregame matchup report →
           </Link>
@@ -144,7 +152,7 @@ export function TeamGameEdge({ abbr, name }: { abbr: string; name: string }) {
                   <span className="text-xs text-[#94A3B8]">SV {g!.sv?.toFixed(3).replace(/^0/, "")}</span>
                 </p>
                 <div className="mx-auto mt-2 max-w-[16rem]">
-                  <HalfRinkZones values={goalieZoneValues(g!, HUB_LEAGUE)} label={`${g!.name} save % by zone`} />
+                  <HalfRinkZones values={goalieZoneValues(g!, leagueGoalie)} label={`${g!.name} save % by zone`} />
                 </div>
               </div>
             ))}
@@ -160,16 +168,29 @@ export function TeamGameEdge({ abbr, name }: { abbr: string; name: string }) {
 
 // ------------------------------------------------------------------ Player
 
+/** Player Game Edge tab: this season by default, with a switch to add last season. */
 export function PlayerGameEdge({ playerId, name, goalie }: { playerId: number | null; name: string; goalie: boolean }) {
   if (playerId == null) return <p className="text-sm text-[#94A3B8]">No NHL play-by-play for {name}.</p>;
+  return (
+    <SeasonViews
+      season={SEASON_LABEL}
+      current={<PlayerEdgeView playerId={playerId} name={name} goalie={goalie} view="season" />}
+      two={<PlayerEdgeView playerId={playerId} name={name} goalie={goalie} view="two" />}
+    />
+  );
+}
+
+function PlayerEdgeView({ playerId, name, goalie, view }: { playerId: number; name: string; goalie: boolean; view: EdgeView }) {
+  const leagueGoalie = leagueGoalieFor(view);
+  const span = view === "two" ? "this season or last" : "this season";
   if (goalie) {
-    const g = goalieEdge(playerId);
-    if (!g) return <p className="text-sm text-[#94A3B8]">Not enough shots faced since 2024-25 for a goalie tendency map.</p>;
-    const zones = goalieZoneValues(g, HUB_LEAGUE);
+    const g = goalieEdge(playerId, view);
+    if (!g) return <p className="text-sm text-[#94A3B8]">Not enough shots faced {span} for a goalie tendency map yet.</p>;
+    const zones = goalieZoneValues(g, leagueGoalie);
     const weakest = ZONE_KEYS.filter((z) => zones[z].delta != null).sort((a, b) => (zones[a].delta ?? 0) - (zones[b].delta ?? 0))[0];
     return (
       <div className="grid gap-5">
-        <Card title="Goalie tendency map" tip="Save % by ice zone vs league, shrunk for small samples. This season counts in full, last season at half weight.">
+        <Card title="Goalie tendency map" tip="Save % by ice zone vs league, shrunk for small samples.">
           <div className="grid gap-5 md:grid-cols-2">
             <div className="mx-auto w-full max-w-xs">
               <HalfRinkZones values={zones} label={`${name} save % by zone`} />
@@ -188,20 +209,20 @@ export function PlayerGameEdge({ playerId, name, goalie }: { playerId: number | 
       </div>
     );
   }
-  const p = playerEdge(playerId);
-  if (!p) return <p className="text-sm text-[#94A3B8]">Not enough NHL shots or 5-on-5 ice time since 2024-25 for Game Edge yet.</p>;
+  const p = playerEdge(playerId, view);
+  if (!p) return <p className="text-sm text-[#94A3B8]">Not enough NHL shots or 5-on-5 ice time {span} for Game Edge yet.</p>;
   const shotRows = [...SHOT_KEYS.filter((k) => (p.type[k]?.[0] ?? 0) > 0)];
   const rebound = p.chance.rebound;
   const typeTotal = Object.values(p.type).reduce((s, v) => s + v[0], 0) || 1;
   return (
     <div className="grid gap-5">
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <Card title="Shot & goal heatmap" tip="Every unblocked shot in the offensive zone (blue = volume, red dots = goals). This season in full, earlier seasons at reduced weight.">
+        <Card title="Shot & goal heatmap" tip="Every unblocked shot in the offensive zone (blue = volume, red dots = goals). ">
           <div className="mx-auto max-w-sm">
             <HalfRinkShots cells={p.cells} label={`${name} shot heatmap`} />
           </div>
           <p className="mt-2 text-xs text-[#94A3B8]">
-            {Math.round(p.shots)} weighted shots on goal · {Math.round(p.goals)} goals · net on the right
+            {Math.round(p.shots)} shots on goal · {Math.round(p.goals)} goals · net on the right
           </p>
         </Card>
         <Card title="Shot-type breakdown" tip="Share of his shots on goal by official NHL shot type, plus rebounds (shots within 2.5 s of a save).">

@@ -3,11 +3,15 @@ import goaliesJson from "../../data/game-edge/goalies.json";
 import playersJson from "../../data/game-edge/players.json";
 import teamsJson from "../../data/game-edge/teams.json";
 import todayJson from "../../data/game-edge/today.json";
+import chemistry2Json from "../../data/game-edge/chemistry-2yr.json";
+import goalies2Json from "../../data/game-edge/goalies-2yr.json";
+import players2Json from "../../data/game-edge/players-2yr.json";
+import teams2Json from "../../data/game-edge/teams-2yr.json";
 import { profileRows } from "./profiles";
 import { playerHref, type EntityTab } from "./routes";
 
 // Game Edge data, built nightly by pipelines/game-edge/build.py from free NHL play-by-play
-// and shift charts. Counts are recency-weighted: this season 1.0, last season 0.5, two ago 0.25.
+// and shift charts. Default view = this season only; "two" adds last season at full weight.
 
 /** [shots on goal, goals] */
 export type SG = [number, number];
@@ -121,48 +125,71 @@ type TeamsFile = {
   teams: Record<string, TeamEdge>;
 };
 
-const teams = teamsJson as unknown as TeamsFile;
-const goalies = goaliesJson as unknown as { asOf: string; league: { sv: number | null; chance: Record<string, SG>; zone: Record<string, SG>; type: Record<string, SG> }; goalies: GoalieEdge[] };
-const players = playersJson as unknown as { asOf: string; players: Record<string, PlayerEdge> };
-const chemistry = chemistryJson as unknown as { asOf: string; lines: Unit[]; pairs: Unit[]; bonus: Record<string, number> };
+type GoaliesFile = { asOf: string; league: { sv: number | null; chance: Record<string, SG>; zone: Record<string, SG>; type: Record<string, SG> }; goalies: GoalieEdge[] };
+type PlayersFile = { asOf: string; players: Record<string, PlayerEdge> };
+type ChemistryFile = { asOf: string; lines: Unit[]; pairs: Unit[]; bonus: Record<string, number> };
+
+/** "season" = this season only (the default everywhere). "two" = this season + last season. */
+export type EdgeView = "season" | "two";
+
+const DATA: Record<EdgeView, { teams: TeamsFile; goalies: GoaliesFile; players: PlayersFile; chemistry: ChemistryFile }> = {
+  season: {
+    teams: teamsJson as unknown as TeamsFile,
+    goalies: goaliesJson as unknown as GoaliesFile,
+    players: playersJson as unknown as PlayersFile,
+    chemistry: chemistryJson as unknown as ChemistryFile,
+  },
+  two: {
+    teams: teams2Json as unknown as TeamsFile,
+    goalies: goalies2Json as unknown as GoaliesFile,
+    players: players2Json as unknown as PlayersFile,
+    chemistry: chemistry2Json as unknown as ChemistryFile,
+  },
+};
 const today = todayJson as unknown as { date: string; games: { id: number; start: string; away: string; home: string; refs: string[] }[] };
 
-export const edgeAsOf = teams.asOf;
-export const edgeCurrentSeason = teams.current;
-export const leagueEdge = teams.league;
-export const leagueGoalie = goalies.league;
+export const edgeAsOf = DATA.season.teams.asOf;
+export const edgeCurrentSeason = DATA.season.teams.current;
 
-export function teamEdge(abbr: string): TeamEdge | undefined {
-  return teams.teams[abbr];
+export function leagueEdgeFor(view: EdgeView = "season") {
+  return DATA[view].teams.league;
 }
 
-export function allTeamEdges(): Record<string, TeamEdge> {
-  return teams.teams;
+export function leagueGoalieFor(view: EdgeView = "season") {
+  return DATA[view].goalies.league;
 }
 
-export function allGoalieEdges(): GoalieEdge[] {
-  return goalies.goalies;
+export function teamEdge(abbr: string, view: EdgeView = "season"): TeamEdge | undefined {
+  return DATA[view].teams.teams[abbr];
 }
 
-export function goalieEdge(id: number): GoalieEdge | undefined {
-  return goalies.goalies.find((g) => g.id === id);
+export function allTeamEdges(view: EdgeView = "season"): Record<string, TeamEdge> {
+  return DATA[view].teams.teams;
 }
 
-export function playerEdge(id: number | null | undefined): PlayerEdge | undefined {
-  return id == null ? undefined : players.players[String(id)];
+export function allGoalieEdges(view: EdgeView = "season"): GoalieEdge[] {
+  return DATA[view].goalies.goalies;
 }
 
-export function topLines(): Unit[] {
-  return chemistry.lines;
+export function goalieEdge(id: number, view: EdgeView = "season"): GoalieEdge | undefined {
+  return DATA[view].goalies.goalies.find((g) => g.id === id);
 }
 
-export function topPairs(): Unit[] {
-  return chemistry.pairs;
+export function playerEdge(id: number | null | undefined, view: EdgeView = "season"): PlayerEdge | undefined {
+  return id == null ? undefined : DATA[view].players.players[String(id)];
 }
 
-/** Perfect Roster chemistry bonus (value points, -3..+3) from 5v5 WOWY chemistry lift. */
+export function topLines(view: EdgeView = "season"): Unit[] {
+  return DATA[view].chemistry.lines;
+}
+
+export function topPairs(view: EdgeView = "season"): Unit[] {
+  return DATA[view].chemistry.pairs;
+}
+
+/** Perfect Roster chemistry bonus (value points, -3..+3) from this season's 5v5 WOWY chemistry lift. */
 export function chemistryBonusFor(playerId: number): number {
-  return chemistry.bonus[String(playerId)] ?? 0;
+  return DATA.season.chemistry.bonus[String(playerId)] ?? 0;
 }
 
 export function todaysGames() {

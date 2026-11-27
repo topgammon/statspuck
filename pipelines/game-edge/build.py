@@ -305,12 +305,18 @@ def on_ice_segments(game: dict):
 
 
 def build_all(seasons: list[int], current: int) -> None:
+    """Two Game Edge views: this season only (default, no suffix) and this + last season ("-2yr").
+    Ref Watch always uses every stored game (referees need the sample)."""
     OUT.mkdir(parents=True, exist_ok=True)
     games = load_games(seasons)
     print(f"game-edge build: {len(games)} stored games", flush=True)
     if not games:
         return
-    weight = {current: 1.0, current - 1: 0.5, current - 2: 0.25}
+    _build(games, current, {current: 1.0}, "", main=True)
+    _build(games, current, {current: 1.0, current - 1: 1.0}, "-2yr", main=False)
+
+
+def _build(games: list[dict], current: int, weight: dict[int, float], suffix: str, main: bool) -> None:
     names: dict[int, str] = {}
     pos_of: dict[int, str] = {}
     latest_team: dict[int, tuple[str, str]] = {}
@@ -351,7 +357,7 @@ def build_all(seasons: list[int], current: int) -> None:
 
     for game in sorted(games, key=lambda g: g["id"]):
         season = int(str(game["id"])[:4])
-        w = weight.get(season, 0.25)
+        w = weight.get(season, 0.0)
         side_abbr = [game["away"], game["home"]]
         minutes = game["len"] / 60
         for pid, info in game["roster"].items():
@@ -779,13 +785,15 @@ def build_all(seasons: list[int], current: int) -> None:
         "league": {"sv": league_team["sv"], **league_g},
         "goalies": goalies_out,
     }
-    write("refs.json", refs_out)
-    write("teams.json", {"asOf": date.today().isoformat(), "current": current, "league": league_team, "teams": teams_out})
-    write("goalies.json", goalie_out)
-    write("players.json", {"asOf": date.today().isoformat(), "players": players_out})
-    write("chemistry.json", chemistry_out)
-    build_today(active_refs)
-    build_availability(current, team_games_current)
+    seasons_used = sorted(s for s, v in weight.items() if v > 0)
+    write(f"teams{suffix}.json", {"asOf": date.today().isoformat(), "current": current, "seasons": seasons_used, "league": league_team, "teams": teams_out})
+    write(f"goalies{suffix}.json", goalie_out)
+    write(f"players{suffix}.json", {"asOf": date.today().isoformat(), "players": players_out})
+    write(f"chemistry{suffix}.json", chemistry_out)
+    if main:
+        write("refs.json", refs_out)
+        build_today(active_refs)
+        build_availability(current, team_games_current)
 
 
 def ref_splits_player(entries: dict, total, active: dict) -> dict:

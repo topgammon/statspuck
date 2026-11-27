@@ -342,14 +342,14 @@ export function PlayerProfile({ subject }: { subject: PlayerSubject }) {
     />
   ) : goalieEdgeRow ? (
     <HeroBox
-      label="Save % since 2024-25"
+      label="Save % this season"
       value={goalieEdgeRow.sv != null ? goalieEdgeRow.sv.toFixed(3).replace(/^0/, "") : "—"}
-      caption="Weighted to this season. Zone-by-zone tendencies below."
+      caption="Zone-by-zone tendencies below. Switch on last season for a bigger sample."
       href="/game-edge?tab=goalies"
       hrefLabel="Goalie Tendencies"
     />
   ) : (
-    <HeroBox label="Game Edge" value="—" caption="Not enough NHL play-by-play since 2024-25 yet." href="/game-edge" hrefLabel="Open Game Edge" />
+    <HeroBox label="Game Edge" value="—" caption="Not enough NHL play-by-play this season yet." href="/game-edge" hrefLabel="Open Game Edge" />
   );
 
   // ---- Tab panels ---------------------------------------------------------------------
