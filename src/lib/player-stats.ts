@@ -15,7 +15,7 @@ export function playerStatsTable(playerId: number | null, group: PickGroup, impa
     // Playoff rows carry their own Impact in the last slot.
     const pRows = playoffGoalieSeasons(playerId);
     const playoff = goalieTable(
-      pRows.map((row) => row.slice(0, 7) as GoalieSeason),
+      pRows.map((row) => row.slice(0, 7) as unknown as GoalieSeason),
       new Map(pRows.map((row) => [row[0], row[7]])),
     );
     return { ...regular, playoffs: { rows: playoff.rows, totals: playoff.totals } };
@@ -104,8 +104,8 @@ function goalieTable(source: GoalieSeason[], impact: Map<number, number>): Omit<
   const merged = new Map<number, number[]>();
   for (const row of source) {
     const prev = merged.get(row[0]);
-    if (!prev) merged.set(row[0], [...row]);
-    else for (let i = 1; i < row.length; i++) prev[i] += row[i];
+    if (!prev) merged.set(row[0], row.map((value) => value ?? 0));
+    else for (let i = 1; i < row.length; i++) prev[i] = (prev[i] ?? 0) + (row[i] ?? 0);
   }
   const toRow = (r: number[], season: number | null): StatRow => ({
     season,
@@ -116,11 +116,13 @@ function goalieTable(source: GoalieSeason[], impact: Map<number, number>): Omit<
     sa: r[3],
     sv: r[4],
     ga: r[5],
+    so: r.length > 7 ? r[7] : null,
     impact: season != null && impact.has(season) ? round(impact.get(season)!) : null,
   });
   const all = [...merged.values()];
   const rows = all.map((r) => toRow(r, r[0]));
-  const total = all.reduce((acc, r) => acc.map((value, i) => (i === 0 ? 0 : value + r[i])), [0, 0, 0, 0, 0, 0, 0]);
+  const hasShutouts = all.some((r) => r.length > 7);
+  const total = all.reduce((acc, r) => acc.map((value, i) => (i === 0 ? 0 : value + (r[i] ?? 0))), hasShutouts ? [0, 0, 0, 0, 0, 0, 0, 0] : [0, 0, 0, 0, 0, 0, 0]);
   const totals = rows.length ? { ...toRow(total, null), impact: rows.some((row) => row.impact != null) ? round(rows.reduce((t, row) => t + (Number(row.impact) || 0), 0)) : null } : null;
   return {
     columns: [
@@ -132,6 +134,7 @@ function goalieTable(source: GoalieSeason[], impact: Map<number, number>): Omit<
       { key: "sa", label: "SA", tip: "Shots against" },
       { key: "sv", label: "SV", tip: "Saves" },
       { key: "ga", label: "GA", tip: "Goals against" },
+      { key: "so", label: "SO", tip: "Shutouts" },
       { key: "impact", label: "Impact", digits: 1, tip: "StatsPuck Impact for the season. Goalies earn 1.35 per start plus goals saved above average." },
     ],
     rows,

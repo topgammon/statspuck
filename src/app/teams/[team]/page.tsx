@@ -25,6 +25,7 @@ import { rosterBoard, teamSkill, teamSkillRank } from "@/lib/leaderboards";
 import { teamOverall } from "@/lib/overall-grades";
 import { contractSeasons, teamContracts } from "@/lib/team-contracts";
 import { TeamContractsTable } from "@/components/entity/team-contracts-table";
+import { ExpiringContracts } from "@/components/entity/expiring-contracts";
 import { gmTeamHref, playerHref, teamHref } from "@/lib/routes";
 import { scoutingReport } from "@/lib/scouting";
 import { letterTone } from "@/lib/search";
@@ -302,6 +303,7 @@ export default async function TeamPage({ params }: { params: Promise<Params> }) 
         <FranchiseAssetCard abbr={team.abbr} />
         <DraftCapitalMatrix abbr={team.abbr} teamName={team.name} />
         <TeamContractsTable rows={teamContracts(team.abbr)} seasons={contractSeasons()} teamName={team.name} ceiling={capCeiling} />
+        <ExpiringContracts rows={teamContracts(team.abbr)} />
         <AssetMgmtSoon subject={team.name} />
       </div>
     ),

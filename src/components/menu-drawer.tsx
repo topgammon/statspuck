@@ -35,8 +35,6 @@ export function MenuDrawer() {
     };
   }, [open]);
 
-  /** A tool's own root link is active only on that exact page; sub-pages match by prefix. */
-  const isActive = (href: string, root: string) => (href === root ? pathname === root || pathname === `${root}/` : pathname.startsWith(href));
 
   const drawer = (
     <div className={`fixed inset-0 z-50 ${open ? "" : "pointer-events-none"}`} aria-hidden={!open}>
@@ -88,40 +86,38 @@ export function MenuDrawer() {
             {modules
               .filter((item) => item.icon !== "board")
               .map((item) => (
-                <div
+                <Link
                   key={item.name}
-                  className={`rounded-xl border p-3 ${item.live ? "border-[#E11D48]/40 bg-[#0B0D10]/60" : "border-dashed border-[#262B36] bg-[#0B0D10]/30"}`}
+                  href={item.href}
+                  className={`flex items-center justify-between gap-2 rounded-xl border p-3 transition ${
+                    pathname.startsWith(item.href)
+                      ? "border-[#38BDF8] bg-[#38BDF8]/10"
+                      : item.live
+                        ? "border-[#E11D48]/40 bg-[#0B0D10]/60 hover:border-[#38BDF8]/60"
+                        : "border-dashed border-[#262B36] bg-[#0B0D10]/30 hover:border-[#38BDF8]/60"
+                  }`}
                 >
-                  <Link href={item.href} className="flex items-center justify-between gap-2">
-                    <span className={`display text-xl font-bold ${item.live ? "text-[#F8FAFC]" : "text-[#F8FAFC]/70"}`}>{item.name}</span>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${
-                        item.live ? "bg-[#E11D48]/15 text-[#E11D48]" : "bg-white/5 text-[#94A3B8]"
-                      }`}
-                    >
-                      {item.live ? "Live" : "Soon"}
-                    </span>
-                  </Link>
-                  {item.links ? (
-                    <div className="mt-3 grid grid-cols-3 gap-2">
-                      {item.links.map((link) => (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          className={`rounded-lg border px-1 py-1.5 text-center text-sm leading-tight transition ${
-                            isActive(link.href, item.href)
-                              ? "border-[#38BDF8] bg-[#38BDF8]/10 text-[#38BDF8]"
-                              : "border-[#262B36] text-[#94A3B8] hover:border-[#38BDF8]/60 hover:text-white"
-                          }`}
-                        >
-                          {link.label}
-                        </Link>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
+                  <span className={`display text-xl font-bold ${item.live ? "text-[#F8FAFC]" : "text-[#F8FAFC]/70"}`}>{item.name}</span>
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${item.live ? "bg-[#E11D48]/15 text-[#E11D48]" : "bg-white/5 text-[#94A3B8]"}`}>
+                    {item.live ? "Live" : "Soon"}
+                  </span>
+                </Link>
               ))}
           </div>
+
+          {/* How every grade and rating is built. Applies site-wide, so it sits on its own. */}
+          <Link
+            href="/draft-rater/methodology"
+            className={`mt-6 flex items-center justify-between gap-2 rounded-xl border p-3 transition ${
+              pathname.startsWith("/draft-rater/methodology") ? "border-[#38BDF8] bg-[#38BDF8]/10" : "border-[#262B36] bg-[#0B0D10]/40 hover:border-[#38BDF8]/60"
+            }`}
+          >
+            <span>
+              <span className="display block text-lg font-bold text-[#F8FAFC]">Methodology</span>
+              <span className="block text-xs text-[#94A3B8]">How every grade and rating is calculated</span>
+            </span>
+            <span className="text-[#38BDF8]">→</span>
+          </Link>
         </nav>
 
         <div className="border-t border-[#262B36] px-5 py-4 text-sm">

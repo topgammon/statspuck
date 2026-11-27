@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { TradeNav } from "@/components/trade/trade-nav";
 import { TradeTrees } from "@/components/trade/trade-trees";
 import { teamOptions } from "@/lib/trade-rater";
 import { treeCallouts, treeList, treeSteps } from "@/lib/trade-trees";
@@ -13,7 +12,6 @@ export const metadata: Metadata = {
 export default function TradeTreesPage() {
   return (
     <div>
-      <TradeNav active="trees" />
       <section className="max-w-3xl">
         <p className="text-sm font-semibold tracking-[0.2em] text-[#E11D48] uppercase">Trade Machine · Trade Trees</p>
         <h1 className="display mt-2 text-5xl leading-[0.95] font-bold sm:text-6xl">One trade. Everything it became.</h1>

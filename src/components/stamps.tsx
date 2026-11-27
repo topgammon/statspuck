@@ -13,7 +13,7 @@ const tones: Record<Stamp, string> = {
 };
 
 const TIPS: Partial<Record<Stamp, string>> = {
-  "IRON MAN": "Played 95%+ of his team's games in 5+ straight full seasons, or 300+ games in a row of complete seasons.",
+  "IRON MAN": "Played 340+ NHL regular-season games in a row without missing one (the current season counts).",
 };
 
 export function StampMark({ stamp }: { stamp: Stamp }) {

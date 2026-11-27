@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { TradeNav } from "@/components/trade/trade-nav";
 import { TradeRater } from "@/components/trade/trade-rater";
 import { ratedFrom, ratedTrades, teamOptions } from "@/lib/trade-rater";
 
@@ -15,7 +14,6 @@ export default function TradeRaterPage() {
   cutoff.setFullYear(cutoff.getFullYear() - 1);
   return (
     <div>
-      <TradeNav active="rater" />
       <section className="max-w-3xl">
         <p className="text-sm font-semibold tracking-[0.2em] text-[#E11D48] uppercase">Trade Machine · Trade Rater</p>
         <h1 className="display mt-2 text-5xl leading-[0.95] font-bold sm:text-6xl">Who actually won the trade?</h1>

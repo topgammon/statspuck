@@ -1,7 +1,7 @@
 import { capShare } from "./cap";
-import { leaderboard, meta, picks, teamsByAbbr } from "./data";
+import { leaderboard, picks, teamsByAbbr } from "./data";
 import { allGmCareers, teamOverall } from "./overall-grades";
-import { ironRun } from "./season-stats";
+import { ironStreak } from "./ironman";
 import { franchiseAssets, franchiseAssetsFor } from "./franchise-assets";
 import { teamTradeReport } from "./gm-grades";
 import { impactPerCap, profileRows, type ProfileRow } from "./profiles";
@@ -58,7 +58,7 @@ export function skillBoard(limit?: number, group?: "skater" | "goalie"): Board {
     .sort((a, b) => b.skills!.overall - a.skills!.overall || (b.recentRate ?? 0) - (a.recentRate ?? 0))
     .slice(0, limit ?? 2000)
     .map((row): BoardRow => {
-      const iron = ironRun(row.playerId, meta.seasonInProgress);
+      const iron = ironStreak(row.playerId);
       return {
         href: playerHref(row.routeId, "skills"),
         tags: [row.group === "G" ? "goalie" : "skater"],
@@ -70,8 +70,8 @@ export function skillBoard(limit?: number, group?: "skater" | "goalie"): Board {
           archetype: row.skills!.archetype ?? "—",
           impact: row.recentRate == null ? null : Math.round(row.recentRate * 10) / 10,
           asset: row.assetRating == null ? null : Math.round(row.assetRating),
-          iron: iron && iron.seasons >= 2 ? iron.games : null,
-          ironSeasons: iron && iron.seasons >= 2 ? `${iron.seasons} yrs · ${iron.from}–${String(iron.to + 1).slice(2)}` : "",
+          iron: iron && iron.current > 0 ? iron.current : null,
+          ironBest: iron && iron.best > 0 ? iron.best : null,
         },
       };
     });
@@ -91,12 +91,12 @@ export function skillBoard(limit?: number, group?: "skater" | "goalie"): Board {
       { key: "asset", label: "Asset Value", format: "int", desc: true, tip: "Trade value on the 0-100 Trade Machine scale." },
       {
         key: "iron",
-        label: "Iron Man run",
+        label: "Iron Man streak",
         format: "int",
         desc: true,
-        tip: "Games in his longest run of back-to-back full seasons playing 95%+ of his team's games (2+ seasons). 5+ seasons earns the IRON MAN stamp.",
+        tip: "Games in a row he has played right now without missing one (this season included). 340+ earns the IRON MAN stamp. Tracked for players whose recent seasons make a 340-game streak possible.",
       },
-      { key: "ironSeasons", label: "Run", format: "text" },
+      { key: "ironBest", label: "Best streak", format: "int", desc: true, tip: "His longest run of consecutive games played since 2005-06." },
     ],
     rows,
   };

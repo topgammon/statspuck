@@ -9,14 +9,14 @@ import picksJson from "../../data/draft-rater/picks.json";
 import teamsJson from "../../data/draft-rater/teams.json";
 import undraftedJson from "../../data/draft-rater/undrafted.json";
 import { gradeEras, gradeTeams, type GradeFilter } from "./grade";
-import { ironMan } from "./season-stats";
+import { isIronMan } from "./ironman";
 import type { CurveSet, DraftClass, Era, Headlines, Meta, OgIndex, PickRow, Stamp, TeamGrade, TeamInfo, UndraftedPlayer } from "./types";
 
 export const meta = metaJson as Meta;
 
 /** Adds the IRON MAN stamp (durability) on top of the pipeline's Draft Rater stamps. Never part of any grade. */
 function withIronMan<T extends { playerId: number | null; stamps: Stamp[] }>(row: T): T {
-  if (row.stamps.includes("IRON MAN") || !ironMan(row.playerId, meta.seasonInProgress)) return row;
+  if (row.stamps.includes("IRON MAN") || !isIronMan(row.playerId)) return row;
   return { ...row, stamps: [...row.stamps, "IRON MAN"] };
 }
 

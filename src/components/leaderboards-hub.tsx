@@ -169,6 +169,7 @@ const GOALIE_COLUMNS: BoardColumn[] = [
   { key: "gs", label: "GS", format: "int", desc: true, tip: "Games started" },
   { key: "sa", label: "SA", format: "int", desc: true, tip: "Shots against" },
   { key: "sv", label: "Saves", format: "int", desc: true },
+  { key: "so", label: "SO", format: "int", desc: true, tip: "Shutouts" },
 ];
 
 function seasonLabel(season: number): string {
@@ -212,13 +213,13 @@ function SeasonLeaders({ seasons, query, setQuery }: { seasons: number[]; query:
       image: { kind: "player", playerId, headshot: Boolean(headshot) },
       values: { pts, g, a, ppg: gp ? Math.round((pts / gp) * 100) / 100 : null, gp, pm, sog, shPct: sog ? Math.round((g / sog) * 1000) / 10 : null, foPct, toi },
     }));
-    const goalieRows: BoardRow[] = file.goalies.map(([routeId, playerId, name, headshot, gp, gs, svPct, gaa, sa, sv]) => ({
+    const goalieRows: BoardRow[] = file.goalies.map(([routeId, playerId, name, headshot, gp, gs, svPct, gaa, sa, sv, so]) => ({
       href: routeId ? playerHref(routeId, "stats") : null,
       tags: ["goalie", ...(gp >= maxGoalieGp * 0.25 ? ["qualified"] : [])],
       name,
       sub: `G · ${gp} GP`,
       image: { kind: "player", playerId, headshot: Boolean(headshot) },
-      values: { svPct, gaa, gp, gs, sa, sv },
+      values: { svPct, gaa, gp, gs, sa, sv, so },
     }));
     return {
       id: "seasons" as BoardId,

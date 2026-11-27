@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { DRAFT_RATER_SECTIONS, ToolNav } from "@/components/tool-nav";
 import { meta } from "@/lib/data";
 import { updatedLabel } from "@/lib/format";
 import { site } from "@/lib/site";
@@ -17,6 +18,7 @@ export const metadata: Metadata = {
 export default function DraftRaterLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <>
+      <ToolNav tool="Draft Rater" sections={DRAFT_RATER_SECTIONS} hideOn={["/draft-rater/methodology"]} />
       {children}
       <p className="mt-16 text-right text-sm text-[#94A3B8]">{updatedLabel(meta.asOf)}.</p>
     </>

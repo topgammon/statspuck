@@ -9,8 +9,8 @@ import { allGoalieSeasons, allSkaterSeasons, statsLastSeason, statsName, teamGam
 
 /** [routeId (0 = no profile), playerId, name, pos, headshot 0/1, gp, g, a, pts, plusMinus, sog, foPct|null, toiPerGameSec] */
 export type SeasonSkaterRow = [number, number, string, string, number, number, number, number, number, number, number, number | null, number];
-/** [routeId, playerId, name, headshot 0/1, gp, starts, svPct|null, gaa|null, shotsAgainst, saves] */
-export type SeasonGoalieRow = [number, number, string, number, number, number, number | null, number | null, number, number];
+/** [routeId, playerId, name, headshot 0/1, gp, starts, svPct|null, gaa|null, shotsAgainst, saves, shutouts] */
+export type SeasonGoalieRow = [number, number, string, number, number, number, number | null, number | null, number, number, number];
 
 export type SeasonFile = { season: number; inProgress: boolean; teamGames: number; skaters: SeasonSkaterRow[]; goalies: SeasonGoalieRow[] };
 
@@ -57,7 +57,7 @@ export function seasonFile(season: number): SeasonFile {
     const pid = Number(key);
     const id = identity(pid);
     if (!id) continue;
-    const sum = (i: number) => these.reduce((total, row) => total + row[i], 0);
+    const sum = (i: number) => these.reduce((total, row) => total + (row[i] ?? 0), 0);
     const gp = sum(1);
     if (gp <= 0) continue;
     const sa = sum(3);
@@ -73,6 +73,7 @@ export function seasonFile(season: number): SeasonFile {
       toi > 0 ? Math.round(((sum(5) * 3600) / toi) * 100) / 100 : null,
       sa,
       sum(4),
+      these.reduce((total, row) => total + (row[7] ?? 0), 0),
     ]);
   }
   skaters.sort((a, b) => b[8] - a[8]);
