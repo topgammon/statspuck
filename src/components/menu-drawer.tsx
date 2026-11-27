@@ -128,6 +128,13 @@ export function MenuDrawer() {
             </span>
             <span className="text-[#38BDF8]">→</span>
           </Link>
+          <Link href="/#about" className="mt-2 flex items-center justify-between gap-2 rounded-xl border border-[#262B36] bg-[#0B0D10]/40 p-3 transition hover:border-[#38BDF8]/60">
+            <span>
+              <span className="display block text-lg font-bold text-[#F8FAFC]">About / Support</span>
+              <span className="block text-xs text-[#94A3B8]">Built in Calgary · free, no ads</span>
+            </span>
+            <span className="text-[#E11D48]">♥</span>
+          </Link>
         </nav>
 
         <div className="border-t border-[#262B36] px-5 py-4 text-sm">

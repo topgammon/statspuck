@@ -46,6 +46,8 @@ const FOOTER_COLUMNS: { title: string; links: { href: string; label: string }[] 
       { href: "/lottery", label: "Draft Lottery Simulator" },
       { href: "/perfect-roster", label: "Perfect Roster" },
       { href: "/trophies", label: "Trophy Favorites" },
+      { href: "/card-studio", label: "Card Studio" },
+      { href: "/rumors", label: "Rumor & Buzz Tracker" },
       { href: "/game-edge", label: "Game Edge" },
       { href: "/ref-watch", label: "Ref Watch" },
     ],
@@ -69,6 +71,7 @@ const FOOTER_COLUMNS: { title: string; links: { href: string; label: string }[] 
     title: "About",
     links: [
       { href: "/draft-rater/methodology", label: "Methodology" },
+      { href: "/#about", label: "About / Support" },
       { href: "/", label: "Home" },
     ],
   },

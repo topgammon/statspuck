@@ -8,7 +8,7 @@ export type ModuleInfo = {
   blurb: string;
   href: string;
   live: boolean;
-  icon: "draft" | "path" | "trade" | "edge" | "ref" | "board";
+  icon: "draft" | "path" | "trade" | "edge" | "ref" | "board" | "card" | "rumor";
   /** False keeps it off the home page tool grid (menu only). */
   onHome?: boolean;
   /** Sub-pages shown in the menu drawer. */
@@ -85,6 +85,22 @@ export const modules: ModuleInfo[] = [
     icon: "board",
     onHome: false,
     blurb: "Hart, Norris, Vezina, Calder and Selke favorites on luck-adjusted pace.",
+  },
+  {
+    name: "Card Studio",
+    status: "LIVE NOW",
+    href: "/card-studio",
+    live: true,
+    icon: "card",
+    blurb: "Build share-ready graphics: comparisons, scouting cards, trades, Top 5s and redrafts.",
+  },
+  {
+    name: "Rumor & Buzz Tracker",
+    status: "LIVE NOW",
+    href: "/rumors",
+    live: true,
+    icon: "rumor",
+    blurb: "Trade and signing chatter with live Skill, cap and Asset Value, one click from the Trade Machine.",
   },
   {
     name: "Game Edge",

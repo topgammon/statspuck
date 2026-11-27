@@ -181,6 +181,11 @@ export function PlayerProfile({ subject }: { subject: PlayerSubject }) {
           ) : null}
           <ProspectTierPill tier={tier} />
         </div>
+        {playerId != null ? (
+          <Link href={`/card-studio?template=scout&player=${playerId}`} className="mt-3 inline-block text-xs font-semibold text-[#38BDF8] hover:underline">
+            Open in Card Studio →
+          </Link>
+        ) : null}
       </div>
     </div>
   );

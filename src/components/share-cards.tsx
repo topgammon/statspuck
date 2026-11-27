@@ -265,7 +265,7 @@ function Grid({ columns, gap, children }: { columns: number; gap: number; childr
   return <div style={{ display: "grid", gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`, gap }}>{children}</div>;
 }
 
-function Logo({ abbr, name, size = 72 }: { abbr: string; name?: string; size?: number }) {
+export function Logo({ abbr, name, size = 72 }: { abbr: string; name?: string; size?: number }) {
   const [markup, setMarkup] = useState("");
   useEffect(() => {
     let alive = true;
@@ -292,7 +292,7 @@ function Logo({ abbr, name, size = 72 }: { abbr: string; name?: string; size?: n
   );
 }
 
-function Stamps({ stamps, size = 15 }: { stamps: string[]; size?: number }) {
+export function Stamps({ stamps, size = 15 }: { stamps: string[]; size?: number }) {
   if (stamps.length === 0) return null;
   return (
     <span style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -1311,7 +1311,7 @@ function Bars({ points, width, height }: { points: YearPoint[]; width: number; h
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
 
-function gradeColor(letter: string | null | undefined): string {
+export function gradeColor(letter: string | null | undefined): string {
   const first = (letter ?? "").charAt(0);
   if (first === "A") return GOLD;
   if (first === "B") return EMERALD;
@@ -1320,7 +1320,7 @@ function gradeColor(letter: string | null | undefined): string {
   return MUTED;
 }
 
-function stampColor(stamp: string): string {
+export function stampColor(stamp: string): string {
   if (stamp === "ELITE") return GOLD;
   if (stamp === "STEAL") return EMERALD;
   if (stamp === "BUST") return LOSS;
@@ -1348,7 +1348,7 @@ function pct(rate: number | null): string {
 }
 
 /** Shrinks long names so they fit on one line. */
-function fitSize(text: string, base: number, maxChars: number): number {
+export function fitSize(text: string, base: number, maxChars: number): number {
   if (text.length <= maxChars) return base;
   return Math.max(Math.round(base * 0.6), Math.round((base * maxChars) / text.length));
 }
@@ -1361,13 +1361,13 @@ function parseHex(color: string): [number, number, number] | null {
   return [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)];
 }
 
-function hexA(color: string, alpha: number): string {
+export function hexA(color: string, alpha: number): string {
   const rgb = parseHex(color);
   if (!rgb) return color;
   return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${alpha})`;
 }
 
-function luminance(color: string): number {
+export function luminance(color: string): number {
   const rgb = parseHex(color);
   if (!rgb) return 1;
   const [r, g, b] = rgb.map((v) => {

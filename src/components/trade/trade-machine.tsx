@@ -9,82 +9,58 @@ import { ShareLauncher } from "@/components/share-modal";
 import type { TradeSide } from "@/components/share-cards";
 import { TeamLogo } from "@/components/team-logo";
 import { TogglePill } from "@/components/toggle-pill";
-import { formatRating, gradeForMargin, gradeTone, ratingFill, ratingTone, toRating } from "@/lib/rating";
+import { formatRating, gradeTone, ratingFill, ratingTone } from "@/lib/rating";
 import type { PickTierId } from "@/lib/valuation";
 import type { TradeData, TradePick, TradePlayer, TradeTeam } from "@/lib/trade-data";
+import {
+  computeTrade,
+  decodeTrade,
+  encodeTrade,
+  indexTrade,
+  itemValue as itemValueOf,
+  pickKey,
+  pickRating as pickRatingOf,
+  playerRating as playerRatingOf,
+  tradeMoney,
+  type TradeCalc,
+  type TradeItem,
+} from "@/lib/trade-calc";
 import { playerHref } from "@/lib/routes";
 
 // Interactive Trade Machine. Everything is computed in the browser from the data the page ships:
 // Asset Value ratings, cap totals, floor and ceiling checks, and the verdict.
 
-type Item = {
-  key: string;
-  kind: "player" | "pick";
-  id: string;
-  from: string;
-  to: string;
-  /** Share of salary the sending team keeps, 0 to 0.5. Players only. */
-  retain: number;
-  tier?: PickTierId;
-  /** The player agreed to waive his NMC / no-trade clause for this deal. */
-  waived?: boolean;
-};
+type Item = TradeItem;
+type Calc = TradeCalc;
 
-const money = (value: number) => `$${(Math.abs(value) / 1_000_000).toFixed(2)}M`;
+const money = tradeMoney;
 const signedMoney = (value: number) => `${value >= 0 ? "+" : "−"}${money(value)}`;
 
-type Row = { label: string; sub: string; rating: number; color: string };
-
-type Calc = {
-  team: TradeTeam;
-  incoming: number;
-  outgoing: number;
-  net: number;
-  capAfter: number;
-  capDelta: number;
-  grade: string;
-  margin: number;
-  rowsIn: Row[];
-  issues: string[];
-};
-
 export function TradeMachine({ data }: { data: TradeData }) {
-  const teamsByAbbr = useMemo(() => new Map(data.teams.map((team) => [team.abbr, team])), [data.teams]);
-  const playersById = useMemo(() => new Map(data.players.map((player) => [String(player.id), player])), [data.players]);
-  const picksByKey = useMemo(() => new Map(data.picks.map((pick) => [pickKey(pick), pick])), [data.picks]);
+  const index = useMemo(() => indexTrade(data), [data]);
+  const playersById = index.players;
+  const picksByKey = index.picks;
   const sortedTeams = useMemo(() => [...data.teams].sort((a, b) => a.name.localeCompare(b.name)), [data.teams]);
 
   const [slots, setSlots] = useState<string[]>(() => [sortedTeams[0].abbr, sortedTeams[1].abbr]);
   const [items, setItems] = useState<Item[]>([]);
 
-  // ?player=ID pre-loads that player on the left side, sent to the next team.
+  // ?player=ID[,ID]&to=ABBR pre-loads players headed to a team; ?t=..&i=.. restores a whole trade.
   useEffect(() => {
-    const id = new URLSearchParams(window.location.search).get("player");
-    const player = id ? playersById.get(id) : null;
-    if (!player) return;
-    const other = sortedTeams.find((team) => team.abbr !== player.team)?.abbr;
-    if (!other) return;
+    const loaded = decodeTrade(window.location.search, data, index);
+    if (!loaded) return;
     // Read from the address bar after the page loads, so server and browser render the same first frame.
     const timer = window.setTimeout(() => {
-      setSlots([player.team, other]);
-      setItems([{ key: `p:${player.id}`, kind: "player", id: String(player.id), from: player.team, to: other, retain: 0 }]);
+      setSlots(loaded.slots);
+      setItems(loaded.items);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [playersById, sortedTeams]);
+  }, [data, index]);
 
   const mode = slots.length;
-  const rate = (usd: number) => toRating(usd, data.scale.uref, data.scale.exponent);
-  const playerRating = (player: TradePlayer, retain: number) => rate(player.usd + retain * player.aavPv);
-  const pickRating = (pick: TradePick, tier: PickTierId) => rate(data.pickUsd[tier] * Math.pow(data.discount, Math.max(0, pick.year - data.firstPickYear)));
-
-  function itemValue(item: Item): number {
-    if (item.kind === "player") {
-      const player = playersById.get(item.id);
-      return player ? playerRating(player, item.retain) : 0;
-    }
-    const pick = picksByKey.get(item.id);
-    return pick ? pickRating(pick, item.tier ?? pick.defaultTier) : 0;
-  }
+  const playerRating = (player: TradePlayer, retain: number) => playerRatingOf(data, player, retain);
+  const pickRating = (pick: TradePick, tier: PickTierId) => pickRatingOf(data, pick, tier);
+  const itemValue = (item: Item) => itemValueOf(data, index, item);
 
   function setSlot(index: number, abbr: string) {
     const old = slots[index];
@@ -121,70 +97,8 @@ export function TradeMachine({ data }: { data: TradeData }) {
     setItems((current) => current.map((item) => (item.key === key ? { ...item, ...change } : item)));
   }
 
-  const calcs = useMemo<Calc[]>(() => {
-    const values = items.map((item) => ({ item, value: itemValue(item) }));
-    const moved = values.reduce((sum, row) => sum + Math.abs(row.value), 0);
-    const size = Math.max(12, moved / 2);
-    return slots.map((abbr) => {
-      const team = teamsByAbbr.get(abbr)!;
-      let incoming = 0;
-      let outgoing = 0;
-      let capDelta = 0;
-      const rowsIn: Row[] = [];
-      for (const { item, value } of values) {
-        const retained = item.kind === "player" ? item.retain : 0;
-        const player = item.kind === "player" ? playersById.get(item.id) : null;
-        const hit = player ? player.aav * (1 - retained) : 0;
-        if (item.to === abbr) {
-          incoming += value;
-          capDelta += hit;
-          rowsIn.push(rowFor(item, value));
-        }
-        if (item.from === abbr) {
-          outgoing += value;
-          capDelta -= hit;
-        }
-      }
-      const net = incoming - outgoing;
-      const capAfter = team.capHit + capDelta;
-      const issues: string[] = [];
-      if (items.length) {
-        if (capAfter > data.ceiling) issues.push(`${team.short} would be ${money(capAfter - data.ceiling)} over the cap ceiling`);
-        if (capAfter < data.floor) issues.push(`${team.short} would be ${money(data.floor - capAfter)} under the cap floor`);
-      }
-      // Trade protection: a clause blocks the deal until the player waives it.
-      for (const item of items) {
-        if (item.kind !== "player" || item.from !== abbr || item.waived) continue;
-        const player = playersById.get(item.id);
-        if (player?.clauseWarning) issues.push(`${player.name}: ${player.clauseWarning}`);
-      }
-      const margin = net / size;
-      return { team, incoming, outgoing, net, capAfter, capDelta, grade: gradeForMargin(margin), margin, rowsIn, issues };
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, slots, data]);
-
-  function rowFor(item: Item, value: number): Row {
-    if (item.kind === "player") {
-      const player = playersById.get(item.id)!;
-      return { label: player.name, sub: player.pos, rating: Math.round(value), color: ratingFill(value) };
-    }
-    const pick = picksByKey.get(item.id)!;
-    const tier = item.tier ?? pick.defaultTier;
-    return { label: `${pick.year} Round ${pick.round}`, sub: data.pickLabel[tier], rating: Math.round(value), color: ratingFill(value) };
-  }
-
-  const empty = items.length === 0;
-  const issues = calcs.flatMap((calc) => calc.issues);
-  const best = [...calcs].sort((a, b) => b.margin - a.margin)[0];
-  const fair = !empty && Math.abs(best.margin) < 0.06 && calcs.every((calc) => Math.abs(calc.margin) < 0.06);
-  const degree = best.margin >= 0.25 ? "Lopsided win" : best.margin >= 0.12 ? "Clear win" : "Narrow win";
-  const headline = empty ? "Build a trade" : fair ? "Fair trade" : `${best.team.short} win this trade`;
-  const sub = empty
-    ? "Add players or picks from either roster."
-    : fair
-      ? "Both sides come out about even."
-      : `${degree} · ${best.net >= 0 ? "+" : "−"}${Math.abs(Math.round(best.net))} Asset Value net`;
+  const result = useMemo(() => computeTrade(data, index, slots, items), [data, index, slots, items]);
+  const { calcs, empty, issues, fair, headline, sub } = result;
 
   const shareSides: TradeSide[] = calcs.map((calc) => ({
     abbr: calc.team.abbr,
@@ -220,6 +134,10 @@ export function TradeMachine({ data }: { data: TradeData }) {
           </button>
         </div>
         {!empty ? (
+          <span className="flex flex-wrap items-center gap-3">
+          <a href={`/card-studio?template=trade&${encodeTrade(slots, items)}`} className="text-sm font-semibold text-[#38BDF8] hover:underline">
+            Open in Card Studio →
+          </a>
           <ShareLauncher
             fileSlug={slots.map((abbr) => abbr.toLowerCase()).join("-")}
             title={`${headline} · ${slots.join(" / ")}`}
@@ -227,6 +145,7 @@ export function TradeMachine({ data }: { data: TradeData }) {
             path="/trade-machine"
             card={{ kind: "trade", headline, sub, sides: shareSides, capNotes: issues }}
           />
+          </span>
         ) : null}
       </section>
 
@@ -260,10 +179,6 @@ export function TradeMachine({ data }: { data: TradeData }) {
       </div>
     </div>
   );
-}
-
-function pickKey(pick: TradePick): string {
-  return `k:${pick.team}:${pick.year}:${pick.round}:${pick.from}`;
 }
 
 /* ------------------------------------------------------------------ */

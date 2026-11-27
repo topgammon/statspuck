@@ -95,7 +95,12 @@ export function EraProfile({
   const ranked = useMemo(() => {
     const included = rows.filter((pick) => pick.included && pick.score != null);
     const byScore = [...included].sort((a, b) => (b.score ?? 0) - (a.score ?? 0) || a.overall - b.overall);
-    return { best: byScore[0] ?? null, worst: byScore[byScore.length - 1] ?? null, notable: byScore.slice(0, 3) };
+    return {
+      best: byScore[0] ?? null,
+      worst: byScore[byScore.length - 1] ?? null,
+      notable: byScore.slice(0, 3),
+      top5: byScore.filter((pick) => pick.playerId != null).slice(0, 5),
+    };
   }, [rows]);
   const years = [...new Set(rows.map((pick) => pick.year))].sort((a, b) => b - a);
   const pickTeams = [...new Map(rows.map((pick) => [pick.franchise, pick.franchiseName])).entries()].map(([id, label]) => ({ id, label }));
@@ -171,6 +176,14 @@ export function EraProfile({
             <span className="block text-sm font-semibold">{gm?.overall ? `${gm.overall.rating}/100 · ${gm.overall.pillars} pillars` : "Needs 2 pillars"}</span>
           </span>
         </Link>
+        {ranked.top5.length ? (
+          <a
+            href={`/card-studio?template=top5&preset=impact&players=${ranked.top5.map((pick) => pick.playerId).join(",")}&title=${encodeURIComponent(`${era.person}'s Best Draft Picks`)}`}
+            className="mt-2 block text-xs font-semibold text-[#38BDF8] hover:underline"
+          >
+            Open in Card Studio →
+          </a>
+        ) : null}
         <div role="group" aria-label="Choose a team" className="mt-3 flex flex-wrap gap-1.5">
           {views.map((item) => {
             const on = item.id === view.id;

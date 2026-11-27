@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { AboutSupport } from "@/components/about-support";
 import { GlobalSearch } from "@/components/global-search";
 import { Cell, RowImage } from "@/components/leaderboard-table";
 import { money, RosterCard } from "@/components/perfect-roster-view";
@@ -10,6 +11,7 @@ import { devBoard } from "@/lib/dev-board";
 import { skillBoard, type BoardRow } from "@/lib/leaderboards";
 import { modules, type ModuleInfo } from "@/lib/modules";
 import { profileRows } from "@/lib/profiles";
+import { rumors } from "@/lib/rumors";
 import { formatRating } from "@/lib/rating";
 import { playerHref, teamHref } from "@/lib/routes";
 import { letterTone } from "@/lib/search";
@@ -56,6 +58,26 @@ export default function HomePage() {
       title: "Top Overall Skill",
       rows: skills.rows.slice(0, 3).map((row) => ({ href: row.href ?? "/leaderboards", name: row.name, image: row.image, value: <Cell value={row.values.skill} column={skills.columns[0]} /> })),
     },
+    "Card Studio": {
+      title: "Make a scouting card",
+      rows: skills.rows.slice(0, 3).map((row) => ({
+        href: row.image?.kind === "player" && row.image.playerId ? `/card-studio?template=scout&player=${row.image.playerId}` : `/card-studio?ref=${row.name}`,
+        name: row.name,
+        image: row.image,
+        value: <span className="text-xs font-semibold text-[#38BDF8]">Card →</span>,
+      })),
+    },
+    "Rumor & Buzz Tracker": {
+      title: "Latest buzz",
+      rows: rumors()
+        .slice(0, 3)
+        .map((rumor) => ({
+          href: `/rumors#${rumor.id}`,
+          name: rumor.players[0]?.name ?? rumor.headline,
+          image: { kind: "team", abbr: rumor.teamCode } as BoardRow["image"],
+          value: <span className="text-[10px] font-semibold tracking-wide whitespace-nowrap text-[#94A3B8] uppercase">{rumor.rumorType.replace(" Talks", "").replace(" Watch", "")}</span>,
+        })),
+    },
     "Game Edge": null,
     "Ref Watch": null,
   };
@@ -92,7 +114,7 @@ export default function HomePage() {
           <h2 className="display text-3xl font-bold">Tools</h2>
           <p className="hidden text-sm text-[#94A3B8] sm:block">Click a card to open the tool. Click a row to jump straight to that team or player.</p>
         </div>
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {modules.filter((item) => item.onHome !== false).map((item) => (
             <ToolCard key={item.name} item={item} mini={minis[item.name] ?? null} />
           ))}
@@ -100,6 +122,8 @@ export default function HomePage() {
       </section>
 
       <PerfectRosterPreview />
+
+      <AboutSupport />
     </div>
   );
 }
@@ -167,6 +191,8 @@ function ToolIcon({ icon, live }: { icon: ModuleInfo["icon"]; live: boolean }) {
     edge: <path d="M4 4h16v16H4zM12 4v16M12 12m-3 0a3 3 0 1 0 6 0 3 3 0 1 0-6 0" />,
     ref: <path d="M8 3h8l-1 5H9L8 3Zm1 5v13m6-13v13M9 12h6m-6 4h6" />,
     board: <path d="M5 20V10m7 10V4m7 16v-7M3 20h18" />,
+    card: <path d="M4 5h16v14H4zM4 15l4-4 3 3 3-3 6 6M15 9h.01" />,
+    rumor: <path d="M4 10v4h3l5 4V6L7 10H4Zm12-1a4 4 0 0 1 0 6m2.5-8.5a7.5 7.5 0 0 1 0 11" />,
   };
   return (
     <span

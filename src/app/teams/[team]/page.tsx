@@ -143,6 +143,9 @@ export default async function TeamPage({ params }: { params: Promise<Params> }) 
             <span className="block text-sm font-semibold">{overall ? `${overall.rating}/100 · #${overall.rank} of ${n}` : "Needs 2 pillars"}</span>
           </span>
         </Link>
+        <Link href={`/card-studio?template=top5&preset=skill&team=${team.abbr}`} className="mt-2 block text-xs font-semibold text-[#38BDF8] hover:underline">
+          Open in Card Studio →
+        </Link>
       </div>
     </div>
   );
