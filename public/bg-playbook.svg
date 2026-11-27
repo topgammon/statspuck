@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <!-- StatsPuck background: a coach's whiteboard. Hand-drawn rink lines, Xs and Os, and play arrows.
+       Drawn in light marker strokes; the site sets the overall opacity so it stays very subtle. -->
+  <defs>
+    <marker id="a" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M2 2 L10 6 L2 10" stroke="#E2E8F0" stroke-width="1.6" fill="none"/>
+    </marker>
+    <marker id="b" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M2 2 L10 6 L2 10" stroke="#7DD3FC" stroke-width="1.6" fill="none"/>
+    </marker>
+  </defs>
+
+  <!-- Faint half-rink outline, slightly wobbly like a marker on a board -->
+  <g stroke="#CBD5E1" stroke-width="2" opacity="0.55">
+    <path d="M120 120 C 118 300, 122 700, 121 880"/>
+    <path d="M800 112 C 803 330, 797 660, 801 888" stroke="#F87171" opacity="0.7"/>
+    <path d="M520 116 C 522 330, 517 650, 519 884" stroke="#7DD3FC"/>
+    <path d="M1080 116 C 1078 330, 1083 650, 1081 884" stroke="#7DD3FC"/>
+    <path d="M1480 120 C 1482 300, 1478 700, 1479 880"/>
+    <circle cx="800" cy="500" r="92"/>
+    <circle cx="330" cy="290" r="70"/>
+    <circle cx="330" cy="710" r="70"/>
+    <circle cx="1270" cy="290" r="70"/>
+    <circle cx="1270" cy="710" r="70"/>
+    <path d="M190 470 Q 230 500 190 530"/>
+    <path d="M1410 470 Q 1370 500 1410 530"/>
+  </g>
+
+  <!-- Play 1 (left zone): breakout. Xs and Os with skating and passing lines -->
+  <g stroke="#E2E8F0" stroke-width="2.6">
+    <path d="M232 380 l22 22 M254 380 l-22 22"/>
+    <path d="M298 560 l22 22 M320 560 l-22 22"/>
+    <path d="M430 420 l22 22 M452 420 l-22 22"/>
+    <circle cx="372" cy="342" r="13"/>
+    <circle cx="410" cy="640" r="13"/>
+    <path d="M254 404 C 300 470, 360 500, 420 520" marker-end="url(#a)"/>
+    <path d="M320 556 C 360 500, 400 470, 438 446" stroke-dasharray="2 10" marker-end="url(#a)"/>
+    <path d="M452 430 C 520 400, 580 380, 650 390" marker-end="url(#a)"/>
+    <path d="M372 356 C 380 420, 360 470, 330 520" stroke="#7DD3FC" stroke-dasharray="10 9" marker-end="url(#b)"/>
+  </g>
+
+  <!-- Play 2 (centre): regroup with a cross and a drop pass -->
+  <g stroke="#E2E8F0" stroke-width="2.6">
+    <path d="M690 300 l22 22 M712 300 l-22 22"/>
+    <path d="M900 690 l22 22 M922 690 l-22 22"/>
+    <circle cx="880" cy="300" r="13"/>
+    <path d="M712 322 C 780 400, 830 520, 900 600" marker-end="url(#a)"/>
+    <path d="M910 690 C 850 620, 760 560, 700 470" marker-end="url(#a)"/>
+    <path d="M880 314 C 870 380, 840 420, 790 440" stroke="#7DD3FC" stroke-dasharray="10 9" marker-end="url(#b)"/>
+    <path d="M760 760 q 30 -26 60 0 t 60 0" opacity="0.8"/>
+  </g>
+
+  <!-- Play 3 (right zone): cycle low and a shot from the point -->
+  <g stroke="#E2E8F0" stroke-width="2.6">
+    <path d="M1150 330 l22 22 M1172 330 l-22 22"/>
+    <path d="M1360 640 l22 22 M1382 640 l-22 22"/>
+    <path d="M1180 690 l22 22 M1202 690 l-22 22"/>
+    <circle cx="1300" cy="420" r="13"/>
+    <circle cx="1240" cy="560" r="13"/>
+    <path d="M1372 640 C 1420 600, 1430 540, 1400 500 C 1370 470, 1330 480, 1320 520" marker-end="url(#a)"/>
+    <path d="M1180 700 C 1240 720, 1300 700, 1350 660" stroke-dasharray="2 10" marker-end="url(#a)"/>
+    <path d="M1172 352 C 1260 420, 1330 470, 1400 498" stroke-dasharray="14 10" marker-end="url(#a)"/>
+    <path d="M1300 434 C 1290 480, 1270 520, 1250 546" stroke="#7DD3FC" stroke-dasharray="10 9" marker-end="url(#b)"/>
+  </g>
+
+  <!-- Coach's scribbles: a circled target and a check mark -->
+  <g stroke="#CBD5E1" stroke-width="2" opacity="0.75">
+    <path d="M1400 476 c 24 -8 44 10 40 30 c -4 22 -34 30 -52 18 c -16 -11 -10 -40 12 -48"/>
+    <path d="M610 820 l14 16 l30 -36"/>
+    <path d="M980 180 c 40 -10 80 -6 120 6" stroke-dasharray="3 9"/>
+  </g>
+</svg>
