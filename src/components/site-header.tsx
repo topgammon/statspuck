@@ -58,6 +58,7 @@ const FOOTER_COLUMNS: { title: string; links: { href: string; label: string }[] 
       { href: "/leaderboards?board=gms", label: "General Managers" },
       { href: "/leaderboards?board=contracts", label: "Best Contract Value" },
       { href: "/leaderboards?board=steals", label: "Draft Steals" },
+      { href: "/leaderboards?board=trophies", label: "Trophy Favorites" },
       { href: "/leaderboards?board=lottery", label: "Lottery Luck" },
       { href: "/leaderboards?board=milestones", label: "Milestone Watch" },
       { href: "/leaderboards?board=debuts", label: "NHL Debuts" },

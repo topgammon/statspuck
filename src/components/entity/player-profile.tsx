@@ -4,6 +4,8 @@ import { ContractDeepDive, InjuryTimeline, surplusScore, TradeHistory } from "@/
 import { ContractCompsPanel } from "@/components/entity/contract-comps-panel";
 import { fairValue } from "@/lib/contract-comps";
 import { nextMilestones } from "@/lib/milestones";
+import { awardsFor } from "@/lib/awards";
+import { TrophyCase } from "@/components/entity/trophy-case";
 import { AssetValuePanel } from "@/components/entity/asset-value";
 import { ArchetypePill, ProspectTierPill, SectionLabel } from "@/components/entity/bio";
 import { GameEdgePanel } from "@/components/entity/game-edge-panel";
@@ -373,6 +375,7 @@ export function PlayerProfile({ subject }: { subject: PlayerSubject }) {
 
   const careerPanel = pick ? (
     <div className="grid gap-8">
+      <TrophyCase awards={awardsFor(playerId)} name={name} />
       <DraftPanel pick={pick} color={color} />
       <section>
         <h2 className="display mb-3 text-2xl font-bold">Development path</h2>
@@ -382,6 +385,7 @@ export function PlayerProfile({ subject }: { subject: PlayerSubject }) {
     </div>
   ) : (
     <div className="grid gap-5">
+      <TrophyCase awards={awardsFor(playerId)} name={name} />
       <UndraftedDraftPanel player={und!} />
       <UndraftedDevelopmentPanel player={und!} />
       <DebutAndMilestones debut={debut} team={debutTeam} gp={base.gpCareer} milestones={!retired && playerId != null ? nextMilestones(playerId, group === "G") : undefined} />

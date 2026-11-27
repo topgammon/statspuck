@@ -20,8 +20,8 @@ body {
   isolation: isolate;
   /* A cool, low sheen from above (like arena light on fresh ice) fading into obsidian. */
   background:
-    radial-gradient(120% 70% at 50% -20%, rgba(148, 163, 184, 0.09), transparent 60%),
-    linear-gradient(180deg, #0e1116 0%, #0b0d10 45%, #0a0c0f 100%);
+    radial-gradient(120% 70% at 50% -20%, rgba(148, 163, 184, 0.05), transparent 60%),
+    linear-gradient(180deg, #0b0d10 0%, #090b0d 45%, #08090b 100%);
   background-attachment: fixed;
   color: #f8fafc;
   font-family: var(--font-sans);
@@ -35,7 +35,7 @@ body::before {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  opacity: 0.07;
+  opacity: 0.035;
   background: url("/bg-playbook.svg") center 42% / max(1400px, 110vw) auto no-repeat;
   -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 45%, #000 40%, transparent 92%);
   mask-image: radial-gradient(ellipse 80% 70% at 50% 45%, #000 40%, transparent 92%);

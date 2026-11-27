@@ -3,6 +3,7 @@ import { leaderboard, picks, teamsByAbbr } from "./data";
 import { allGmCareers, teamOverall } from "./overall-grades";
 import { ironStreak } from "./ironman";
 import { lotteryLuck } from "./lottery";
+import { trophyRaces } from "./trophies";
 import { debutSeason, milestoneWatch, nhlDebuts, STAT_LABEL, WATCH_WINDOW } from "./milestones";
 import { franchiseAssets, franchiseAssetsFor } from "./franchise-assets";
 import { teamTradeReport } from "./gm-grades";
@@ -44,7 +45,7 @@ export type Board = {
   selects?: { id: string; label: string; segment?: string; options: { tag: string; label: string }[] }[];
 };
 
-export type BoardId = "players" | "teams" | "gms" | "contracts" | "steals" | "seasons" | "lottery" | "debuts" | "milestones";
+export type BoardId = "players" | "teams" | "gms" | "contracts" | "steals" | "seasons" | "lottery" | "debuts" | "milestones" | "trophies";
 
 function playerImage(row: ProfileRow): BoardRow["image"] {
   return { kind: "player", playerId: row.playerId, headshot: row.hasHeadshot };
@@ -432,6 +433,35 @@ export function milestonesBoard(): Board {
   };
 }
 
+/** Live trophy races (top 5 each), switchable by trophy. Same numbers as /trophies. */
+export function trophyBoard(): Board {
+  const races = trophyRaces();
+  return {
+    id: "trophies",
+    label: "Trophy Favorites",
+    blurb: "Live top-5 favorites for each major award, from this season's luck-adjusted Impact pace and Overall Skill. The full breakdown is on the Trophy Favorites page.",
+    rankBy: "score",
+    segments: races.map((race) => ({ tag: race.id, label: race.name.replace(" Trophy", "") })),
+    columns: [
+      { key: "line", label: "This season", format: "text" },
+      { key: "pace", label: "Luck-adj. pace", format: "dec1", desc: true, tip: "Luck-adjusted Impact per 82 games this season" },
+      { key: "luck", label: "Luck removed", format: "signed", tip: "Impact taken out (+) or added back (-) by the luck adjustment" },
+      { key: "skill", label: "Skill", format: "skill", desc: true },
+      { key: "gp", label: "GP", format: "int", desc: true },
+    ],
+    rows: races.flatMap((race) =>
+      race.favorites.map((fav) => ({
+        href: playerHref(fav.routeId, "stats"),
+        tags: [race.id],
+        name: fav.name,
+        sub: `${fav.pos} · ${fav.team ?? "—"}`,
+        image: { kind: "player" as const, playerId: fav.playerId, headshot: fav.headshot },
+        values: { line: fav.line, pace: fav.pace, luck: fav.luck, skill: fav.skill, gp: fav.gp },
+      })),
+    ),
+  };
+}
+
 export function allBoards(): Board[] {
-  return [skillBoard(), teamBoard(), gmBoard(), contractBoard(), stealBoard(), lotteryBoard(), milestonesBoard(), debutsBoard()];
+  return [skillBoard(), teamBoard(), gmBoard(), contractBoard(), stealBoard(), trophyBoard(), lotteryBoard(), milestonesBoard(), debutsBoard()];
 }

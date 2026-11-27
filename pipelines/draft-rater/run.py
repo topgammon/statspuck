@@ -15,6 +15,7 @@ from pathlib import Path
 
 from asset_data import build as build_asset_data
 from cards import render
+from fetch_awards import build as fetch_awards, due as awards_due
 from fetch_bios import main as fetch_bios
 from fetch_contracts import main as fetch_contracts
 from fetch_trades import build as build_trades
@@ -76,6 +77,8 @@ def main() -> None:
         fetch_edge()  # needs nhlers.json from build_asset_data
         fetch_ironman()  # needs season_stats.json
         fetch_debuts()  # needs season_stats.json
+        if awards_due():
+            fetch_awards()  # monthly: trophies change once a year
     if not args.skip_cards:
         render()
 

@@ -58,8 +58,7 @@ export function UfaTracker({ board, summers }: { board: Board; summers: number[]
         <LeaderboardTable board={shown} search={query} />
       </div>
       <p className="mt-3 text-xs text-[#94A3B8]">
-        Projections match each player with the 5 closest standard NHL contracts on the books today (position, age, recent Impact, Overall Skill). Click a player for the full comparables on his Asset Value
-        tab.
+        Projections match each player with the 5 closest comparable contracts (today&apos;s deals plus notable signings since 2005) by position, age at signing, Impact pace and Skill, then apply their average share of the cap at signing to today&apos;s cap. Click a player for the full comparables on his Asset Value tab.
       </p>
     </div>
   );

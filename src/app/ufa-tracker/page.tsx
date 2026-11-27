@@ -63,7 +63,7 @@ export default function UfaTrackerPage() {
       { key: "skill", label: "Skill", format: "skill", desc: true, tip: "Overall Skill Rating, 0-99" },
       { key: "impact", label: "Impact / 82", format: "dec1", desc: true, tip: "Impact per 82 games over the last two seasons" },
       { key: "aav", label: "Expiring AAV", format: "money", desc: true },
-      { key: "nextAav", label: "Proj. AAV", format: "money", desc: true, tip: "Projected next contract from the 5 closest comparable contracts, at today's cap" },
+      { key: "nextAav", label: "Proj. AAV", format: "money", desc: true, tip: "Projected next contract: average signing-year cap share of the 5 closest comparable deals, times today's cap" },
       { key: "nextTerm", label: "Proj. term", format: "int", desc: true, tip: "Projected length in years (median of the comparables)" },
       { key: "nextAsset", label: "Proj. Asset Value", format: "int", desc: true, tip: "Asset Value (0-100) on the projected new deal" },
     ],
