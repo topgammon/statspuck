@@ -77,6 +77,11 @@ function valueOf(row: ProfileRow): number {
   return row.group === "G" ? skill + 0.5 * Math.min(rate, 80) : skill + 0.2 * Math.min(rate, 180);
 }
 
+/** Every eligible active player under contract, for the Build Your Own Roster tool. */
+export function rosterPool(): RosterPlayer[] {
+  return candidates();
+}
+
 function candidates(): RosterPlayer[] {
   const out: RosterPlayer[] = [];
   for (const row of profileRows()) {
