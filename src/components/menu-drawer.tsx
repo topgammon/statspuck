@@ -80,6 +80,16 @@ export function MenuDrawer() {
             <span className="display text-xl font-bold text-[#F8FAFC]">Leaderboards</span>
             <span className="text-[#38BDF8]">→</span>
           </Link>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <Link href="/leaderboards?view=teams" className="rounded-xl border border-[#262B36] bg-[#0B0D10]/60 p-3 transition hover:border-[#38BDF8]/60">
+              <span className="display block text-lg font-bold text-[#F8FAFC]">Teams</span>
+              <span className="block text-xs text-[#94A3B8]">All 32 franchises</span>
+            </Link>
+            <Link href="/leaderboards?view=players" className="rounded-xl border border-[#262B36] bg-[#0B0D10]/60 p-3 transition hover:border-[#38BDF8]/60">
+              <span className="display block text-lg font-bold text-[#F8FAFC]">Players</span>
+              <span className="block text-xs text-[#94A3B8]">Every NHL player</span>
+            </Link>
+          </div>
 
           <p className="mt-6 text-[11px] font-semibold tracking-[0.16em] text-[#E11D48] uppercase">Tools</p>
           <div className="mt-3 grid gap-2">

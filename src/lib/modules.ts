@@ -9,6 +9,8 @@ export type ModuleInfo = {
   href: string;
   live: boolean;
   icon: "draft" | "path" | "trade" | "edge" | "ref" | "board";
+  /** False keeps it off the home page tool grid (menu only). */
+  onHome?: boolean;
   /** Sub-pages shown in the menu drawer. */
   links?: { href: string; label: string }[];
 };
@@ -47,6 +49,15 @@ export const modules: ModuleInfo[] = [
       { href: "/trade-machine/rater", label: "Trade Rater" },
       { href: "/trade-machine/trees", label: "Trade Trees" },
     ],
+  },
+  {
+    name: "UFA & RFA Tracker",
+    status: "LIVE NOW",
+    href: "/ufa-tracker",
+    live: true,
+    icon: "trade",
+    onHome: false,
+    blurb: "Next summer's free agents with projected next contracts from comparable deals.",
   },
   {
     name: "Game Edge",

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { CapMeter } from "@/components/cap-meter";
+import { ClauseBadge } from "@/components/clause-badge";
 import { ArchetypePill, ProspectTierPill } from "@/components/entity/bio";
 import { PlayerHeadshot } from "@/components/player-headshot";
 import { ShareLauncher } from "@/components/share-modal";
@@ -25,6 +26,8 @@ type Item = {
   /** Share of salary the sending team keeps, 0 to 0.5. Players only. */
   retain: number;
   tier?: PickTierId;
+  /** The player agreed to waive his NMC / no-trade clause for this deal. */
+  waived?: boolean;
 };
 
 const money = (value: number) => `$${(Math.abs(value) / 1_000_000).toFixed(2)}M`;
@@ -148,6 +151,12 @@ export function TradeMachine({ data }: { data: TradeData }) {
       if (items.length) {
         if (capAfter > data.ceiling) issues.push(`${team.short} would be ${money(capAfter - data.ceiling)} over the cap ceiling`);
         if (capAfter < data.floor) issues.push(`${team.short} would be ${money(data.floor - capAfter)} under the cap floor`);
+      }
+      // Trade protection: a clause blocks the deal until the player waives it.
+      for (const item of items) {
+        if (item.kind !== "player" || item.from !== abbr || item.waived) continue;
+        const player = playersById.get(item.id);
+        if (player?.clauseWarning) issues.push(`${player.name}: ${player.clauseWarning}`);
       }
       const margin = net / size;
       return { team, incoming, outgoing, net, capAfter, capDelta, grade: gradeForMargin(margin), margin, rowsIn, issues };
@@ -444,7 +453,10 @@ function TeamColumn(props: ColumnProps) {
                 <li key={item.key} className="rounded-xl border border-[#38BDF8]/30 bg-[#38BDF8]/[0.04] p-3">
                   <div className="flex items-center gap-3">
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-semibold">{player ? player.name : `${pick!.year} Round ${pick!.round}`}</p>
+                      <p className="flex items-center gap-1.5 truncate font-semibold">
+                        {player ? player.name : `${pick!.year} Round ${pick!.round}`}
+                        {player ? <ClauseBadge clause={player.clause} text={player.clauseText} small /> : null}
+                      </p>
                       <p className="truncate text-xs text-[#94A3B8]">
                         {player ? `${money(player.aav)} AAV · ${player.yearsLeft} yr${player.yearsLeft === 1 ? "" : "s"} left` : pick!.from !== pick!.team ? `Pick acquired from ${pick!.from}` : "Own pick"}
                       </p>
@@ -503,6 +515,22 @@ function TeamColumn(props: ColumnProps) {
                     ) : null}
                     {pick && pick.tiers.length === 1 ? <span>Projected tier: {data.pickLabel[pick.tiers[0]]}</span> : null}
                   </div>
+                  {player?.clauseWarning ? (
+                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                      <span
+                        title={player.clauseText ?? undefined}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                          item.waived ? "bg-[#10B981]/12 text-[#10B981]" : "bg-[#F97316]/12 text-[#FDBA74]"
+                        }`}
+                      >
+                        {item.waived ? "✓ Clause waived" : `⚠ ${player.clauseWarning}`}
+                      </span>
+                      <label className="inline-flex cursor-pointer items-center gap-2 text-[11px] font-semibold text-[#94A3B8]">
+                        <input type="checkbox" checked={Boolean(item.waived)} onChange={(event) => onPatch(item.key, { waived: event.target.checked })} className="accent-[#10B981]" />
+                        Player waives clause
+                      </label>
+                    </div>
+                  ) : null}
                 </li>
               );
             })}
@@ -540,6 +568,7 @@ function TeamColumn(props: ColumnProps) {
                           {player.name}
                         </a>
                         <span className="shrink-0 text-[10px] font-semibold text-[#94A3B8]">{player.pos}</span>
+                        <ClauseBadge clause={player.clause} text={player.clauseText} small />
                       </div>
                       <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                         <ArchetypePill archetype={player.archetype} small />

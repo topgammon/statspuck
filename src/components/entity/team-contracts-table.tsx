@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { ClauseBadge } from "@/components/clause-badge";
 import type { ContractRow } from "@/lib/team-contracts";
 
 // Every contract on the books, grouped Forwards / Defense / Goalies, with the cap hit
@@ -67,7 +68,7 @@ export function TeamContractsTable({ rows, seasons, teamName, ceiling }: { rows:
         <p className="text-[11px] font-semibold tracking-[0.16em] text-[#94A3B8] uppercase">Contracts · {teamName}</p>
         <p className="text-xs text-[#94A3B8]">
           {rows.length} contracts · cap hit by season · <span className="rounded bg-[#10B981]/15 px-1 text-[#10B981]">UFA</span> /{" "}
-          <span className="rounded bg-[#38BDF8]/15 px-1 text-[#38BDF8]">RFA</span> when the deal ends (estimated from age)
+          <span className="rounded bg-[#38BDF8]/15 px-1 text-[#38BDF8]">RFA</span> when the deal ends
         </p>
       </div>
       <div className="mt-3 max-h-[40rem] overflow-auto rounded-xl border border-[#262B36]">
@@ -121,6 +122,7 @@ export function TeamContractsTable({ rows, seasons, teamName, ceiling }: { rows:
                       )}
                       <span className="text-xs text-[#94A3B8]">{row.pos}</span>
                       {row.elc ? <span className="rounded bg-white/5 px-1 text-[9px] font-bold tracking-wider text-[#94A3B8] uppercase">ELC</span> : null}
+                      <ClauseBadge clause={row.clause} text={row.clauseText} small />
                     </span>
                   </td>
                   <td className="px-2.5 py-1.5 text-right tabular-nums text-[#94A3B8]">{row.age ?? "—"}</td>

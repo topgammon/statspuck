@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ContractDeepDive, InjuryTimeline, surplusScore, TradeHistory } from "@/components/entity/asset-extras";
+import { ContractCompsPanel } from "@/components/entity/contract-comps-panel";
+import { fairValue } from "@/lib/contract-comps";
 import { AssetValuePanel } from "@/components/entity/asset-value";
 import { ArchetypePill, ProspectTierPill, SectionLabel } from "@/components/entity/bio";
 import { GameEdgePanel } from "@/components/entity/game-edge-panel";
@@ -11,6 +13,7 @@ import { ProfileShell } from "@/components/entity/profile-shell";
 import { SkillsPanel } from "@/components/entity/skills-panel";
 import { StatsTable } from "@/components/entity/stats-table";
 import { UndraftedDevelopmentPanel, UndraftedDraftPanel } from "@/components/entity/undrafted-profile";
+import { ClauseBadge } from "@/components/clause-badge";
 import { CountryFlag } from "@/components/country-badge";
 import { PlayerHeadshot } from "@/components/player-headshot";
 import { ShareLauncher } from "@/components/share-modal";
@@ -49,6 +52,7 @@ export const PLAYER_TABS = [
 /** Old tab names keep working: they open the closest new tab. */
 export const PLAYER_TAB_ALIASES: Record<string, string> = {
   overview: "skills",
+  "asset-value": "asset",
   draft: "career",
   development: "career",
   luck: "game-edge",
@@ -155,6 +159,7 @@ export function PlayerProfile({ subject }: { subject: PlayerSubject }) {
               {contractPillText(contract)}
             </Link>
           ) : null}
+          {contract?.clause ? <ClauseBadge clause={contract.clause} text={contract.clauseText} /> : null}
           {pick ? (
             <Link href={`/draft-rater/drafts/${pick.year}`} className="rounded-full border border-[#262B36] px-2.5 py-0.5 text-xs text-[#94A3B8] hover:border-[#38BDF8]/60 hover:text-white">
               {pick.year} · R{pick.round} #{pick.overall} · {pick.team}
@@ -356,6 +361,7 @@ export function PlayerProfile({ subject }: { subject: PlayerSubject }) {
   const assetPanel = (
     <div className="grid gap-5">
       <AssetValuePanel playerId={playerId} name={name} tier={tier} value={value} />
+      {!retired && playerId != null ? <ContractCompsPanel name={name} fair={fairValue(playerId)} contract={contract} /> : null}
       <div className="grid gap-5 lg:grid-cols-2">
         <ContractDeepDive contract={contract} value={value} />
         <TradeHistory trades={playerTrades(name)} playerId={playerId} name={name} />

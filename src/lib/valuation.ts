@@ -368,6 +368,19 @@ export function assetFor(playerId: number | null | undefined): PlayerAsset | nul
   return assets.get(playerId) ?? null;
 }
 
+const candidatesById = new Map(candidates.map((c) => [c.id, c]));
+
+/**
+ * Asset Value if this player signed a different contract: same form, age curve and market,
+ * a new AAV and term starting next season. Used for "projected next contract" values.
+ */
+export function projectedAsset(playerId: number, aav: number, term: number): PlayerAsset | null {
+  const base = candidatesById.get(playerId);
+  if (!base) return null;
+  const contract: PlayerContract = { aav, expires: capSeasonStart + 1 + Math.max(1, term), team: base.contract.team };
+  return buildAsset({ ...base, age: base.age + 1, contract }, scale.uref);
+}
+
 export const pickRatings = Object.fromEntries(
   (Object.entries(pickValuesUsd) as [PickTierId, number][]).map(([tier, value]) => [tier, toRating(value, scale.uref)]),
 ) as PickTable;

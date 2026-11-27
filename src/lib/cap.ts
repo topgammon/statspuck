@@ -12,7 +12,29 @@ export type PlayerContract = {
   elc?: boolean;
   /** Team that holds the contract today. */
   team?: string;
+  /** Trade protection this season: NMC, NTC, M-NTC or M-NMC. Missing = none. */
+  clause?: ClauseType;
+  /** The clause wording, e.g. "Player submits a 10 team no trade list". */
+  clauseText?: string;
+  /** Free-agent status when the deal ends. */
+  status?: "UFA" | "RFA";
 };
+
+export type ClauseType = "NMC" | "NTC" | "M-NTC" | "M-NMC";
+
+/** "10" from "Player submits a 10 team no trade list", or null. */
+export function clauseListSize(text: string | undefined): number | null {
+  const match = /(\d+)[\s-]*team/i.exec(text ?? "");
+  return match ? Number(match[1]) : null;
+}
+
+/** What a trade has to clear for this clause. */
+export function clauseWarning(contract: Pick<PlayerContract, "clause" | "clauseText">): string | null {
+  if (!contract.clause) return null;
+  const size = clauseListSize(contract.clauseText);
+  if (contract.clause === "NMC" || contract.clause === "NTC") return `Requires Player Waiver (${contract.clause})`;
+  return size ? `Check ${size}-Team No-Trade List (${contract.clause})` : `Check No-Trade List (${contract.clause})`;
+}
 
 export type TeamCap = {
   /** Cap hit used today. */

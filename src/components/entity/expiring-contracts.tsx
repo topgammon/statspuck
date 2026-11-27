@@ -64,7 +64,7 @@ export function ExpiringContracts({ rows }: { rows: ContractRow[] }) {
           <SectionLabel>Expiring after {season(capSeasonStart + 1)}</SectionLabel>
           <span className="text-xs text-[#94A3B8]">{nextYear.length ? `${money(total(nextYear))} total` : ""}</span>
         </div>
-        <p className="mt-1 text-xs text-[#94A3B8]">Every deal that runs out in July {nextSummer}, with free-agent status (estimated from age).</p>
+        <p className="mt-1 text-xs text-[#94A3B8]">Every deal that runs out in July {nextSummer}, with free-agent status.</p>
         <List rows={nextYear} empty="No contracts expire that summer." />
       </div>
     </div>

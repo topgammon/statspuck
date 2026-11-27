@@ -133,15 +133,22 @@ def match_player(row: dict, by_born: dict, by_name: dict, roster_ids: set[int]) 
     return None
 
 
+CLAUSES = {"NMC", "NTC", "M-NTC", "M-NMC"}
+
+
 def current_contract(row: dict, season: str) -> dict | None:
-    """The contract that covers this season: AAV, end year, ELC flag."""
+    """The contract that covers this season: AAV, end year, ELC flag, plus (when listed)
+    the trade-protection clause this season, its wording and the free-agent status at expiry.
+    Team pages list only a deal's recent and remaining seasons, so its start year and full
+    length are not knowable here and are not stored."""
     for contract in row.get("contracts") or []:
         details = contract.get("details") or []
         seasons = [d.get("season", "") for d in details]
         if season not in seasons:
             continue
         now = details[seasons.index(season)]
-        last = max(int(s[:4]) for s in seasons if s[:4].isdigit()) + 1
+        years = sorted(int(s[:4]) for s in seasons if s[:4].isdigit())
+        last = years[-1] + 1
         elc = "entry" in (contract.get("type") or "").lower()
         # An ELC's listed AAV includes bonuses; the cap hit is what counts.
         aav = money(now.get("capHit")) if elc else (money(now.get("aav")) or money(now.get("capHit")))
@@ -150,6 +157,17 @@ def current_contract(row: dict, season: str) -> dict | None:
         out = {"aav": aav, "expires": last}
         if elc:
             out["elc"] = True
+        clause = str(now.get("clause") or "").strip().upper()
+        if clause in CLAUSES:
+            out["clause"] = clause
+            text = " ".join(str(contract.get("clauseDetails") or "").split())
+            if text:
+                out["clauseText"] = text[:220]
+        status = str(contract.get("expiryStatus") or "")
+        if status.startswith("UFA"):
+            out["status"] = "UFA"
+        elif status.startswith("RFA") or status.startswith("10.2"):
+            out["status"] = "RFA"
         return out
     return None
 

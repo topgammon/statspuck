@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { LeaderboardTable } from "@/components/leaderboard-table";
 import { TogglePill } from "@/components/toggle-pill";
@@ -14,26 +15,22 @@ const SEASONS_ID = "seasons";
 
 export function LeaderboardsHub({ boards, seasons }: { boards: Board[]; seasons: number[] }) {
   const tabs = [...boards.map((board) => ({ id: board.id as string, label: board.label })), { id: SEASONS_ID, label: "Season Leaders" }];
-  const [active, setActive] = useState<string>(boards[0].id);
+  // ?board=teams or ?view=teams (the nav's Teams / Players links). Read live, so a nav click
+  // while already on this page switches the board too.
+  const params = useSearchParams();
+  const fromUrl = params.get("board") ?? params.get("view");
+  const urlBoard = fromUrl && tabs.some((tab) => tab.id === fromUrl) ? fromUrl : null;
+  const [picked, setPicked] = useState<{ id: string; url: string | null } | null>(null);
+  const active = picked && picked.url === urlBoard ? picked.id : (urlBoard ?? boards[0].id);
   const [query, setQuery] = useState("");
 
-  useEffect(() => {
-    const read = () => {
-      const id = new URLSearchParams(window.location.search).get("board");
-      if (id && tabs.some((tab) => tab.id === id)) setActive(id);
-    };
-    read();
-    window.addEventListener("popstate", read);
-    return () => window.removeEventListener("popstate", read);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   function pick(id: string) {
-    setActive(id);
     setQuery("");
     const url = new URL(window.location.href);
+    url.searchParams.delete("view");
     if (id === boards[0].id) url.searchParams.delete("board");
     else url.searchParams.set("board", id);
+    setPicked({ id, url: id === boards[0].id ? null : id });
     window.history.replaceState(window.history.state, "", url);
   }
 
@@ -72,17 +69,22 @@ export function LeaderboardsHub({ boards, seasons }: { boards: Board[]; seasons:
 function BoardView({ board, query, setQuery, extra }: { board: Board; query: string; setQuery: (value: string) => void; extra?: React.ReactNode }) {
   const [toggles, setToggles] = useState<Record<string, boolean>>(() => Object.fromEntries((board.toggles ?? []).map((toggle) => [toggle.tag, toggle.on])));
   const [segment, setSegment] = useState<string>(board.segments?.[0]?.tag ?? "");
+  const [selected, setSelected] = useState<Record<string, string>>({});
 
   const shown = useMemo(() => {
     let rows: BoardRow[] = board.rows;
     if (segment) rows = rows.filter((row) => row.tags?.includes(segment));
+    for (const select of board.selects ?? []) {
+      const value = selected[select.id];
+      if (value && (!select.segment || select.segment === segment)) rows = rows.filter((row) => row.tags?.includes(value));
+    }
     for (const toggle of board.toggles ?? []) {
       const on = toggles[toggle.tag];
       if (toggle.onlyWhenOn && on) rows = rows.filter((row) => row.tags?.includes(toggle.tag));
       if (!toggle.onlyWhenOn && !on) rows = rows.filter((row) => !row.tags?.includes(toggle.tag));
     }
     return { ...board, rows };
-  }, [board, segment, toggles]);
+  }, [board, segment, toggles, selected]);
 
   return (
     <>
@@ -98,6 +100,25 @@ function BoardView({ board, query, setQuery, extra }: { board: Board; query: str
         {board.segments ? (
           <TogglePill value={segment} options={board.segments.map((item) => ({ id: item.tag, label: item.label }))} onChange={setSegment} label="Position group" />
         ) : null}
+        {(board.selects ?? [])
+          .filter((select) => !select.segment || select.segment === segment)
+          .map((select) => (
+            <label key={select.id} className="inline-flex items-center gap-2 text-xs font-semibold text-[#94A3B8]">
+              {select.label}
+              <select
+                value={selected[select.id] ?? ""}
+                onChange={(event) => setSelected((current) => ({ ...current, [select.id]: event.target.value }))}
+                className="rounded-lg border border-[#262B36] bg-[#14171F] px-2 py-1.5 text-sm text-[#F8FAFC] outline-none focus:border-[#38BDF8]"
+              >
+                <option value="">All</option>
+                {select.options.map((option) => (
+                  <option key={option.tag} value={option.tag}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ))}
         {(board.toggles ?? []).map((toggle) => (
           <Switch key={toggle.tag} label={toggle.label} on={toggles[toggle.tag]} onChange={(on) => setToggles((current) => ({ ...current, [toggle.tag]: on }))} />
         ))}

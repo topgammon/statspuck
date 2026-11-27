@@ -38,6 +38,8 @@ export type Board = {
   toggles?: { tag: string; label: string; on: boolean; onlyWhenOn: boolean }[];
   /** Two-way switch, e.g. Skaters | Goalies. */
   segments?: { tag: string; label: string }[];
+  /** Dropdown filters that keep rows carrying the chosen tag. `segment` limits a dropdown to one segment. */
+  selects?: { id: string; label: string; segment?: string; options: { tag: string; label: string }[] }[];
 };
 
 export type BoardId = "players" | "teams" | "gms" | "contracts" | "steals" | "seasons";
@@ -61,7 +63,7 @@ export function skillBoard(limit?: number, group?: "skater" | "goalie"): Board {
       const iron = ironStreak(row.playerId);
       return {
         href: playerHref(row.routeId, "skills"),
-        tags: [row.group === "G" ? "goalie" : "skater"],
+        tags: [row.group === "G" ? "goalie" : "skater", `pos:${row.group}`, ...(row.team ? [`team:${row.team}`] : [])],
         name: row.name,
         sub: `${row.pos} · ${teamShort(row.team)}`,
         image: playerImage(row),
@@ -83,6 +85,22 @@ export function skillBoard(limit?: number, group?: "skater" | "goalie"): Board {
     segments: [
       { tag: "skater", label: "Skaters" },
       { tag: "goalie", label: "Goalies" },
+    ],
+    selects: [
+      {
+        id: "pos",
+        label: "Position",
+        segment: "skater",
+        options: [
+          { tag: "pos:F", label: "Forwards" },
+          { tag: "pos:D", label: "Defense" },
+        ],
+      },
+      {
+        id: "team",
+        label: "Team",
+        options: [...leaderboard].sort((a, b) => a.name.localeCompare(b.name)).map((team) => ({ tag: `team:${team.abbr}`, label: team.name })),
+      },
     ],
     columns: [
       { key: "skill", label: "Skill", format: "skill", desc: true, tip: "Overall Skill Rating, 0-99. About 72 is a league-average regular; 95+ is elite." },

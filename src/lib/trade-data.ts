@@ -1,6 +1,6 @@
 import headshotsJson from "../../data/draft-rater/headshots.json";
 import { classify, prospectTier, type Archetype } from "./archetypes";
-import { capCeiling, capFloor, contracts } from "./cap";
+import { capCeiling, capFloor, clauseWarning, contracts } from "./cap";
 import { picks, teams as teamList } from "./data";
 import { draftCapital } from "./draft-capital";
 import { nhlersFile } from "./nhlers";
@@ -30,6 +30,10 @@ export type TradePlayer = {
   aavPv: number;
   rating: number;
   trajectory: number;
+  /** Trade protection this season (NMC, NTC, M-NTC, M-NMC) and what a deal has to clear. */
+  clause: string | null;
+  clauseText: string | null;
+  clauseWarning: string | null;
 };
 
 export type TradeTeam = {
@@ -97,6 +101,9 @@ export function buildTradeData(): TradeData {
       aavPv: asset.aavPv / 1_000_000,
       rating: asset.rating,
       trajectory: asset.trajectory,
+      clause: contract.clause ?? null,
+      clauseText: contract.clauseText ?? null,
+      clauseWarning: clauseWarning(contract),
     });
   }
   players.sort((a, b) => b.rating - a.rating);

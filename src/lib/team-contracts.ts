@@ -15,8 +15,10 @@ export type ContractRow = {
   capPct: number;
   expires: number;
   elc: boolean;
-  /** Free-agent status when the deal ends: UFA at 27+ on July 1, otherwise RFA (estimate). */
+  /** Free-agent status when the deal ends (from the cap source; age-based estimate if missing). */
   status: "UFA" | "RFA" | null;
+  clause: string | null;
+  clauseText: string | null;
   asset: number | null;
   headshot: boolean;
 };
@@ -60,7 +62,9 @@ export function teamContracts(abbr: string): ContractRow[] {
       capPct: Math.round(capShare(contract.aav) * 1000) / 10,
       expires: contract.expires,
       elc: Boolean(contract.elc),
-      status: endAge == null ? null : endAge >= 27 ? "UFA" : "RFA",
+      status: contract.status ?? (endAge == null ? null : endAge >= 27 ? "UFA" : "RFA"),
+      clause: contract.clause ?? null,
+      clauseText: contract.clauseText ?? null,
       asset: profile?.assetRating != null ? Math.round(profile.assetRating) : null,
       headshot: profile?.hasHeadshot ?? true,
     });

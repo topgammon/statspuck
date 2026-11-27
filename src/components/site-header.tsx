@@ -17,7 +17,15 @@ export function SiteHeader() {
           <span className="display hidden text-xl font-bold tracking-[0.04em] xl:block">STATSPUCK</span>
         </Link>
         <HeaderSearch />
-        <MenuDrawer />
+        <nav aria-label="Browse" className="flex items-center gap-1">
+          <Link href="/leaderboards?view=teams" className="hidden h-10 items-center rounded-xl px-3 text-sm font-semibold text-[#94A3B8] transition hover:bg-white/[0.04] hover:text-white sm:flex">
+            Teams
+          </Link>
+          <Link href="/leaderboards?view=players" className="hidden h-10 items-center rounded-xl px-3 text-sm font-semibold text-[#94A3B8] transition hover:bg-white/[0.04] hover:text-white sm:flex">
+            Players
+          </Link>
+          <MenuDrawer />
+        </nav>
       </div>
     </header>
   );
@@ -34,6 +42,7 @@ const FOOTER_COLUMNS: { title: string; links: { href: string; label: string }[] 
       { href: "/trade-machine/rater", label: "Trade Rater" },
       { href: "/trade-machine/trees", label: "Trade Trees" },
       { href: "/trade-machine/rankings", label: "Franchise Rankings" },
+      { href: "/ufa-tracker", label: "UFA & RFA Tracker" },
       { href: "/game-edge", label: "Game Edge" },
       { href: "/ref-watch", label: "Ref Watch" },
     ],

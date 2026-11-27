@@ -29,7 +29,8 @@ export function ContractDeepDive({ contract, value }: { contract: PlayerContract
         ["% of Cap", pctCap(contract.aav), `Share of the ${money(capCeiling)} cap ceiling`],
         ["Expiry", `${contract.expires - 1}-${String(contract.expires).slice(2)} (${contract.expires})`, "Last season of the deal"],
         ["Contract type", contract.elc ? "Entry-level (ELC)" : "Standard"],
-        ["NMC / M-NTC", "Not tracked yet", "No-movement and modified no-trade clauses are not in our public cap feed yet"],
+        ["Trade protection", contract.clause ? `${contract.clause}${contract.clauseText ? ` · ${contract.clauseText}` : ""}` : "None", "No-Move (NMC), No-Trade (NTC) or Modified No-Trade (M-NTC) clause this season"],
+        ["Status at expiry", contract.status ?? "—", "Free-agent status when the deal ends"],
         ["Contract Surplus Score", score == null ? "—" : `${score} / 100`, "50 is a fair deal. Higher means he gives more value than he costs over the contract."],
       ]
     : [];

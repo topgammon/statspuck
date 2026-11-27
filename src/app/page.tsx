@@ -91,7 +91,7 @@ export default function HomePage() {
           <p className="hidden text-sm text-[#94A3B8] sm:block">Click a card to open the tool. Click a row to jump straight to that team or player.</p>
         </div>
         <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
-          {modules.map((item) => (
+          {modules.filter((item) => item.onHome !== false).map((item) => (
             <ToolCard key={item.name} item={item} mini={minis[item.name] ?? null} />
           ))}
         </div>
