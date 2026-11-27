@@ -9,6 +9,9 @@
 from __future__ import annotations
 
 import argparse
+import datetime as dt
+import json
+from pathlib import Path
 
 from asset_data import build as build_asset_data
 from cards import render
@@ -26,12 +29,26 @@ from model import build
 from season_stats import build as build_season_stats
 
 
+CONTRACTS_FILE = Path(__file__).resolve().parents[2] / "data" / "contracts.json"
+CONTRACT_REFRESH_DAYS = 30
+
+
+def contracts_due() -> bool:
+    """Contracts change rarely, so they are re-synced about once a month, not nightly."""
+    try:
+        as_of = json.loads(CONTRACTS_FILE.read_text(encoding="utf-8")).get("asOf")
+        return (dt.date.today() - dt.date.fromisoformat(as_of)).days >= CONTRACT_REFRESH_DAYS
+    except (OSError, ValueError, TypeError):
+        return True
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Update Draft Rater data.")
     parser.add_argument("--sample", action="store_true", help="Print a small API sample and stop.")
     parser.add_argument("--rebuild", action="store_true", help="Refetch completed seasons too.")
     parser.add_argument("--skip-fetch", action="store_true", help="Use the database as it stands.")
     parser.add_argument("--skip-cards", action="store_true", help="Skip share-card images.")
+    parser.add_argument("--contracts", action="store_true", help="Re-sync contracts now, even if the monthly refresh is not due.")
     args = parser.parse_args()
     if args.sample:
         sample()
@@ -43,7 +60,10 @@ def main() -> None:
         fetch_gm_photos()
         fetch_paths()
         fetch_bios()
-        fetch_contracts()
+        if args.contracts or contracts_due():
+            fetch_contracts()
+        else:
+            print(f"contracts: last synced under {CONTRACT_REFRESH_DAYS} days ago; skipping (monthly)", flush=True)
         fetch_playoffs()
     build()
     build_trades()
