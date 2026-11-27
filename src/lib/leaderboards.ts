@@ -463,5 +463,5 @@ export function trophyBoard(): Board {
 }
 
 export function allBoards(): Board[] {
-  return [skillBoard(), teamBoard(), gmBoard(), contractBoard(), stealBoard(), trophyBoard(), lotteryBoard(), milestonesBoard(), debutsBoard()];
+  return [skillBoard(), teamBoard(), gmBoard(), contractBoard(), stealBoard(), trophyBoard(), lotteryBoard(), milestonesBoard()];
 }

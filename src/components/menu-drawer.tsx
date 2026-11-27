@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { StatsPuckBadge } from "@/components/wordmark";
 import { modules } from "@/lib/modules";
 
 export function MenuDrawer() {
@@ -83,34 +82,26 @@ export function MenuDrawer() {
           <div className="mt-2 grid grid-cols-2 gap-2">
             <Link href="/leaderboards?view=teams" className="rounded-xl border border-[#262B36] bg-[#0B0D10]/60 p-3 transition hover:border-[#38BDF8]/60">
               <span className="display block text-lg font-bold text-[#F8FAFC]">Teams</span>
-              <span className="block text-xs text-[#94A3B8]">All 32 franchises</span>
             </Link>
             <Link href="/leaderboards?view=players" className="rounded-xl border border-[#262B36] bg-[#0B0D10]/60 p-3 transition hover:border-[#38BDF8]/60">
               <span className="display block text-lg font-bold text-[#F8FAFC]">Players</span>
-              <span className="block text-xs text-[#94A3B8]">Every NHL player</span>
             </Link>
           </div>
 
-          <p className="mt-6 text-[11px] font-semibold tracking-[0.16em] text-[#E11D48] uppercase">Tools</p>
+          <p className="mt-6 text-[11px] font-semibold tracking-[0.16em] text-[#94A3B8] uppercase">Tools</p>
           <div className="mt-3 grid gap-2">
             {modules
-              .filter((item) => item.icon !== "board")
+              .filter((item) => item.icon !== "board" && item.href !== "/lottery")
               .map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
                   className={`flex items-center justify-between gap-2 rounded-xl border p-3 transition ${
-                    pathname.startsWith(item.href)
-                      ? "border-[#38BDF8] bg-[#38BDF8]/10"
-                      : item.live
-                        ? "border-[#E11D48]/40 bg-[#0B0D10]/60 hover:border-[#38BDF8]/60"
-                        : "border-dashed border-[#262B36] bg-[#0B0D10]/30 hover:border-[#38BDF8]/60"
+                    pathname.startsWith(item.href) ? "border-[#38BDF8] bg-[#38BDF8]/10" : "border-[#262B36] bg-[#0B0D10]/60 hover:border-[#38BDF8]/60"
                   }`}
                 >
-                  <span className={`display text-xl font-bold ${item.live ? "text-[#F8FAFC]" : "text-[#F8FAFC]/70"}`}>{item.name}</span>
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${item.live ? "bg-[#E11D48]/15 text-[#E11D48]" : "bg-white/5 text-[#94A3B8]"}`}>
-                    {item.live ? "Live" : "Soon"}
-                  </span>
+                  <span className="display text-xl font-bold text-[#F8FAFC]">{item.name}</span>
+                  <span className="text-[#94A3B8]">→</span>
                 </Link>
               ))}
           </div>
@@ -122,25 +113,27 @@ export function MenuDrawer() {
               pathname.startsWith("/draft-rater/methodology") ? "border-[#38BDF8] bg-[#38BDF8]/10" : "border-[#262B36] bg-[#0B0D10]/40 hover:border-[#38BDF8]/60"
             }`}
           >
-            <span>
-              <span className="display block text-lg font-bold text-[#F8FAFC]">Methodology</span>
-              <span className="block text-xs text-[#94A3B8]">How every grade and rating is calculated</span>
-            </span>
-            <span className="text-[#38BDF8]">→</span>
+            <span className="display block text-lg font-bold text-[#F8FAFC]">Methodology</span>
+            <span className="text-[#94A3B8]">→</span>
           </Link>
           <Link href="/#about" className="mt-2 flex items-center justify-between gap-2 rounded-xl border border-[#262B36] bg-[#0B0D10]/40 p-3 transition hover:border-[#38BDF8]/60">
-            <span>
-              <span className="display block text-lg font-bold text-[#F8FAFC]">About / Support</span>
-              <span className="block text-xs text-[#94A3B8]">Built in Calgary · free, no ads</span>
-            </span>
-            <span className="text-[#E11D48]">♥</span>
+            <span className="display block text-lg font-bold text-[#F8FAFC]">About / Support</span>
+            <span className="text-[#94A3B8]">→</span>
+          </Link>
+          <Link
+            href="/contact"
+            className={`mt-2 flex items-center justify-between gap-2 rounded-xl border p-3 transition ${
+              pathname.startsWith("/contact") ? "border-[#38BDF8] bg-[#38BDF8]/10" : "border-[#262B36] bg-[#0B0D10]/40 hover:border-[#38BDF8]/60"
+            }`}
+          >
+            <span className="display block text-lg font-bold text-[#F8FAFC]">Contact</span>
+            <span className="text-[#94A3B8]">→</span>
           </Link>
         </nav>
 
         <div className="border-t border-[#262B36] px-5 py-4 text-sm">
-          <Link href="/" className="flex items-center gap-2 text-[#94A3B8] transition hover:text-white">
-            <StatsPuckBadge height={26} />
-            StatsPuck Home
+          <Link href="/" className="display font-bold tracking-[0.06em] text-[#94A3B8] transition hover:text-white">
+            STATSPUCK Home
           </Link>
         </div>
       </aside>

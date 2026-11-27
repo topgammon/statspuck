@@ -12,18 +12,11 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-[#262B36] bg-[#0B0D10]/90 backdrop-blur">
       <div className="mx-auto grid max-w-6xl grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3 sm:gap-5">
-        <Link href="/" className="flex items-center gap-3" aria-label="StatsPuck home">
-          <StatsPuckBadge height={40} />
-          <span className="display hidden text-xl font-bold tracking-[0.04em] xl:block">STATSPUCK</span>
+        <Link href="/" className="flex h-10 items-center" aria-label="StatsPuck home">
+          <span className="display text-lg font-bold tracking-[0.06em] sm:text-xl">STATSPUCK</span>
         </Link>
         <HeaderSearch />
         <nav aria-label="Browse" className="flex items-center gap-1">
-          <Link href="/leaderboards?view=teams" className="hidden h-10 items-center rounded-xl px-3 text-sm font-semibold text-[#94A3B8] transition hover:bg-white/[0.04] hover:text-white sm:flex">
-            Teams
-          </Link>
-          <Link href="/leaderboards?view=players" className="hidden h-10 items-center rounded-xl px-3 text-sm font-semibold text-[#94A3B8] transition hover:bg-white/[0.04] hover:text-white sm:flex">
-            Players
-          </Link>
           <MenuDrawer />
         </nav>
       </div>
@@ -63,7 +56,6 @@ const FOOTER_COLUMNS: { title: string; links: { href: string; label: string }[] 
       { href: "/leaderboards?board=trophies", label: "Trophy Favorites" },
       { href: "/leaderboards?board=lottery", label: "Lottery Luck" },
       { href: "/leaderboards?board=milestones", label: "Milestone Watch" },
-      { href: "/leaderboards?board=debuts", label: "NHL Debuts" },
       { href: "/leaderboards?board=seasons", label: "Season Leaders" },
     ],
   },
@@ -72,6 +64,7 @@ const FOOTER_COLUMNS: { title: string; links: { href: string; label: string }[] 
     links: [
       { href: "/draft-rater/methodology", label: "Methodology" },
       { href: "/#about", label: "About / Support" },
+      { href: "/contact", label: "Contact" },
       { href: "/", label: "Home" },
     ],
   },

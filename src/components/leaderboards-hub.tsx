@@ -13,6 +13,13 @@ import type { SeasonFile } from "@/lib/season-leaders";
 
 const SEASONS_ID = "seasons";
 
+/** Boards grouped so every option fits without sideways scrolling. */
+const TAB_GROUPS: { label: string; ids: string[] }[] = [
+  { label: "Players", ids: ["players", "contracts", "steals", "milestones", SEASONS_ID] },
+  { label: "Teams & GMs", ids: ["teams", "gms", "lottery"] },
+  { label: "Awards", ids: ["trophies"] },
+];
+
 export function LeaderboardsHub({ boards, seasons }: { boards: Board[]; seasons: number[] }) {
   const tabs = [...boards.map((board) => ({ id: board.id as string, label: board.label })), { id: SEASONS_ID, label: "Season Leaders" }];
   // ?board=teams or ?view=teams (the nav's Teams / Players links). Read live, so a nav click
@@ -39,26 +46,35 @@ export function LeaderboardsHub({ boards, seasons }: { boards: Board[]; seasons:
 
   return (
     <div>
-      <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-        <div role="tablist" aria-label="Leaderboard categories" className="flex min-w-max gap-2">
-          {tabs.map((item) => {
-            const on = item.id === active;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                role="tab"
-                aria-selected={on}
-                onClick={() => pick(item.id)}
-                className={`rounded-full border px-4 py-2 text-sm font-semibold whitespace-nowrap transition ${
-                  on ? "border-[#38BDF8] bg-[#38BDF8]/10 text-[#38BDF8]" : "border-[#262B36] bg-[#14171F] text-[#94A3B8] hover:border-[#38BDF8]/60 hover:text-white"
-                }`}
-              >
-                {item.label}
-              </button>
-            );
-          })}
-        </div>
+      <div role="tablist" aria-label="Leaderboard categories" className="grid gap-3 rounded-2xl border border-[#262B36] bg-[#14171F] p-3 sm:grid-cols-[repeat(3,auto)] sm:justify-start sm:gap-x-8">
+        {TAB_GROUPS.map((group) => {
+          const items = group.ids.map((id) => tabs.find((tab) => tab.id === id)).filter((tab): tab is { id: string; label: string } => Boolean(tab));
+          if (!items.length) return null;
+          return (
+            <div key={group.label}>
+              <p className="mb-1.5 text-[10px] font-semibold tracking-[0.16em] text-[#94A3B8] uppercase">{group.label}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {items.map((item) => {
+                  const on = item.id === active;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={on}
+                      onClick={() => pick(item.id)}
+                      className={`rounded-full border px-3 py-1.5 text-sm font-semibold whitespace-nowrap transition ${
+                        on ? "border-[#38BDF8] bg-[#38BDF8]/10 text-[#38BDF8]" : "border-[#262B36] bg-[#0B0D10]/60 text-[#94A3B8] hover:border-[#38BDF8]/60 hover:text-white"
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </div>
       {board ? <BoardView key={board.id} board={board} query={query} setQuery={setQuery} /> : <SeasonLeaders seasons={seasons} query={query} setQuery={setQuery} />}
       <p className="mt-3 text-xs text-[#94A3B8]">Click any column to sort (lowest first, click again for highest first). Click any row to open the full profile.</p>

@@ -1,19 +1,10 @@
 /* eslint-disable @next/next/no-img-element */
 
-/** StatsPuck logo on a white sticker badge so the black linework stays crisp on the dark canvas. */
+/** StatsPuck logo. The PNG is transparent, so it sits straight on the canvas (no white badge). */
 export function StatsPuckBadge({ height = 44 }: { height?: number }) {
   return (
-    <span
-      className="inline-flex shrink-0 items-center justify-center rounded-lg bg-white p-[3px] shadow-[0_0_0_1px_rgba(255,255,255,0.6),0_4px_14px_rgba(0,0,0,0.45)]"
-      style={{ height }}
-    >
-      <img
-        src="/statspuck-logo-480.png"
-        alt="StatsPuck"
-        width={480}
-        height={320}
-        className="h-full w-auto rounded-md"
-      />
+    <span className="inline-flex shrink-0 items-center justify-center" style={{ height }}>
+      <img src="/statspuck-logo-480.png" alt="StatsPuck" width={480} height={320} className="h-full w-auto" />
     </span>
   );
 }
