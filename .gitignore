@@ -6,6 +6,7 @@ next-env.d.ts
 .wrangler
 .env*
 pipelines/*/cache
+pipelines/game-edge/store
 __pycache__
 .DS_Store
 Thumbs.db

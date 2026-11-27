@@ -1,0 +1,50 @@
+name: Game Edge & Ref Watch data
+
+# Nightly: fetch every newly finished NHL game (play-by-play, referees, shift charts) and
+# rebuild Ref Watch, Game Edge, line chemistry and player availability.
+# Runs an hour after the Draft Rater job (availability reads its season_stats.json).
+# Finished games are kept between runs in the Actions cache, so a normal night only
+# downloads yesterday's games. Updates land on staging only.
+on:
+  schedule:
+    - cron: "0 11 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: data-commits
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: staging
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore stored games
+        uses: actions/cache@v4
+        with:
+          path: pipelines/game-edge/store
+          key: game-edge-store-${{ github.run_id }}
+          restore-keys: game-edge-store-
+      - name: Fetch new games and rebuild
+        run: python pipelines/game-edge/run.py
+      - name: Commit data to staging if it changed
+        run: |
+          git config user.name "statspuck-data-bot"
+          git config user.email "statspuck-data-bot@users.noreply.github.com"
+          git add data/game-edge data/draft-rater/availability.json
+          if git diff --staged --quiet; then
+            echo "No data changes"
+          else
+            git commit -m "Update Game Edge and Ref Watch data"
+            git pull --rebase origin staging
+            git push origin HEAD:staging
+          fi

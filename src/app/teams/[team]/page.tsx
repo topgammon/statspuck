@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { CapBar, DnaPills, PillarGrades, SectionLabel } from "@/components/entity/bio";
-import { GameEdgePanel } from "@/components/entity/game-edge-panel";
+import { TeamGameEdge } from "@/components/entity/edge-panels";
+import { teamEdge } from "@/lib/game-edge";
 import { ComingSoonStamp, HeroBox } from "@/components/entity/hero-box";
 import { OrgDevelopment } from "@/components/entity/org-development";
 import { ProfileShell } from "@/components/entity/profile-shell";
@@ -40,7 +41,7 @@ const TEAM_TABS = [
   { id: "cap-assets", label: "Cap & Assets" },
   { id: "draft-dev", label: "Draft & Dev" },
   { id: "history", label: "History & Trades" },
-  { id: "game-edge", label: "Game Edge", soon: true },
+  { id: "game-edge", label: "Game Edge" },
 ];
 
 const TEAM_ALIASES: Record<string, string> = {
@@ -281,7 +282,19 @@ export default async function TeamPage({ params }: { params: Promise<Params> }) 
         )}
       />
     ),
-    "game-edge": <HeroBox label="Game Edge" badge={<ComingSoonStamp />} caption="Line chemistry, goal types and pregame edges." href="/game-edge" hrefLabel="Preview Game Edge" />,
+    "game-edge": (() => {
+      const edge = teamEdge(team.abbr);
+      return (
+        <HeroBox
+          label="Power play / penalty kill"
+          value={edge?.ppPct != null ? `${(edge.ppPct * 100).toFixed(1)}%` : "—"}
+          unit={edge?.pkPct != null ? `PP · ${(edge.pkPct * 100).toFixed(1)}% PK` : "PP"}
+          caption="Goal types, top lines, goalie tendencies and ref splits from play-by-play."
+          href="/game-edge"
+          hrefLabel="Pregame matchup reports"
+        />
+      );
+    })(),
   };
 
   const panels: Record<string, ReactNode> = {
@@ -368,7 +381,7 @@ export default async function TeamPage({ params }: { params: Promise<Params> }) 
         </div>
       </div>
     ),
-    "game-edge": <GameEdgePanel subject={team.name} />,
+    "game-edge": <TeamGameEdge abbr={team.abbr} name={team.name} />,
   };
 
   return <ProfileShell tabs={TEAM_TABS} aliases={TEAM_ALIASES} left={left} middle={middle} heroes={heroes} panels={panels} />;

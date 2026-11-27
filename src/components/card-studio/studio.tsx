@@ -2,7 +2,7 @@
 
 import { domToBlob } from "modern-screenshot";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { CompareCard, DraftCard, FORMATS, RankCard, ScoutCard, TradeCard, type RankRow, type StudioFormat } from "@/components/card-studio/cards";
+import { CompareCard, DraftCard, FORMATS, RankCard, ScoutCard, TeamCompareCard, TradeCard, type RankRow, type StudioFormat } from "@/components/card-studio/cards";
 import { hexA, luminance } from "@/components/share-cards";
 import { TeamLogo } from "@/components/team-logo";
 import { TogglePill } from "@/components/toggle-pill";
@@ -19,7 +19,7 @@ type AccentId = "crimson" | "cyan" | "team";
 type PresetId = "skill" | "impact" | "contract" | "steals" | "asset";
 
 const TEMPLATES: { id: Template; label: string; blurb: string }[] = [
-  { id: "compare", label: "Head-to-Head", blurb: "Two players side by side" },
+  { id: "compare", label: "Head-to-Head", blurb: "Two players or two teams" },
   { id: "scout", label: "Scouting Card", blurb: "One player, every number" },
   { id: "trade", label: "Trade Proposal", blurb: "Both sides + verdict" },
   { id: "top5", label: "Top-5 Ranking", blurb: "Your title, your list" },
@@ -75,6 +75,9 @@ export function CardStudio() {
 
   const [aId, setAId] = useState<number | null>(null);
   const [bId, setBId] = useState<number | null>(null);
+  const [compareKind, setCompareKind] = useState<"players" | "teams">("players");
+  const [teamA, setTeamA] = useState("");
+  const [teamB, setTeamB] = useState("");
   const [scoutId, setScoutId] = useState<number | null>(null);
   const [preset, setPreset] = useState<PresetId>("skill");
   const [rankSource, setRankSource] = useState<"preset" | "custom">("preset");
@@ -149,6 +152,12 @@ export function CardStudio() {
       setYear(years.includes(y) ? y : (years.find((value) => value <= new Date().getFullYear() - 10) ?? years[0]));
       const sub = params.get("sub");
       if (sub) setSubtitle(sub);
+      const sortedAbbrs = [...teams.keys()].sort();
+      const ta = params.get("ta")?.toUpperCase();
+      const tb = params.get("tb")?.toUpperCase();
+      setTeamA(ta && teams.has(ta) ? ta : (sortedAbbrs[0] ?? ""));
+      setTeamB(tb && teams.has(tb) ? tb : (sortedAbbrs[1] ?? ""));
+      if (ta || tb) setCompareKind("teams");
       setReady(true);
     }, 0);
     return () => window.clearTimeout(timer);
@@ -216,7 +225,7 @@ export function CardStudio() {
 
   // Accent color.
   const teamColor = (() => {
-    if (template === "compare") return a?.c;
+    if (template === "compare") return compareKind === "teams" ? colors.get(teamA) : a?.c;
     if (template === "scout") return scout?.c;
     if (template === "trade") return tradeResult?.calcs[0]?.team.color;
     if (template === "top5") return rankTeam !== "ALL" ? colors.get(rankTeam) : rankRows[0]?.image.kind === "player" ? rankRows[0].image.color : undefined;
@@ -230,7 +239,10 @@ export function CardStudio() {
     if (!ready) return;
     const params = new URLSearchParams();
     params.set("template", template);
-    if (template === "compare" && aId && bId) {
+    if (template === "compare" && compareKind === "teams" && teamA && teamB) {
+      params.set("ta", teamA);
+      params.set("tb", teamB);
+    } else if (template === "compare" && aId && bId) {
       params.set("a", String(aId));
       params.set("b", String(bId));
     }
@@ -245,12 +257,16 @@ export function CardStudio() {
     let query = params.toString();
     if (template === "trade" && slots.length >= 2) query += `&${encodeTrade(slots, items)}`;
     window.history.replaceState(null, "", `${window.location.pathname}?${query}`);
-  }, [ready, template, aId, bId, scoutId, preset, rankTeam, rankSource, picksList, title, titleTouched, year, slots, items]);
+  }, [ready, template, aId, bId, compareKind, teamA, teamB, scoutId, preset, rankTeam, rankSource, picksList, title, titleTouched, year, slots, items]);
 
   const common = { format, accent, subtitle, handle };
   let card: ReactNode = null;
   if (data) {
-    if (template === "compare" && a && b) card = <CompareCard {...common} a={a} b={b} teams={teams} />;
+    if (template === "compare" && compareKind === "teams") {
+      const ta = teams.get(teamA);
+      const tb = teams.get(teamB);
+      if (ta && tb) card = <TeamCompareCard {...common} a={ta} b={tb} />;
+    } else if (template === "compare" && a && b) card = <CompareCard {...common} a={a} b={b} teams={teams} />;
     if (template === "scout" && scout) card = <ScoutCard {...common} p={scout} teams={teams} />;
     if (template === "trade" && tradeResult) card = <TradeCard {...common} result={tradeResult} />;
     if (template === "top5") card = <RankCard {...common} title={rankTitle} metric={rankSource === "custom" ? `Hand-picked · ${PRESETS[preset].label}` : PRESETS[preset].label} rows={rankRows} />;
@@ -258,6 +274,7 @@ export function CardStudio() {
   }
 
   const fileSlug = (() => {
+    if (template === "compare" && compareKind === "teams") return `${teamA}-vs-${teamB}`;
     if (template === "compare") return `${a?.n ?? "a"}-vs-${b?.n ?? "b"}`;
     if (template === "scout") return scout?.n ?? "scout";
     if (template === "trade") return slots.join("-");
@@ -304,8 +321,39 @@ export function CardStudio() {
             {!data ? <p className="text-sm text-[#94A3B8]">Loading players…</p> : null}
             {data && template === "compare" ? (
               <div className="space-y-3">
-                <PlayerPicker label="Player A" players={players} teams={teams} value={a} onPick={setAId} />
-                <PlayerPicker label="Player B" players={players} teams={teams} value={b} onPick={setBId} />
+                <TogglePill<"players" | "teams">
+                  label="Compare"
+                  value={compareKind}
+                  options={[
+                    { id: "players", label: "Players" },
+                    { id: "teams", label: "Teams" },
+                  ]}
+                  onChange={setCompareKind}
+                />
+                {compareKind === "players" ? (
+                  <>
+                    <PlayerPicker label="Player A" players={players} teams={teams} value={a} onPick={setAId} />
+                    <PlayerPicker label="Player B" players={players} teams={teams} value={b} onPick={setBId} />
+                  </>
+                ) : (
+                  (
+                    [
+                      ["Team A", teamA, setTeamA],
+                      ["Team B", teamB, setTeamB],
+                    ] as const
+                  ).map(([label, value, set]) => (
+                    <label key={label} className="block text-xs font-semibold tracking-[0.12em] text-[#94A3B8] uppercase">
+                      {label}
+                      <select value={value} onChange={(event) => set(event.target.value)} className={`${inputClass} mt-1.5`}>
+                        {sortedTeams.map((team) => (
+                          <option key={team.abbr} value={team.abbr}>
+                            {team.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ))
+                )}
               </div>
             ) : null}
             {data && template === "scout" ? <PlayerPicker label="Player" players={players} teams={teams} value={scout} onPick={setScoutId} /> : null}

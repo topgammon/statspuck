@@ -1,5 +1,6 @@
 import rosterBios from "../../data/draft-rater/roster_bios.json";
 import { capCeiling, capFloor, capShare } from "./cap";
+import { chemistryBonusFor } from "./game-edge";
 import { profileRows, type ProfileRow } from "./profiles";
 import type { Archetype } from "./archetype-meta";
 import { vitalsFor } from "./vitals";
@@ -8,8 +9,8 @@ import { vitalsFor } from "./vitals";
 //
 // Picks the best possible 20-man NHL roster from every active player under contract:
 // 4 LW, 4 C, 4 RW, 3 left-shot D, 3 right-shot D and 2 goalies, with total AAV at or under the
-// cap ceiling. Player value = Overall Skill + recent Impact pace (+ chemistryBonus, 0 until the
-// Line Chemistry engine ships).
+// cap ceiling. Player value = Overall Skill + recent Impact pace + chemistryBonus (Game Edge
+// 5v5 WOWY chemistry lift).
 //
 // Solved exactly, not greedily: a knapsack per position slot (exactly k players, best value for
 // every budget in $100K steps), then the six position tables are combined budget by budget.
@@ -51,10 +52,12 @@ export type PerfectRoster = {
 
 const bios = rosterBios as unknown as Record<string, { pos?: string; sc?: string }>;
 
-/** Hook for Phase D's Line Chemistry engine. */
-export function chemistryBonus(_player: RosterPlayer): number {
-  void _player;
-  return 0;
+/**
+ * Line Chemistry bonus (-3..+3 value points) from Game Edge: how much a player's 5-on-5
+ * linemates' shot share rises with him on the ice (WOWY), built from NHL shift charts.
+ */
+export function chemistryBonus(player: RosterPlayer): number {
+  return chemistryBonusFor(player.playerId);
 }
 
 function slotOf(row: ProfileRow): Slot | null {

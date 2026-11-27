@@ -4,6 +4,9 @@ import { draftClasses, leaderboard, meta, picks, teams, teamsByAbbr, undrafted }
 import { impactPerCap, profileRows } from "./profiles";
 import { playerValue } from "./player-value";
 import { vitalsFor, ageOn } from "./vitals";
+import { franchiseAssetsFor } from "./franchise-assets";
+import { teamEdge } from "./game-edge";
+import { teamOverall } from "./overall-grades";
 
 // Everything Card Studio needs, flattened into one static JSON file (/card-studio/players.json)
 // so the studio page loads fast and fetches the numbers in the browser.
@@ -56,11 +59,26 @@ export type StudioClassPick = { id: number | null; r: number; n: string; o: numb
 
 export type StudioClass = { y: number; l: string | null; rating: number | null; top: StudioClassPick[]; steals: StudioClassPick[] };
 
-export type StudioTeam = { abbr: string; name: string; short: string; color: string; l: string | null };
+/** Team head-to-head numbers: grades as [rating, letter]; goals per game; PP/PK %; net penalties drawn per game. */
+export type StudioTeamStats = {
+  ov: [number, string] | null;
+  dr: [number, string] | null;
+  dv: [number, string] | null;
+  fa: number | null;
+  cs: number | null;
+  gf: number | null;
+  ga: number | null;
+  pp: number | null;
+  pk: number | null;
+  pn: number | null;
+};
+
+export type StudioTeam = { abbr: string; name: string; short: string; color: string; l: string | null; x?: StudioTeamStats };
 
 export type StudioData = { asOf: string; ceiling: number; players: StudioPlayer[]; classes: StudioClass[]; teams: StudioTeam[] };
 
 const round1 = (value: number) => Math.round(value * 10) / 10;
+const round2 = (value: number) => Math.round(value * 100) / 100;
 
 export function buildStudioData(): StudioData {
   const pickByPlayer = new Map(picks.filter((pick) => pick.playerId != null && !pick.forfeited).map((pick) => [pick.playerId as number, pick]));
@@ -145,12 +163,38 @@ export function buildStudioData(): StudioData {
     })
     .sort((a, b) => b.y - a.y);
 
-  const letters = new Map(leaderboard.map((team) => [team.abbr, team.letter]));
+  const byAbbr = new Map(leaderboard.map((team) => [team.abbr, team]));
   return {
     asOf: meta.asOf,
     ceiling: capCeiling,
     players,
     classes,
-    teams: teams.map((team) => ({ abbr: team.abbr, name: team.name, short: team.short, color: team.color, l: letters.get(team.abbr) ?? null })),
+    teams: teams.map((team) => {
+      const grade = byAbbr.get(team.abbr);
+      const overall = teamOverall(team.abbr);
+      const assets = franchiseAssetsFor(team.abbr);
+      const edge = teamEdge(team.abbr);
+      const goals = (table: Partial<Record<string, [number, number]>> | undefined) =>
+        edge && edge.weightGames ? round2(Object.values(table ?? {}).reduce((s, v) => s + (v?.[1] ?? 0), 0) / edge.weightGames) : null;
+      return {
+        abbr: team.abbr,
+        name: team.name,
+        short: team.short,
+        color: team.color,
+        l: grade?.letter ?? null,
+        x: {
+          ov: overall ? [overall.rating, overall.letter] : null,
+          dr: grade ? [Math.round(grade.rating), grade.letter] : null,
+          dv: grade?.dev && grade.dev.rating != null && grade.dev.letter ? [Math.round(grade.dev.rating), grade.dev.letter] : null,
+          fa: assets ? Math.round(assets.total) : null,
+          cs: assets ? assets.capSpace : null,
+          gf: goals(edge?.for),
+          ga: goals(edge?.against),
+          pp: edge?.ppPct != null ? round1(edge.ppPct * 100) : null,
+          pk: edge?.pkPct != null ? round1(edge.pkPct * 100) : null,
+          pn: edge ? round2(edge.drawn - edge.taken) : null,
+        },
+      };
+    }),
   };
 }

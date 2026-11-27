@@ -6,6 +6,8 @@ import { Cell, RowImage } from "@/components/leaderboard-table";
 import { money, RosterCard } from "@/components/perfect-roster-view";
 import { StatsPuckBadge } from "@/components/wordmark";
 import { perfectRoster } from "@/lib/perfect-roster";
+import { todaysGames } from "@/lib/game-edge";
+import { activeRefs } from "@/lib/ref-watch";
 import { leaderboard } from "@/lib/data";
 import { devBoard } from "@/lib/dev-board";
 import { skillBoard, type BoardRow } from "@/lib/leaderboards";
@@ -78,8 +80,27 @@ export default function HomePage() {
           value: <span className="text-[10px] font-semibold tracking-wide whitespace-nowrap text-[#94A3B8] uppercase">{rumor.rumorType.replace(" Talks", "").replace(" Watch", "")}</span>,
         })),
     },
-    "Game Edge": null,
-    "Ref Watch": null,
+    "Game Edge": todaysGames().games.length
+      ? {
+          title: "Tonight's matchups",
+          rows: todaysGames()
+            .games.slice(0, 3)
+            .map((g) => ({
+              href: "/game-edge",
+              name: `${g.away} @ ${g.home}`,
+              image: { kind: "team", abbr: g.home } as BoardRow["image"],
+              value: <span className="text-xs font-semibold text-[#38BDF8]">Report →</span>,
+            })),
+        }
+      : null,
+    "Ref Watch": {
+      title: "Most consistent referees",
+      rows: activeRefs()
+        .filter((r) => !r.low)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3)
+        .map((r) => ({ href: `/ref-watch/${r.slug}`, name: r.name, image: null, value: letter(r.grade) })),
+    },
   };
 
   return (
@@ -87,10 +108,10 @@ export default function HomePage() {
       {/* Full-screen hero: header + logo + search fill the first screen; tools start below the fold. */}
       <section className="relative -mt-8 flex min-h-[calc(100svh-4.25rem)] flex-col items-center justify-center pb-16 text-center">
         <span className="hidden sm:block">
-          <StatsPuckBadge height={150} />
+          <StatsPuckBadge height={250} />
         </span>
         <span className="sm:hidden">
-          <StatsPuckBadge height={112} />
+          <StatsPuckBadge height={170} />
         </span>
         <h1 className="display mt-8 text-4xl leading-[1.02] font-bold sm:text-6xl">
           Every hockey decision, <span className="text-[#38BDF8]">settled by the math.</span>

@@ -8,7 +8,8 @@ import { awardsFor } from "@/lib/awards";
 import { TrophyCase } from "@/components/entity/trophy-case";
 import { AssetValuePanel } from "@/components/entity/asset-value";
 import { ArchetypePill, ProspectTierPill, SectionLabel } from "@/components/entity/bio";
-import { GameEdgePanel } from "@/components/entity/game-edge-panel";
+import { PlayerGameEdge } from "@/components/entity/edge-panels";
+import { goalieEdge, playerEdge } from "@/lib/game-edge";
 import { ComingSoonStamp, HeroBox } from "@/components/entity/hero-box";
 import { DebutAndMilestones, DraftPanel } from "@/components/entity/player-career";
 import { PlayerDevelopment } from "@/components/entity/player-development";
@@ -49,7 +50,7 @@ export const PLAYER_TABS = [
   { id: "stats", label: "Stats" },
   { id: "asset", label: "Asset Value" },
   { id: "career", label: "Career" },
-  { id: "game-edge", label: "Game Edge", soon: true },
+  { id: "game-edge", label: "Game Edge" },
 ];
 
 /** Old tab names keep working: they open the closest new tab. */
@@ -327,14 +328,28 @@ export function PlayerProfile({ subject }: { subject: PlayerSubject }) {
     />
   );
 
-  const edgeHero = (
+  const edge = group === "G" ? null : playerEdge(playerId);
+  const goalieEdgeRow = group === "G" && playerId != null ? goalieEdge(playerId) : undefined;
+  const edgeHero = edge ? (
     <HeroBox
-      label="Game Edge"
-      badge={<ComingSoonStamp />}
-      caption="Line chemistry, goal types, heatmaps and clutch splits from play-by-play."
-      href="/game-edge"
-      hrefLabel="Preview Game Edge"
+      label="5v5 Chemistry Lift"
+      value={`${edge.lift > 0 ? "+" : ""}${edge.lift.toFixed(1)}`}
+      valueTone={edge.lift >= 0 ? "text-[#10B981]" : "text-[#EF4444]"}
+      unit="CF%"
+      caption="How much his linemates' 5-on-5 shot share rises with him on the ice."
+      href="/game-edge?tab=chemistry"
+      hrefLabel="Line Chemistry"
     />
+  ) : goalieEdgeRow ? (
+    <HeroBox
+      label="Save % since 2024-25"
+      value={goalieEdgeRow.sv != null ? goalieEdgeRow.sv.toFixed(3).replace(/^0/, "") : "—"}
+      caption="Weighted to this season. Zone-by-zone tendencies below."
+      href="/game-edge?tab=goalies"
+      hrefLabel="Goalie Tendencies"
+    />
+  ) : (
+    <HeroBox label="Game Edge" value="—" caption="Not enough NHL play-by-play since 2024-25 yet." href="/game-edge" hrefLabel="Open Game Edge" />
   );
 
   // ---- Tab panels ---------------------------------------------------------------------
@@ -374,7 +389,7 @@ export function PlayerProfile({ subject }: { subject: PlayerSubject }) {
         <ContractDeepDive contract={contract} value={value} />
         <TradeHistory trades={playerTrades(name)} playerId={playerId} name={name} />
       </div>
-      <InjuryTimeline />
+      <InjuryTimeline playerId={playerId} />
     </div>
   );
 
@@ -408,7 +423,7 @@ export function PlayerProfile({ subject }: { subject: PlayerSubject }) {
         stats: statsPanel,
         asset: assetPanel,
         career: careerPanel,
-        "game-edge": <GameEdgePanel subject={name} />,
+        "game-edge": <PlayerGameEdge playerId={playerId} name={name} goalie={group === "G"} />,
       }}
     />
   );

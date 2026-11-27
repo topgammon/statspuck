@@ -6,6 +6,7 @@ import { teamsByAbbr } from "@/lib/data";
 import type { PlayerValue } from "@/lib/player-value";
 import type { PlayerTrade } from "@/lib/player-trades";
 import { teamHref } from "@/lib/routes";
+import { availabilityFor } from "@/lib/availability";
 
 // Extra Asset Value tab sections: contract & clause deep-dive, injury timeline (soon),
 // and NHL trade history with a link into the Trade Machine.
@@ -60,14 +61,48 @@ export function ContractDeepDive({ contract, value }: { contract: PlayerContract
   );
 }
 
-export function InjuryTimeline() {
-  return (
-    <div className="rounded-2xl border border-dashed border-[#262B36] bg-[#14171F]/60 p-5">
-      <div className="flex items-center justify-between gap-2">
-        <SectionLabel>Injury history</SectionLabel>
-        <span className="text-[10px] font-bold tracking-wider text-[#94A3B8] uppercase">Soon</span>
+export function InjuryTimeline({ playerId }: { playerId: number | null }) {
+  const a = availabilityFor(playerId);
+  if (!a) {
+    return (
+      <div className="rounded-2xl border border-[#262B36] bg-[#14171F] p-5">
+        <SectionLabel>Injury &amp; availability history</SectionLabel>
+        <p className="mt-2 text-sm text-[#94A3B8]">Starts with his first 40+ game NHL season, so prospects and part-timers are never penalized. Nothing to show yet.</p>
       </div>
-      <p className="mt-2 text-sm text-[#94A3B8]">A season-by-season timeline of games missed to injury, feeding the injury-risk part of Asset Value. Coming with the Luck &amp; Variance data.</p>
+    );
+  }
+  const tone = (pct: number) => (pct >= 0.95 ? "#10B981" : pct >= 0.85 ? "#38BDF8" : pct >= 0.7 ? "#F97316" : "#EF4444");
+  return (
+    <div className="rounded-2xl border border-[#262B36] bg-[#14171F] p-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <SectionLabel>Injury &amp; availability history</SectionLabel>
+        <span className="text-xs text-[#94A3B8]">
+          Career availability <b style={{ color: tone(a.pct) }}>{(a.pct * 100).toFixed(1)}%</b> · durability factor <b className="text-[#F8FAFC]">×{a.durability.toFixed(2)}</b> in Asset Value
+        </span>
+      </div>
+      <ul className="mt-3 grid gap-1.5">
+        {a.seasons.map((s) => {
+          const pct = s.games ? s.gp / s.games : 1;
+          return (
+            <li key={s.season} className="grid grid-cols-[4.5rem_minmax(0,1fr)_7.5rem] items-center gap-2 text-xs">
+              <span className="text-[#94A3B8]">
+                {s.season}-{String(s.season + 1).slice(2)}
+                {s.live ? "*" : ""}
+              </span>
+              <span className="h-3 overflow-hidden rounded-full bg-[#EF4444]/25">
+                <span className="block h-full rounded-full" style={{ width: `${pct * 100}%`, background: tone(pct) }} />
+              </span>
+              <span className="text-right tabular-nums">
+                {s.gp}/{s.games} GP {s.missed ? <span className="text-[#EF4444]">· {s.missed} missed</span> : null}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="mt-3 text-[11px] text-[#94A3B8]">
+        Games missed = his team&apos;s games minus his games played (injury, healthy scratch or minors; the NHL feed does not say which). Counted from his first 40+ GP NHL
+        season. * season in progress, not used for the durability factor.
+      </p>
     </div>
   );
 }

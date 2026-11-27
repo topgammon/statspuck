@@ -19,7 +19,6 @@ const LAYOUT: SlotDef[] = [
   { slot: "G", group: "Goalies", label: "Backup" },
 ];
 const SIZE = LAYOUT.length;
-const MIN_SALARY = 775_000;
 const STORAGE_KEY = "statspuck-roster-builder";
 
 const isF = (s: Slot) => s === "LW" || s === "C" || s === "RW";
@@ -106,8 +105,11 @@ export function RosterBuilder({
     } catch {
       ids = null;
     }
-    if (ids) setRoster(Array.from({ length: SIZE }, (_, i) => ids![i] ?? null));
-    setLoaded(true);
+    const timer = window.setTimeout(() => {
+      if (ids) setRoster(Array.from({ length: SIZE }, (_, i) => ids![i] ?? null));
+      setLoaded(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [byId]);
 
   useEffect(() => {

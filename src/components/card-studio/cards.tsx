@@ -305,7 +305,22 @@ export function CompareCard({ format, accent, subtitle, handle, a, b, teams }: C
     );
   };
 
-  const shown = s.wide ? rows : rows;
+  return (
+    <Frame format={format} accent={accent} handle={handle}>
+      <Header format={format} accent={accent} eyebrow="Head-to-Head" title={`${lastName(a.n)} vs ${lastName(b.n)}`} subtitle={subtitle} />
+      <div style={{ display: "flex", alignItems: s.tall ? "flex-start" : "center", gap: 18 * s.k }}>
+        {side(a, "left")}
+        <span style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 30 * s.k, color: accent, flex: "none", alignSelf: "center" }}>VS</span>
+        {side(b, "right")}
+      </div>
+      <CompareRows rows={rows} format={format} accent={accent} />
+    </Frame>
+  );
+}
+
+/** The bar-vs-bar stat table shared by the player and team head-to-head cards. */
+function CompareRows({ rows: shown, format, accent }: { rows: CompareRow[]; format: StudioFormat; accent: string }) {
+  const s = sz(format);
   const rowH = s.wide ? Math.min(36, Math.floor(300 / Math.ceil(shown.length / 2))) : s.tall ? 74 : 46;
   const renderRow = (row: CompareRow) => {
     const max = row.max ?? Math.max(1, row.a ?? 0, row.b ?? 0);
@@ -332,31 +347,78 @@ export function CompareCard({ format, accent, subtitle, handle, a, b, teams }: C
 
   const half = Math.ceil(shown.length / 2);
   return (
+    <div style={{ background: hexA(PANEL, 0.7), border: `1px solid ${LINE}`, borderRadius: 18 * s.k, padding: `${10 * s.k}px ${16 * s.k}px` }}>
+      {s.wide ? (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", columnGap: 26 }}>
+          <div>{shown.slice(0, half).map((row) => renderRow(row))}</div>
+          <div>{shown.slice(half).map((row) => renderRow(row))}</div>
+        </div>
+      ) : (
+        shown.map((row) => renderRow(row))
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* 1b. Head-to-Head Team Comparison                                    */
+/* ------------------------------------------------------------------ */
+
+export function TeamCompareCard({ format, accent, subtitle, handle, a, b }: CardCommon & { a: StudioTeam; b: StudioTeam }) {
+  const s = sz(format);
+  const x = a.x;
+  const y = b.x;
+  const grade = (label: string, av: [number, string] | null | undefined, bv: [number, string] | null | undefined): CompareRow => ({
+    label,
+    a: av?.[0] ?? null,
+    b: bv?.[0] ?? null,
+    aText: av ? av[1] : "—",
+    bText: bv ? bv[1] : "—",
+    max: 100,
+  });
+  const num = (label: string, av: number | null | undefined, bv: number | null | undefined, fmt: (v: number) => string, opts: Partial<CompareRow> = {}): CompareRow => ({
+    label,
+    a: av ?? null,
+    b: bv ?? null,
+    aText: av == null ? "—" : fmt(av),
+    bText: bv == null ? "—" : fmt(bv),
+    ...opts,
+  });
+  const rows: CompareRow[] = [
+    grade("Overall Grade", x?.ov, y?.ov),
+    grade("Drafting", x?.dr, y?.dr),
+    grade("Development", x?.dv, y?.dv),
+    num("Franchise Assets", x?.fa, y?.fa, (v) => String(v)),
+    num("Goals For / Game", x?.gf, y?.gf, (v) => v.toFixed(2), { max: 4.5 }),
+    num("Goals Against / Game", x?.ga, y?.ga, (v) => v.toFixed(2), { max: 4.5, winner: "low" }),
+    num("Power Play %", x?.pp, y?.pp, (v) => `${v.toFixed(1)}%`, { max: 35 }),
+    num("Penalty Kill %", x?.pk, y?.pk, (v) => `${v.toFixed(1)}%`, { max: 100 }),
+    num("Cap Space", x?.cs, y?.cs, (v) => money(v), { winner: "high" }),
+  ];
+  const side = (t: StudioTeam, flip: boolean) => (
+    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: s.tall ? "column" : flip ? "row-reverse" : "row", alignItems: s.tall ? (flip ? "flex-end" : "flex-start") : "center", gap: 16 * s.k, textAlign: flip ? "right" : "left" }}>
+      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: (s.wide ? 120 : s.tall ? 230 : 160), height: (s.wide ? 120 : s.tall ? 230 : 160), borderRadius: 24 * s.k, background: `linear-gradient(180deg, ${hexA(t.color, 0.35)}, ${PANEL})`, border: `1px solid ${LINE}`, flex: "none" }}>
+        <Logo abbr={t.abbr} size={(s.wide ? 92 : s.tall ? 180 : 124)} />
+      </span>
+      <div style={{ minWidth: 0, display: "flex", flexDirection: "column", alignItems: flip ? "flex-end" : "flex-start", gap: 6 * s.k, width: "100%" }}>
+        <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: fitSize(t.name, 36 * s.k, s.wide ? 15 : 14), lineHeight: 1.02, ...ellipsis, maxWidth: "100%" }}>{t.name}</div>
+        {t.x?.ov ? (
+          <Pill size={12 * s.k} color={GOLD}>
+            Overall {t.x.ov[1]} · {t.x.ov[0]}/100
+          </Pill>
+        ) : null}
+      </div>
+    </div>
+  );
+  return (
     <Frame format={format} accent={accent} handle={handle}>
-      <Header format={format} accent={accent} eyebrow="Head-to-Head" title={`${lastName(a.n)} vs ${lastName(b.n)}`} subtitle={subtitle} />
+      <Header format={format} accent={accent} eyebrow="Team Head-to-Head" title={`${a.short} vs ${b.short}`} subtitle={subtitle} />
       <div style={{ display: "flex", alignItems: s.tall ? "flex-start" : "center", gap: 18 * s.k }}>
-        {side(a, "left")}
+        {side(a, false)}
         <span style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 30 * s.k, color: accent, flex: "none", alignSelf: "center" }}>VS</span>
-        {side(b, "right")}
+        {side(b, true)}
       </div>
-      <div style={{ background: hexA(PANEL, 0.7), border: `1px solid ${LINE}`, borderRadius: 18 * s.k, padding: `${10 * s.k}px ${16 * s.k}px` }}>
-        {s.wide ? (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", columnGap: 26 }}>
-            <div>
-              {shown.slice(0, half).map((row) => (
-                renderRow(row)
-              ))}
-            </div>
-            <div>
-              {shown.slice(half).map((row) => (
-                renderRow(row)
-              ))}
-            </div>
-          </div>
-        ) : (
-          shown.map((row) => renderRow(row))
-        )}
-      </div>
+      <CompareRows rows={rows} format={format} accent={accent} />
     </Frame>
   );
 }

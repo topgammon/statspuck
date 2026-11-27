@@ -86,7 +86,8 @@ export default function PerfectRosterPage() {
           </section>
 
           <p className="mt-6 text-xs text-[#94A3B8]">
-            Value = Overall Skill + recent Impact pace (Impact per 82 for skaters, per season for goalies). Line chemistry will join the formula with the Game Edge chemistry engine.
+            Value = Overall Skill + recent Impact pace (Impact per 82 for skaters, per season for goalies) + a line chemistry bonus of up to ±3 for players whose 5-on-5 linemates
+            get better (or worse) shot share with them on the ice (Game Edge WOWY).
             Chosen from {roster.pool} active players with a contract and a current Skill rating. Lines are ordered by value, not real-world deployment.
           </p>
 

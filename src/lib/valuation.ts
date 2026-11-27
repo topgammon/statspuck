@@ -2,6 +2,7 @@ import { capCeiling, capSeasonStart, contracts, yearsLeft, type PlayerContract }
 import { curves } from "./data";
 import { ageAtSeason, nhlersFile, type AgePoint, type Group, type Nhler } from "./nhlers";
 import { RATING_EXPONENT, toRating } from "./rating";
+import { availabilityFor } from "./availability";
 
 export { RATING_EXPONENT, toRating, ratingTone } from "./rating";
 
@@ -203,6 +204,8 @@ export type PlayerAsset = {
   aavPv: number;
   /** 0-100 trade value (can be negative). */
   rating: number;
+  /** Availability multiplier applied to projected value (1 = fully durable). */
+  durability: number;
 };
 
 export type ValuationScale = {
@@ -237,8 +240,10 @@ function buildAsset(c: Candidate, uref: number): PlayerAsset {
   const years: YearRow[] = [];
   let termSurplus = 0;
   let aavPv = 0;
+  // Durability: players who miss lots of games deliver less of their per-game value.
+  const durability = availabilityFor(c.id)?.durability ?? 1;
   for (let k = 0; k < left; k++) {
-    const rate = c.form.rate * (base > 0 ? curveAt(c.group, c.age + k) / base : 1);
+    const rate = durability * c.form.rate * (base > 0 ? curveAt(c.group, c.age + k) / base : 1);
     const mv = marketValue(market, rate);
     const surplus = Math.pow(DISCOUNT, k) * (PREMIUM * mv - c.contract.aav);
     termSurplus += surplus;
@@ -252,7 +257,7 @@ function buildAsset(c: Candidate, uref: number): PlayerAsset {
   const weight = c.contract.elc ? ELC_CONTROL_WEIGHT : EXTENSION_WEIGHT;
   for (let j = 0; j < extra; j++) {
     const k = left + j;
-    const rate = c.form.rate * (base > 0 ? curveAt(c.group, c.age + k) / base : 1);
+    const rate = durability * c.form.rate * (base > 0 ? curveAt(c.group, c.age + k) / base : 1);
     const mv = marketValue(market, rate);
     const surplus = weight * Math.pow(DISCOUNT, k) * (PREMIUM - 1) * mv;
     control += surplus;
@@ -275,6 +280,7 @@ function buildAsset(c: Candidate, uref: number): PlayerAsset {
     value,
     aavPv,
     rating: toRating(value, uref),
+    durability,
   };
 }
 
