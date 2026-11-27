@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ContractDeepDive, InjuryTimeline, surplusScore, TradeHistory } from "@/components/entity/asset-extras";
@@ -30,7 +29,7 @@ import { profileRows } from "@/lib/profiles";
 import { formatRating, ratingTone } from "@/lib/rating";
 import { playerHref } from "@/lib/routes";
 import { letterTone } from "@/lib/search";
-import { debutSeason } from "@/lib/season-stats";
+import { debutSeason, playoffTotals } from "@/lib/season-stats";
 import { skillColor, skillsFor, skillTone } from "@/lib/skills";
 import type { PickRow, UndraftedPlayer, Vitals } from "@/lib/types";
 import { ageOn, birthLabel, feetInches, vitalsFor } from "@/lib/vitals";
@@ -95,6 +94,7 @@ export function PlayerProfile({ subject }: { subject: PlayerSubject }) {
   if (pick) (pick.seasons ?? []).forEach((impact, index) => impactBySeason.set(pick.year + index, impact));
   else und!.seasons.forEach((impact, index) => impactBySeason.set(und!.firstSeason + index, impact));
   const stats = playerStatsTable(playerId, group, impactBySeason);
+  const playoff = playoffTotals(playerId);
   const debut = und ? und.debut : debutSeason(playerId);
   const debutTeam = und?.firstTeam ? { abbr: und.franchise ?? und.firstTeam, name: und.firstTeamName ?? und.firstTeam } : pick ? { abbr: pick.franchise, name: pick.franchiseName } : null;
 
@@ -244,7 +244,7 @@ export function PlayerProfile({ subject }: { subject: PlayerSubject }) {
             { label: "Career GP", value: String(base.gpCareer) },
             group === "G" ? { label: "SV%", value: rate } : { label: "Points", value: base.points == null ? "—" : String(base.points), note: `${base.goals ?? 0} G · ${base.assists ?? 0} A` },
             { label: rateLabel === "PPG" ? "PPG" : "GAA", value: rateLabel === "PPG" ? rate : base.gaa == null ? "—" : base.gaa.toFixed(2) },
-            { label: "Seasons", value: String(stats.rows.length) },
+            { label: "Playoff Impact", value: playoff.gp ? playoff.impact.toFixed(0) : "—", note: playoff.gp ? `${playoff.gp} playoff GP` : undefined },
           ],
         }),
         `${name}: ${base.qg.toFixed(0)} career Impact in ${base.gpCareer} NHL games.`,
@@ -331,7 +331,11 @@ export function PlayerProfile({ subject }: { subject: PlayerSubject }) {
     group === "G"
       ? { label: "Career SV%", value: rate, sub: base.gaa == null ? undefined : `${base.gaa.toFixed(2)} GAA` }
       : { label: "Career PPG", value: rate, sub: base.points == null ? undefined : `${base.goals ?? 0} G · ${base.assists ?? 0} A · ${base.points} PTS` },
-    { label: "Playoff Impact", value: "Soon", sub: "Playoff data is on the way", soon: true },
+    {
+      label: "Playoff Impact",
+      value: playoff.gp ? playoff.impact.toFixed(1) : "—",
+      sub: playoff.gp ? `${playoff.gp} playoff games · ${playoff.springs} ${playoff.springs === 1 ? "spring" : "springs"}` : "No NHL playoff games yet",
+    },
   ];
 
   const statsPanel = (
@@ -345,7 +349,7 @@ export function PlayerProfile({ subject }: { subject: PlayerSubject }) {
           </div>
         ))}
       </div>
-      <StatsTable columns={stats.columns} rows={stats.rows} totals={stats.totals} />
+      <StatsTable columns={stats.columns} rows={stats.rows} totals={stats.totals} playoffs={stats.playoffs} />
     </div>
   );
 

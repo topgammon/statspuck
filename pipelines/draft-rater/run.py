@@ -18,6 +18,7 @@ from fetch_trades import build as build_trades
 from fetch_gm_photos import main as fetch_gm_photos
 from fetch_nhl import fetch_all, sample
 from fetch_paths import main as fetch_paths
+from fetch_playoffs import build as fetch_playoffs
 from fetch_rosters import main as fetch_rosters
 from model import build
 from season_stats import build as build_season_stats
@@ -41,6 +42,7 @@ def main() -> None:
         fetch_paths()
         fetch_bios()
         fetch_contracts()
+        fetch_playoffs()
     build()
     build_trades()
     build_asset_data()

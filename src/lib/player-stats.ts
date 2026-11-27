@@ -1,21 +1,37 @@
 import type { StatColumn, StatRow } from "@/components/entity/stats-table";
-import { goalieSeasons, skaterSeasons } from "./season-stats";
+import { goalieSeasons, playoffGoalieSeasons, playoffSkaterSeasons, skaterSeasons, type GoalieSeason, type SkaterSeason } from "./season-stats";
 import type { PickGroup } from "./types";
 
 // Builds the Stats tab table for one player from the season export. Traded players
 // have one row per club in the source; here each season is merged into one line.
 
-export type StatsTableData = { columns: StatColumn[]; rows: StatRow[]; totals: StatRow | null };
+export type StatsTableData = { columns: StatColumn[]; rows: StatRow[]; totals: StatRow | null; playoffs: { rows: StatRow[]; totals: StatRow | null } };
 
 const round = (value: number, digits = 1) => Math.round(value * 10 ** digits) / 10 ** digits;
 
 export function playerStatsTable(playerId: number | null, group: PickGroup, impactBySeason: Map<number, number>): StatsTableData {
-  return group === "G" ? goalieTable(playerId, impactBySeason) : skaterTable(playerId, impactBySeason);
+  if (group === "G") {
+    const regular = goalieTable(goalieSeasons(playerId), impactBySeason);
+    // Playoff rows carry their own Impact in the last slot.
+    const pRows = playoffGoalieSeasons(playerId);
+    const playoff = goalieTable(
+      pRows.map((row) => row.slice(0, 7) as GoalieSeason),
+      new Map(pRows.map((row) => [row[0], row[7]])),
+    );
+    return { ...regular, playoffs: { rows: playoff.rows, totals: playoff.totals } };
+  }
+  const regular = skaterTable(skaterSeasons(playerId), impactBySeason);
+  const pRows = playoffSkaterSeasons(playerId);
+  const playoff = skaterTable(
+    pRows.map((row) => [...row.slice(0, 12), 0, 0] as SkaterSeason),
+    new Map(pRows.map((row) => [row[0], row[12]])),
+  );
+  return { ...regular, playoffs: { rows: playoff.rows, totals: playoff.totals } };
 }
 
-function skaterTable(playerId: number | null, impact: Map<number, number>): StatsTableData {
+function skaterTable(source: SkaterSeason[], impact: Map<number, number>): Omit<StatsTableData, "playoffs"> {
   const merged = new Map<number, number[]>();
-  for (const row of skaterSeasons(playerId)) {
+  for (const row of source) {
     const prev = merged.get(row[0]);
     if (!prev) {
       merged.set(row[0], [...row]);
@@ -84,9 +100,9 @@ function skaterTable(playerId: number | null, impact: Map<number, number>): Stat
   };
 }
 
-function goalieTable(playerId: number | null, impact: Map<number, number>): StatsTableData {
+function goalieTable(source: GoalieSeason[], impact: Map<number, number>): Omit<StatsTableData, "playoffs"> {
   const merged = new Map<number, number[]>();
-  for (const row of goalieSeasons(playerId)) {
+  for (const row of source) {
     const prev = merged.get(row[0]);
     if (!prev) merged.set(row[0], [...row]);
     else for (let i = 1; i < row.length; i++) prev[i] += row[i];

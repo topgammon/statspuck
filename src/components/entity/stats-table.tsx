@@ -9,9 +9,21 @@ import { TogglePill } from "@/components/toggle-pill";
 export type StatColumn = { key: string; label: string; tip?: string; digits?: number; signed?: boolean; text?: boolean };
 export type StatRow = Record<string, number | string | null>;
 
-export function StatsTable({ columns, rows, totals }: { columns: StatColumn[]; rows: StatRow[]; totals: StatRow | null }) {
+export function StatsTable({
+  columns,
+  rows: regularRows,
+  totals: regularTotals,
+  playoffs,
+}: {
+  columns: StatColumn[];
+  rows: StatRow[];
+  totals: StatRow | null;
+  playoffs: { rows: StatRow[]; totals: StatRow | null };
+}) {
   const [mode, setMode] = useState<"regular" | "playoffs">("regular");
   const [sort, setSort] = useState<{ key: string; dir: 1 | -1 }>({ key: "season", dir: 1 });
+  const rows = mode === "playoffs" ? playoffs.rows : regularRows;
+  const totals = mode === "playoffs" ? playoffs.totals : regularTotals;
 
   const sorted = useMemo(() => {
     const out = [...rows];
@@ -44,15 +56,10 @@ export function StatsTable({ columns, rows, totals }: { columns: StatColumn[]; r
           onChange={setMode}
         />
       </div>
-      {mode === "playoffs" ? (
-        <div className="mt-4 rounded-xl border border-dashed border-[#262B36] bg-[#0B0D10]/60 px-4 py-8 text-center">
-          <p className="display text-xl font-bold">Playoff splits are coming soon</p>
-          <p className="mx-auto mt-1 max-w-md text-sm text-[#94A3B8]">
-            We are adding NHL playoff box scores (and Playoff Impact) to the nightly data pipeline. Regular-season numbers are complete back to 2005-06.
-          </p>
-        </div>
-      ) : rows.length === 0 ? (
-        <p className="mt-4 text-sm text-[#94A3B8]">No NHL regular-season games on file yet.</p>
+      {rows.length === 0 ? (
+        <p className="mt-4 rounded-xl border border-dashed border-[#262B36] bg-[#0B0D10]/60 px-4 py-6 text-center text-sm text-[#94A3B8]">
+          {mode === "playoffs" ? "No NHL playoff games since 2005-06 yet." : "No NHL regular-season games on file yet."}
+        </p>
       ) : (
         <div className="mt-4 max-h-[34rem] overflow-auto rounded-xl border border-[#262B36]">
           <table className="w-full min-w-[40rem] text-sm">

@@ -1,4 +1,33 @@
+import playoffJson from "../../data/draft-rater/playoff_stats.json";
 import statsJson from "../../data/draft-rater/season_stats.json";
+
+// ---- Playoffs (pipelines/draft-rater/fetch_playoffs.py) ----------------------------------
+
+/** [season, gp, g, a, pts, plusMinus, pim, shots, blocks, foWins, foLosses, toiPerGameSec, impact] */
+export type PlayoffSkaterSeason = [number, number, number, number, number, number, number, number, number, number, number, number, number];
+/** [season, gp, starts, shotsAgainst, saves, goalsAgainst, toiSec, impact] */
+export type PlayoffGoalieSeason = [number, number, number, number, number, number, number, number];
+
+type PlayoffFile = { seasons: number[]; skaters: Record<string, PlayoffSkaterSeason[]>; goalies: Record<string, PlayoffGoalieSeason[]> };
+const playoffs = playoffJson as unknown as PlayoffFile;
+
+export function playoffSkaterSeasons(playerId: number | null | undefined): PlayoffSkaterSeason[] {
+  return playerId == null ? [] : (playoffs.skaters[String(playerId)] ?? []);
+}
+
+export function playoffGoalieSeasons(playerId: number | null | undefined): PlayoffGoalieSeason[] {
+  return playerId == null ? [] : (playoffs.goalies[String(playerId)] ?? []);
+}
+
+/** Career playoff games and Playoff Impact (same scale as regular-season Impact). */
+export function playoffTotals(playerId: number | null | undefined): { gp: number; impact: number; springs: number } {
+  const rows: number[][] = [...playoffSkaterSeasons(playerId), ...playoffGoalieSeasons(playerId)];
+  return {
+    gp: rows.reduce((sum, row) => sum + row[1], 0),
+    impact: Math.round(rows.reduce((sum, row) => sum + row[row.length - 1], 0) * 10) / 10,
+    springs: new Set(rows.map((row) => row[0])).size,
+  };
+}
 
 // Season-by-season NHL regular-season box scores, exported nightly by
 // pipelines/draft-rater/season_stats.py. Server-side only: pages pass slices to client components.
